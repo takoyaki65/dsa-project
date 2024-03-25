@@ -1,0 +1,48 @@
+version: '3.8'
+services:
+  frontend:
+    build: ./dsa_front
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./dsa_front:/app
+      - /app/node_modules
+
+  backend:
+    depends_on:
+      db:
+        condition: service_healthy
+    build: ./dsa_back
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./dsa_back:/app
+    environment:
+      DATABASE_HOST: db
+      DATABASE_NAME: dsa 
+      DATABASE_USER: dsa 
+      DATABASE_PASSWORD: dsa-jikken 
+      DATABASE_PORT: 3306  
+
+  db:
+    image: mysql:8.3
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    volumes:
+      - db-data:/var/lib/mysql
+      - ./dsa_db/init.sql:/docker-entrypoint-initdb.d/init.sql
+      - ./dsa_db/my.cnf:/etc/mysql/conf.d/my.cnf
+    environment:
+      MYSQL_ROOT_PASSWORD: dsa-root
+      MYSQL_DATABASE: dsa
+      MYSQL_USER: dsa
+      MYSQL_PASSWORD: dsa-jikken
+    ports:
+      - "3306:3306"
+
+volumes:
+  db-data:
+
