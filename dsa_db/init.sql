@@ -35,7 +35,7 @@ CREATE TABLE IF NOT EXISTS sub_assignments (
 ) ENGINE=InnoDB;
 
 INSERT INTO sub_assignments (id, sub_id, title, makefile, required_file_name, test_file_name, test_input, test_output, test_program) VALUES
-(1, 1, '基本課題1', 'gcd_euclid: gcd_euclid.o main_euclid.o', 'gcd_euclid.c', 'main_euclid.c', '/path/to/input', '/path/to/output', '/path/to/test/program'),
+(1, 1, '基本課題1', 'gcd_euclid: gcd_euclid.o main_euclid.o', 'gcd_euclid.c', 'main_euclid.c', '/app/dsa_test_case/report1/in/case1.txt', '/app/dsa_test_case/report1/out/case1.txt', '/app/dsa_test_program/report1/main_iter.c'),
 (1, 2, '発展課題1', 'gcd_recursive: gcd_recursive.o main_recursive.o', 'gcd_recursive.c', 'main_recursive.c', '/path/to/input', '/path/to/output', '/path/to/test/program'),
 (2, 1, '基本課題1', 'linked_list: linked_list.o main_linked_list.o', 'linked_list.c', 'main_linked_list.c', '/path/to/input', '/path/to/output', '/path/to/test/program'),
 (2, 2, '基本課題2', 'queue: queue.o main_queue.o', 'queue.c', 'main_queue.c', '/path/to/input', '/path/to/output', '/path/to/test/program'),
