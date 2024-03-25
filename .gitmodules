@@ -9,3 +9,6 @@
 [submodule "dsa_sample_answer"]
 	path = dsa_sample_answer
 	url = https://github.com/zakkii-k/dsa_sample_answer
+[submodule "dsa_test_program"]
+	path = dsa_test_program
+	url = https://github.com/zakkii-k/dsa_test_program.git
