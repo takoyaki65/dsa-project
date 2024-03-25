@@ -13,6 +13,9 @@ services:
       db:
         condition: service_healthy
     build: ./dsa_back
+      # うまくいかなかったから仕方なくvolumesでマウント．本当はローカルに反映させたくないからCOPY使いたい．
+      # context: .
+      # dockerfile: dsa_back/Dockerfile
     ports:
       - "8000:8000"
     volumes:
