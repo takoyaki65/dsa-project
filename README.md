@@ -27,5 +27,15 @@
       docker-compose up --build
       ```
         を入力．
-   
+
+# コンテナへのアクセス
+1. コンテナ名の確認
+  ```bash
+  docker ps
+  ```
+  NAMESの欄からアクセスしたいコンテナの名前を確認する．
+2. アクセス
+  ```bash
+  docker exec -it [NAMES] bash
+  ```
    
