@@ -37,7 +37,7 @@ CREATE TABLE IF NOT EXISTS sub_assignments (
 ) ENGINE=InnoDB;
 
 INSERT INTO sub_assignments (id, sub_id, title, makefile, required_file_name, test_file_name, test_input_dir, test_output_dir, test_program_dir, test_case_name, test_program_name) VALUES
-(1, 1, '基本課題1', 'gcd_euclid: gcd_euclid.o main_euclid.o', 'gcd_euclid.c', 'main_euclid.c', '/app/dsa_test_case/report1/sub1/in', '/app/dsa_test_case/report1/sub1/out', '/app/dsa_test_program/report1/sub1', 'case1.txt', 'show/main_iter.c'),
+(1, 1, '基本課題1', 'gcd_euclid: gcd_euclid.o main_euclid.o', 'gcd_euclid.c', 'main_euclid.c', '/app/dsa_test_case/report1/sub1/in', '/app/dsa_test_case/report1/sub1/out', '/app/dsa_test_program/report1/sub1', 'case1.txt', 'main_iter.c'),
 (1, 2, '発展課題1', 'gcd_recursive: gcd_recursive.o main_recursive.o', 'gcd_recursive.c', 'main_recursive.c', NULL, NULL, NULL, NULL, NULL),
 (2, 1, '基本課題1', 'linked_list: linked_list.o main_linked_list.o', 'linked_list.c', 'main_linked_list.c', NULL, NULL, NULL, NULL, NULL),
 (2, 2, '基本課題2', 'queue: queue.o main_queue.o', 'queue.c', 'main_queue.c', NULL, NULL, NULL, NULL, NULL),
