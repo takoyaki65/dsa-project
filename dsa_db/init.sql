@@ -48,3 +48,24 @@ INSERT INTO sub_assignments (id, sub_id, title, makefile, required_file_name, te
 (4, 3, '発展課題1', 'binary_tree_mirror: binary_tree_mirror.o main_binary_tree_mirror.o', 'binary_tree_mirror.c', 'main_binary_tree_mirror.c', NULL, NULL, NULL, NULL, NULL),
 (4, 4, '発展課題2', 'bst_advanced: bst_advanced.o main_bst_advanced.o', 'bst_advanced.c', 'main_bst_advanced.c', NULL, NULL, NULL, NULL, NULL);
 
+CREATE TABLE IF NOT EXISTS users (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    username VARCHAR(255) NOT NULL UNIQUE,
+    hashed_password VARCHAR(255) NOT NULL,
+    is_admin BOOLEAN DEFAULT FALSE,
+    disabled BOOLEAN DEFAULT FALSE,
+    created_at DATETIME NOT NULL,
+    updated_at DATETIME NULL,
+    active_start_date DATETIME NULL,
+    active_end_date DATETIME NULL
+);
+
+CREATE TABLE IF NOT EXISTS  auth_codes (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    code VARCHAR(255) NOT NULL,
+    expired_at DATETIME NOT NULL,
+    is_expired BOOLEAN DEFAULT FALSE,
+    user_id INT NULL,
+    CONSTRAINT fk_users_id FOREIGN KEY (user_id) 
+        REFERENCES users(id)
+);
