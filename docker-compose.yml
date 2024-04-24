@@ -22,6 +22,7 @@ services:
       - ./dsa_back:/app
       - ./dsa_test_case:/app/dsa_test_case
       - ./dsa_test_program:/app/dsa_test_program
+      - /var/run/docker.sock:/var/run/docker.sock # to use docker of host machine from container
     environment:
       DATABASE_HOST: db
       DATABASE_NAME: dsa 
