@@ -22,7 +22,10 @@ services:
       - ./dsa_back:/app
       - ./dsa_test_case:/app/dsa_test_case
       - ./dsa_test_program:/app/dsa_test_program
-      - /var/run/docker.sock:/var/run/docker.sock # to use docker of host machine from container
+      # Bind docker.sock of backend server to docker.sock of host machine
+      # to use docker of host machine from container.
+      # Ref: 'The socket solution' of https://jpetazzo.github.io/2015/09/03/do-not-use-docker-in-docker-for-ci/
+      - /var/run/docker.sock:/var/run/docker.sock
     environment:
       DATABASE_HOST: db
       DATABASE_NAME: dsa 
