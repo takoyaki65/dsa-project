@@ -67,3 +67,23 @@ CREATE TABLE IF NOT EXISTS  auth_codes (
     CONSTRAINT fk_users_id FOREIGN KEY (user_id) 
         REFERENCES users(id)
 );
+
+CREATE TABLE IF NOT EXISTS function_test (
+    id INT NOT NULL,
+    sub_id INT NOT NULL,
+    func_id INT NOT NULL,
+    func_name VARCHAR(255) NOT NULL,
+    exec_command VARCHAR(255) ,
+    PRIMARY KEY (id, sub_id, func_id),
+    CONSTRAINT fk_sub_assignments_id FOREIGN KEY (id, sub_id) 
+        REFERENCES sub_assignments(id, sub_id)
+);
+
+INSERT INTO function_test (id, sub_id, func_id, func_name, exec_command) VALUES
+(1, 1, 1, 'gcd_euclid', './{unique_id}/bin/report1/sub1/gcd_euclid'),
+(1, 1, 2, 'gcd_recursive', './{unique_id}/bin/report1/sub2/gcd_recursive'),
+(2, 1, 1, 'insert_cell', './{unique_id}/bin/report2/sub1/incert_cell'),
+(2, 1, 2, 'insert_cell_top', './{unique_id}/bin/report2/sub1/incert_cell_top'),
+(2, 1, 3, 'delete_cell', './{unique_id}/bin/report2/sub1/delete_cell'),
+(2, 1, 4, 'delete_cell_top', './{unique_id}/bin/report2/sub1/delete_cell_top'),
+(2, 1, 5, 'display', './{unique_id}/bin/report2/sub1/display');
