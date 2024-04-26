@@ -1,0 +1,8 @@
+inorder: 
+null
+Not found!: 10
+Not found!: 30
+Minimum value of this bst: -1
+Value 20 deleted
+inorder: 
+null

@@ -18,7 +18,8 @@ INSERT INTO assignments (title, test_dir_name, start_date, end_date) VALUES
 ('課題1', 'report1', '2023-10-01 00:00:00', '2025-12-31 23:59:59'),
 ('課題2', 'report2', '2023-10-08 00:00:00', '2025-12-31 23:59:59'),
 ('課題3', 'report3', '2024-10-30 00:00:00', '2025-12-31 23:59:59'), -- まだ開始していないケース  
-('課題4', 'report4', '2023-11-01 00:00:00', '2023-12-31 23:59:59'); -- もう終了しているケース  
+('課題4', 'report4', '2023-11-01 00:00:00', '2025-12-31 23:59:59'),
+('課題5', 'report5', '2023-11-01 00:00:00', '2023-12-31 23:59:59'); -- もう終了しているケース
 
 CREATE TABLE IF NOT EXISTS sub_assignments (
     id INT NOT NULL,
@@ -86,4 +87,20 @@ INSERT INTO function_test (id, sub_id, func_id, func_name, exec_command) VALUES
 (2, 1, 2, 'insert_cell_top', './{unique_id}/bin/report2/sub1/incert_cell_top'),
 (2, 1, 3, 'delete_cell', './{unique_id}/bin/report2/sub1/delete_cell'),
 (2, 1, 4, 'delete_cell_top', './{unique_id}/bin/report2/sub1/delete_cell_top'),
-(2, 1, 5, 'display', './{unique_id}/bin/report2/sub1/display');
+(2, 1, 5, 'display', './{unique_id}/bin/report2/sub1/display'),
+(4, 1, 1, 'create_tree', './{unique_id}/bin/report4/sub1/create_tree'),
+(4, 1, 2, 'preorder', './{unique_id}/bin/report4/sub1/preorder'),
+(4, 1, 3, 'inorder', './{unique_id}/bin/report4/sub1/inorder'),
+(4, 1, 4, 'postorder', './{unique_id}/bin/report4/sub1/postorder'),
+(4, 1, 5, 'display', './{unique_id}/bin/report4/sub1/display'),
+(4, 1, 6, 'breadth_first_search', './{unique_id}/bin/report4/sub1/breadth_first_search'),
+(4, 1, 7, 'height', './{unique_id}/bin/report4/sub1/height'),
+(4, 1, 8, 'delete_tree', './{unique_id}/bin/report4/sub1/delete_tree'),
+(4, 2, 1, 'min_bst', './{unique_id}/bin/report4/sub2/min_bst'),
+(4, 2, 2, 'search_bst', './{unique_id}/bin/report4/sub2/search_bst'),
+(4, 2, 3, 'insert_bst', './{unique_id}/bin/report4/sub2/insert_bst'),
+(4, 2, 4, 'delete_bst', './{unique_id}/bin/report4/sub2/delete_bst'),
+(4, 3, 1, 'create_mirror', './{unique_id}/bin/report4/sub3/create_mirror'),
+(4, 3, 2, 'are_mirrors', './{unique_id}/bin/report4/sub3/are_mirrors'),
+(4, 4, 1, 'insert_bst', './{unique_id}/bin/report4/sub4/insert_bst'),
+(4, 4, 2, 'delete_bst', './{unique_id}/bin/report4/sub4/delete_bst');
