@@ -1,0 +1,6 @@
+preorder: J I H G F E D C B A 
+inorder: J I H G F E D C B A 
+postorder: A B C D E F G H I J 
+bfs: J I H G F E D C B A 
+J(null, I(null, H(null, G(null, F(null, E(null, D(null, C(null, B(null, A(null, null))))))))))
+height: 10
