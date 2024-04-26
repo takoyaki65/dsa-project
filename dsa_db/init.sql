@@ -44,7 +44,7 @@ INSERT INTO sub_assignments (id, sub_id, title, test_dir_name, makefile, require
 (3, 1, '基本課題1', 'sub1', 'open_addressing: open_addressing.o main_open_addressing.o', 'open_addressing.c', 'main_open_addressing.c', 'test1.txt'),
 (4, 1, '基本課題1', 'sub1',"binarytree: binarytree.o main_binarytree.o", 'binarytree.c', 'main_binarytree.c', 'test1.txt'),
 (4, 2, '基本課題2', 'sub2', 'binarysearchtree: binarysearchtree.o main_binarysearchtree.o', 'binarysearchtree.c', 'main_binarysearchtree.c', 'test1.txt'),
-(4, 3, '発展課題1', 'sub3', 'binary_tree_mirror: binary_tree_mirror.o main_binary_tree_mirror.o', 'binary_tree_mirror.c', 'main_binary_tree_mirror.c', 'test1.txt'),
+(4, 3, '発展課題1', 'sub3', 'binary_tree_mirror: binary_tree_mirror.o main_binarytree_mirror.o', 'binary_tree_mirror.c', 'main_binary_tree_mirror.c', 'test1.txt'),
 (4, 4, '発展課題2', 'sub4', 'bst_advanced: bst_advanced.o main_bst_advanced.o', 'bst_advanced.c', 'main_bst_advanced.c', 'test1.txt');
 
 CREATE TABLE IF NOT EXISTS users (
