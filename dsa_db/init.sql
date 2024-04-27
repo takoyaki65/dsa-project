@@ -19,7 +19,10 @@ INSERT INTO assignments (title, test_dir_name, start_date, end_date) VALUES
 ('課題2', 'report2', '2023-10-08 00:00:00', '2025-12-31 23:59:59'),
 ('課題3', 'report3', '2024-10-30 00:00:00', '2025-12-31 23:59:59'), -- まだ開始していないケース  
 ('課題4', 'report4', '2023-11-01 00:00:00', '2025-12-31 23:59:59'),
-('課題5', 'report5', '2023-11-01 00:00:00', '2023-12-31 23:59:59'); -- もう終了しているケース
+('課題5', 'report5', '2023-11-01 00:00:00', '2023-12-31 23:59:59'), -- もう終了しているケース
+('課題6', 'report6', '2023-11-01 00:00:00', '2023-12-31 23:59:59'), -- もう終了しているケース
+('課題7', 'report7', '2023-11-01 00:00:00', '2023-12-31 23:59:59'), -- もう終了しているケース
+('課題8', 'report8', '2023-11-01 00:00:00', '2025-12-31 23:59:59');
 
 CREATE TABLE IF NOT EXISTS sub_assignments (
     id INT NOT NULL,
@@ -36,7 +39,7 @@ CREATE TABLE IF NOT EXISTS sub_assignments (
 ) ENGINE=InnoDB;
 
 INSERT INTO sub_assignments (id, sub_id, title, test_dir_name, makefile, required_file_name, main_file_name, test_case_name) VALUES
-(1, 1, '基本課題1', 'sub1', 'gcd_euclid: gcd_euclid.o main_euclid.o', 'gcd_euclid.c', 'main_euclid.c', 'test1.txt'),
+(1, 1, '基本課題1', 'sub1', 'gcd_euclid: gcd_euclid.o main_gcd_euclid.o', 'gcd_euclid.c', 'main_gcd_euclid.c', 'test1.txt'),
 (1, 2, '発展課題1', 'sub2', 'gcd_recursive: gcd_recursive.o main_recursive.o', 'gcd_recursive.c', 'main_recursive.c', 'test1.txt'),
 (2, 1, '基本課題1', 'sub3', 'linked_list: linked_list.o main_linked_list.o', 'linked_list.c', 'main_linked_list.c', 'test1.txt'),
 (2, 2, '基本課題2', 'sub1', 'queue: queue.o main_queue.o', 'queue.c', 'main_queue.c', 'test1.txt'),
@@ -44,8 +47,12 @@ INSERT INTO sub_assignments (id, sub_id, title, test_dir_name, makefile, require
 (3, 1, '基本課題1', 'sub1', 'open_addressing: open_addressing.o main_open_addressing.o', 'open_addressing.c', 'main_open_addressing.c', 'test1.txt'),
 (4, 1, '基本課題1', 'sub1',"binarytree: binarytree.o main_binarytree.o", 'binarytree.c', 'main_binarytree.c', 'test1.txt'),
 (4, 2, '基本課題2', 'sub2', 'binarysearchtree: binarysearchtree.o main_binarysearchtree.o', 'binarysearchtree.c', 'main_binarysearchtree.c', 'test1.txt'),
-(4, 3, '発展課題1', 'sub3', 'binary_tree_mirror: binary_tree_mirror.o main_binarytree_mirror.o', 'binary_tree_mirror.c', 'main_binary_tree_mirror.c', 'test1.txt'),
-(4, 4, '発展課題2', 'sub4', 'bst_advanced: bst_advanced.o main_bst_advanced.o', 'bst_advanced.c', 'main_bst_advanced.c', 'test1.txt');
+(4, 3, '発展課題1', 'sub3', 'binarytree_mirror: binarytree_mirror.o main_binarytree_mirror.o', 'binarytree_mirror.c', 'main_binarytree_mirror.c', 'test1.txt'),
+(4, 4, '発展課題2', 'sub4', 'bst_advanced: bst_advanced.o main_bst_advanced.o', 'bst_advanced.c', 'main_bst_advanced.c', 'test1.txt'),
+(8, 1, "基本課題1", "sub1", "knapsack: knapsack.o main_knapsack.o", "knapsack.c", "main_knapsack.c", "test1.txt"),
+(8, 2, "基本課題2", "sub2", "knapsackDP: knapsackDP.o main_knapsackDP.o", "knapsackDP.c", "main_knapsackDP.c", "test1.txt"),
+(8, 3, "発展課題1", "sub3", "knapsack: knapsackDP2.o main_knapsackDP2.o", "knapsackDP2.c", "main_knapsackDP2.c", "test1.txt"),
+(8, 4, "発展課題2", "sub4", "subsetsum: subsetsum.o main_subsetsum.o", "sumsetsum.c", "main_subsetsum.c", "test1.txt");
 
 CREATE TABLE IF NOT EXISTS users (
     id INT AUTO_INCREMENT PRIMARY KEY,
@@ -103,4 +110,8 @@ INSERT INTO function_test (id, sub_id, func_id, func_name, exec_command) VALUES
 (4, 3, 1, 'create_mirror', './{unique_id}/bin/report4/sub3/create_mirror'),
 (4, 3, 2, 'are_mirrors', './{unique_id}/bin/report4/sub3/are_mirrors'),
 (4, 4, 1, 'insert_bst', './{unique_id}/bin/report4/sub4/insert_bst'),
-(4, 4, 2, 'delete_bst', './{unique_id}/bin/report4/sub4/delete_bst');
+(4, 4, 2, 'delete_bst', './{unique_id}/bin/report4/sub4/delete_bst'),
+(8, 1, 1, 'knapsack', './{unique_id}/bin/report8/sub1/knapsack'),
+(8, 2, 1, 'knapsackDP', './{unique_id}/bin/report8/sub2/knapsackDP'),
+(8, 3, 1, 'knapsackDP2', './{unique_id}/bin/report8/sub3/knapsackDP2'),
+(8, 4, 1, 'subsetsum', './{unique_id}/bin/report8/sub4/subsetsum');
