@@ -4,7 +4,6 @@ CREATE DATABASE IF NOT EXISTS dsa CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_
 -- データベースを使用
 USE dsa;
 
--- テーブルの作成
 CREATE TABLE IF NOT EXISTS assignments (
     id INT AUTO_INCREMENT PRIMARY KEY,
     title VARCHAR(255) NOT NULL,
@@ -12,17 +11,6 @@ CREATE TABLE IF NOT EXISTS assignments (
     start_date DATETIME NOT NULL, 
     end_date DATETIME NOT NULL
 );
-
--- 初期データの挿入
-INSERT INTO assignments (title, test_dir_name, start_date, end_date) VALUES
-('課題1', 'report1', '2023-10-01 00:00:00', '2025-12-31 23:59:59'),
-('課題2', 'report2', '2023-10-08 00:00:00', '2025-12-31 23:59:59'),
-('課題3', 'report3', '2024-10-30 00:00:00', '2025-12-31 23:59:59'), -- まだ開始していないケース  
-('課題4', 'report4', '2023-11-01 00:00:00', '2025-12-31 23:59:59'),
-('課題5', 'report5', '2023-11-01 00:00:00', '2023-12-31 23:59:59'), -- もう終了しているケース
-('課題6', 'report6', '2023-11-01 00:00:00', '2023-12-31 23:59:59'), -- もう終了しているケース
-('課題7', 'report7', '2023-11-01 00:00:00', '2023-12-31 23:59:59'), -- もう終了しているケース
-('課題8', 'report8', '2023-11-01 00:00:00', '2025-12-31 23:59:59');
 
 CREATE TABLE IF NOT EXISTS sub_assignments (
     id INT NOT NULL,
@@ -37,6 +25,62 @@ CREATE TABLE IF NOT EXISTS sub_assignments (
     CONSTRAINT fk_assignments_id FOREIGN KEY (id) 
         REFERENCES assignments(id)
 ) ENGINE=InnoDB;
+
+
+CREATE TABLE IF NOT EXISTS users (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    username VARCHAR(255) NOT NULL UNIQUE,
+    hashed_password VARCHAR(255) NOT NULL,
+    is_admin BOOLEAN DEFAULT FALSE,
+    disabled BOOLEAN DEFAULT FALSE,
+    created_at DATETIME NOT NULL,
+    updated_at DATETIME NULL,
+    active_start_date DATETIME NULL,
+    active_end_date DATETIME NULL
+);
+
+CREATE TABLE IF NOT EXISTS auth_codes (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    code VARCHAR(255) NOT NULL,
+    expired_at DATETIME NOT NULL,
+    is_expired BOOLEAN DEFAULT FALSE,
+    user_id INT NULL,
+    CONSTRAINT fk_users_id FOREIGN KEY (user_id) 
+        REFERENCES users(id)
+);
+
+
+CREATE TABLE IF NOT EXISTS refresh_tokens (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    token VARCHAR(255) NOT NULL,
+    expired_at DATETIME NOT NULL,
+    is_expired BOOLEAN DEFAULT FALSE,
+    user_id INT NULL,
+    CONSTRAINT fk_refresh_tokens_users_id FOREIGN KEY (user_id) 
+        REFERENCES users(id)
+);
+
+CREATE TABLE IF NOT EXISTS function_test (
+    id INT NOT NULL,
+    sub_id INT NOT NULL,
+    func_id INT NOT NULL,
+    func_name VARCHAR(255) NOT NULL,
+    exec_command VARCHAR(255) ,
+    PRIMARY KEY (id, sub_id, func_id),
+    CONSTRAINT fk_sub_assignments_id FOREIGN KEY (id, sub_id) 
+        REFERENCES sub_assignments(id, sub_id)
+);
+
+-- 初期データの挿入
+INSERT INTO assignments (title, test_dir_name, start_date, end_date) VALUES
+('課題1', 'report1', '2023-10-01 00:00:00', '2025-12-31 23:59:59'),
+('課題2', 'report2', '2023-10-08 00:00:00', '2025-12-31 23:59:59'),
+('課題3', 'report3', '2024-10-30 00:00:00', '2025-12-31 23:59:59'), -- まだ開始していないケース  
+('課題4', 'report4', '2023-11-01 00:00:00', '2025-12-31 23:59:59'),
+('課題5', 'report5', '2023-11-01 00:00:00', '2023-12-31 23:59:59'), -- もう終了しているケース
+('課題6', 'report6', '2023-11-01 00:00:00', '2023-12-31 23:59:59'), -- もう終了しているケース
+('課題7', 'report7', '2023-11-01 00:00:00', '2023-12-31 23:59:59'), -- もう終了しているケース
+('課題8', 'report8', '2023-11-01 00:00:00', '2025-12-31 23:59:59');
 
 INSERT INTO sub_assignments (id, sub_id, title, test_dir_name, makefile, required_file_name, main_file_name, test_case_name) VALUES
 (1, 1, '基本課題1', 'sub1', 'gcd_euclid: gcd_euclid.o main_gcd_euclid.o', 'gcd_euclid.c', 'main_gcd_euclid.c', 'test1.txt'),
@@ -53,39 +97,6 @@ INSERT INTO sub_assignments (id, sub_id, title, test_dir_name, makefile, require
 (8, 2, "基本課題2", "sub2", "knapsackDP: knapsackDP.o main_knapsackDP.o", "knapsackDP.c", "main_knapsackDP.c", "test1.txt"),
 (8, 3, "発展課題1", "sub3", "knapsack: knapsackDP2.o main_knapsackDP2.o", "knapsackDP2.c", "main_knapsackDP2.c", "test1.txt"),
 (8, 4, "発展課題2", "sub4", "subsetsum: subsetsum.o main_subsetsum.o", "sumsetsum.c", "main_subsetsum.c", "test1.txt");
-
-CREATE TABLE IF NOT EXISTS users (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    username VARCHAR(255) NOT NULL UNIQUE,
-    hashed_password VARCHAR(255) NOT NULL,
-    is_admin BOOLEAN DEFAULT FALSE,
-    disabled BOOLEAN DEFAULT FALSE,
-    created_at DATETIME NOT NULL,
-    updated_at DATETIME NULL,
-    active_start_date DATETIME NULL,
-    active_end_date DATETIME NULL
-);
-
-CREATE TABLE IF NOT EXISTS  auth_codes (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    code VARCHAR(255) NOT NULL,
-    expired_at DATETIME NOT NULL,
-    is_expired BOOLEAN DEFAULT FALSE,
-    user_id INT NULL,
-    CONSTRAINT fk_users_id FOREIGN KEY (user_id) 
-        REFERENCES users(id)
-);
-
-CREATE TABLE IF NOT EXISTS function_test (
-    id INT NOT NULL,
-    sub_id INT NOT NULL,
-    func_id INT NOT NULL,
-    func_name VARCHAR(255) NOT NULL,
-    exec_command VARCHAR(255) ,
-    PRIMARY KEY (id, sub_id, func_id),
-    CONSTRAINT fk_sub_assignments_id FOREIGN KEY (id, sub_id) 
-        REFERENCES sub_assignments(id, sub_id)
-);
 
 INSERT INTO function_test (id, sub_id, func_id, func_name, exec_command) VALUES
 (1, 1, 1, 'gcd_euclid', './{unique_id}/bin/report1/sub1/gcd_euclid'),
