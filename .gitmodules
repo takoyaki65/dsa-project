@@ -12,3 +12,6 @@
 [submodule "dsa_test_program"]
 	path = dsa_test_program
 	url = https://github.com/zakkii-k/dsa_test_program.git
+[submodule "dsa-judge"]
+	path = dsa-judge
+	url = https://github.com/takoyaki65/dsa-judge.git
