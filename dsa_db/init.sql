@@ -29,7 +29,9 @@ CREATE TABLE IF NOT EXISTS sub_assignments (
 
 CREATE TABLE IF NOT EXISTS users (
     id INT AUTO_INCREMENT PRIMARY KEY,
-    username VARCHAR(255) NOT NULL UNIQUE,
+    student_id VARCHAR(255) NOT NULL UNIQUE,
+    username VARCHAR(255) NOT NULL,
+    email VARCHAR(255) NOT NULL UNIQUE,
     hashed_password VARCHAR(255) NOT NULL,
     is_admin BOOLEAN DEFAULT FALSE,
     disabled BOOLEAN DEFAULT FALSE,
@@ -39,9 +41,9 @@ CREATE TABLE IF NOT EXISTS users (
     active_end_date DATETIME NULL
 );
 
-CREATE TABLE IF NOT EXISTS auth_codes (
+CREATE TABLE IF NOT EXISTS access_tokens (
     id INT AUTO_INCREMENT PRIMARY KEY,
-    code VARCHAR(255) NOT NULL,
+    token VARCHAR(255) NOT NULL,
     expired_at DATETIME NOT NULL,
     is_expired BOOLEAN DEFAULT FALSE,
     user_id INT NULL,
