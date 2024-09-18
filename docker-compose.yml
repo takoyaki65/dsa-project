@@ -20,8 +20,8 @@ services:
       - "8000:8000"
     volumes:
       - ./dsa_back:/app
-      - ./dsa_test_case:/app/dsa_test_case
-      - ./dsa_test_program:/app/dsa_test_program
+      - ./dsa_uploaded_file:/uploaded_file
+      - ./dsa_resource:/resource
     environment:
       DATABASE_HOST: db
       DATABASE_NAME: dsa 
