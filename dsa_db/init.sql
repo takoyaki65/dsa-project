@@ -8,8 +8,8 @@ USE dsa;
 CREATE TABLE IF NOT EXISTS Lecture (
     id INT AUTO_INCREMENT PRIMARY KEY, -- 授業エントリのID
     title VARCHAR(255) NOT NULL, -- 授業のタイトル名 e.g., 課題1, 課題2, ...
-    start_date TIMESTAMP NOT NULL, -- 課題ページの公開日
-    end_date TIMESTAMP NOT NULL -- 課題ページの公開終了日
+    start_date DATETIME NOT NULL, -- 課題ページの公開日
+    end_date DATETIME NOT NULL -- 課題ページの公開終了日
 );
 
 -- Problemテーブル(課題1-1,1-2,2-1,...)の作成
@@ -109,31 +109,10 @@ CREATE TABLE IF NOT EXISTS LoginHistory (
     login_at DATETIME NOT NULL,
     logout_at DATETIME DEFAULT NULL, -- ログアウトした時刻
     refresh_count INT DEFAULT 0,  -- リフレッシュした回数、回数制限つける
-    current_token VARCHAR(255) NOT NULL, -- 現在のアクセストークン
+    current_access_token VARCHAR(255) NOT NULL, -- 現在のアクセストークン
     current_refresh_token VARCHAR(255) NOT NULL, -- 現在のリフレッシュトークン
     PRIMARY KEY (user_id, login_at)
     CONSTRAINT fk_users_id FOREIGN KEY (user_id)
-        REFERENCES Users(user_id)
-);
-
-CREATE TABLE IF NOT EXISTS access_tokens (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    token VARCHAR(255) NOT NULL,
-    expired_at DATETIME NOT NULL,
-    is_expired BOOLEAN DEFAULT FALSE,
-    user_id VARCHAR(255) NULL,
-    CONSTRAINT fk_users_id FOREIGN KEY (user_id) 
-        REFERENCES Users(user_id)
-);
-
-
-CREATE TABLE IF NOT EXISTS refresh_tokens (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    token VARCHAR(255) NOT NULL,
-    expired_at DATETIME NOT NULL,
-    is_expired BOOLEAN DEFAULT FALSE,
-    user_id VARCHAR(255) NULL,
-    CONSTRAINT fk_refresh_tokens_users_id FOREIGN KEY (user_id) 
         REFERENCES Users(user_id)
 );
 
@@ -159,7 +138,7 @@ CREATE TABLE IF NOT EXISTS Submission (
 -- UploadedFilesテーブルの作成
 CREATE TABLE IF NOT EXISTS UploadedFiles (
     id INT AUTO_INCREMENT PRIMARY KEY, -- アップロードされたファイルのID(auto increment)
-    ts TIMESTAMP DEFAULT CURRENT_TIMESTAMP, -- アップロードされた時刻
+    ts DATETIME DEFAULT CURRENT_TIMESTAMP, -- アップロードされた時刻
     submission_id INT, -- そのファイルが必要なジャッジリクエストのID
     path VARCHAR(255) NOT NULL, -- アップロードされたファイルのパス
     FOREIGN KEY (submission_id) REFERENCES Submission(id)
@@ -169,7 +148,7 @@ CREATE TABLE IF NOT EXISTS UploadedFiles (
 -- JudgeResultテーブルの作成
 CREATE TABLE IF NOT EXISTS JudgeResult (
     id INT AUTO_INCREMENT PRIMARY KEY, -- ジャッジ結果のID(auto increment)
-    ts TIMESTAMP DEFAULT CURRENT_TIMESTAMP, -- ジャッジ結果が出た時刻
+    ts DATETIME DEFAULT CURRENT_TIMESTAMP, -- ジャッジ結果が出た時刻
     submission_id INT, -- ジャッジ結果に紐づいているジャッジリクエストのID
     testcase_id INT, -- ジャッジ結果に紐づいているテストケースのID
     result ENUM('AC', 'WA', 'TLE', 'MLE', 'RE', 'CE', 'OLE', 'IE') NOT NULL, -- 実行結果のステータス、 AC/WA/TLE/MLE/CE/RE/OLE/IE, 参考: https://atcoder.jp/contests/abc367/glossary
