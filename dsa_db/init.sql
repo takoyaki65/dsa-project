@@ -108,6 +108,7 @@ CREATE TABLE IF NOT EXISTS LoginHistory (
     user_id VARCHAR(255) NOT NULL,
     login_at DATETIME NOT NULL,
     logout_at DATETIME DEFAULT NULL, -- ログアウトした時刻
+    disabled BOOLEAN DEFAULT false NOT NULL, -- ログインが無効かどうか
     refresh_count INT DEFAULT 0,  -- リフレッシュした回数、回数制限つける
     current_access_token VARCHAR(255) NOT NULL, -- 現在のアクセストークン
     current_refresh_token VARCHAR(255) NOT NULL, -- 現在のリフレッシュトークン
