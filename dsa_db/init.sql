@@ -94,7 +94,7 @@ CREATE TABLE Users (
     username VARCHAR(255) NOT NULL,
     email VARCHAR(255) NOT NULL,
     hashed_password VARCHAR(255) NOT NULL,
-    is_admin BOOLEAN DEFAULT false NOT NULL,
+    role ENUM('admin', 'manager', 'student') NOT NULL,
     disabled BOOLEAN DEFAULT false NOT NULL,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
@@ -107,14 +107,22 @@ CREATE TABLE Users (
 CREATE TABLE IF NOT EXISTS LoginHistory (
     user_id VARCHAR(255) NOT NULL,
     login_at DATETIME NOT NULL,
-    logout_at DATETIME DEFAULT NULL, -- ログアウトした時刻
-    disabled BOOLEAN DEFAULT false NOT NULL, -- ログインが無効かどうか
+    logout_at DATETIME NOT NULL, -- ログアウト予定の時刻(リフレッシュトークンにより更新される予定あり)
     refresh_count INT DEFAULT 0,  -- リフレッシュした回数、回数制限つける
     current_access_token VARCHAR(255) NOT NULL, -- 現在のアクセストークン
     current_refresh_token VARCHAR(255) NOT NULL, -- 現在のリフレッシュトークン
     PRIMARY KEY (user_id, login_at)
     CONSTRAINT fk_users_id FOREIGN KEY (user_id)
         REFERENCES Users(user_id)
+);
+
+
+-- BatchSubmissionテーブルの作成
+CREATE TABLE IF NOT EXISTS BatchSubmission (
+    id INT AUTO_INCREMENT PRIMARY KEY, -- バッチ採点のID(auto increment)
+    ts DATETIME DEFAULT CURRENT_TIMESTAMP, -- バッチ採点のリクエスト時刻
+    user_id VARCHAR(255), -- リクエストした管理者のID
+    FOREIGN KEY (user_id) REFERENCES Users(user_id)
 );
 
 
