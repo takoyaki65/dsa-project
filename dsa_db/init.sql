@@ -229,6 +229,18 @@ CREATE TABLE IF NOT EXISTS SubmissionSummary (
 );
 
 
+-- EvaluationResult(学生の提出に対する、各授業の採点結果)
+CREATE TABLE IF NOT EXISTS EvaluationResult (
+    user_id VARCHAR(255), -- 採点対象のユーザのID
+    lecture_id INT NOT NULL, -- 何回目の授業で出される課題か, e.g., 1, 2, ...
+    score INT NOT NULL, -- 集計スコア (該当Submissionリクエストの全scoreの合計)
+    report_path VARCHAR(255), -- 採点結果のレポートのパス
+    comment TEXT, -- コメント
+    FOREIGN KEY (user_id) REFERENCES Users(user_id),
+    FOREIGN KEY (lecture_id) REFERENCES Lecture(id)
+);
+
+
 -- 課題1のデータを挿入
 INSERT INTO Lecture (title, start_date, end_date) VALUES
 ('課題1', '2023-10-01 00:00:00', '2025-12-31 23:59:59');
