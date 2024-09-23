@@ -20,8 +20,8 @@ services:
       - "8000:8000"
     volumes:
       - ./dsa_back:/app
-      - ./dsa_uploaded_file:/uploaded_file
-      - ./dsa_resource:/resource
+      - ./upload:/upload
+      - ./resource:/resource
     environment:
       DATABASE_HOST: db
       DATABASE_NAME: dsa 
@@ -42,8 +42,10 @@ services:
       - /var/run/docker.sock:/var/run/docker.sock
       # ソースコードのマウント
       - ./dsa-judge/src:/app
-      # リソースディレクトリ(アップロードされたファイル、テストケース、サンプルプログラム等)のマウント
-      - ./dsa_resource:/resource
+      # アップロードされたファイル用のディレクトリのマウント
+      - ./upload:/upload
+      # リソースディレクトリ(テストケース、サンプルプログラム等)のマウント
+      - ./resource:/resource
       # ログディレクトリのマウント
       - ./dsa-judge/logs:/logs
       # Sandboxコンテナのメモリ使用量のリアルタイム計測のために、sysgroupディレクトリのマウント
