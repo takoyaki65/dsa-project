@@ -109,9 +109,8 @@ CREATE TABLE IF NOT EXISTS LoginHistory (
     login_at DATETIME NOT NULL,
     logout_at DATETIME NOT NULL, -- ログアウト予定の時刻(リフレッシュトークンにより更新される予定あり)
     refresh_count INT DEFAULT 0,  -- リフレッシュした回数、回数制限つける
-    PRIMARY KEY (user_id, login_at)
-    CONSTRAINT fk_users_id FOREIGN KEY (user_id)
-        REFERENCES Users(user_id)
+    PRIMARY KEY (user_id, login_at),
+    FOREIGN KEY (user_id) REFERENCES Users(user_id)
 );
 
 
@@ -152,29 +151,23 @@ CREATE TABLE IF NOT EXISTS UploadedFiles (
 );
 
 
--- JudgeResultテーブルの作成
-CREATE TABLE IF NOT EXISTS JudgeResult (
-    id INT AUTO_INCREMENT PRIMARY KEY, -- ジャッジ結果のID(auto increment)
-    ts DATETIME DEFAULT CURRENT_TIMESTAMP, -- ジャッジ結果が出た時刻
-    parent_id INT NOT NULL, -- 親のEvaluationSummaryのID
-    submission_id INT NOT NULL, -- ジャッジ結果に紐づいているジャッジリクエストのID
-    testcase_id INT NOT NULL, -- ジャッジ結果に紐づいているテストケースのID
-    result ENUM('AC', 'WA', 'TLE', 'MLE', 'RE', 'CE', 'OLE', 'IE') NOT NULL, -- 実行結果のステータス、 AC/WA/TLE/MLE/CE/RE/OLE/IE, 参考: https://atcoder.jp/contests/abc367/glossary
-    timeMS INT NOT NULL, -- 実行時間[ms]
-    memoryKB INT NOT NULL, -- 消費メモリ[KB]
-    exit_code INT NOT NULL, -- 戻り値
-    stdout TEXT NOT NULL, -- 標準出力
-    stderr TEXT NOT NULL, -- 標準エラー出力
-    -- 以降、外部キー関係ではないけどTestCasesから取ってくる値
-    description TEXT, -- TestCases.description
-    command TEXT NOT NULL, -- 実行したコマンド e.g., "./a.out 1 2 -loption..."
-    stdin TEXT, -- 標準入力(実体)
-    expected_stdout TEXT, -- 期待される標準出力
-    expected_stderr TEXT, -- 期待される標準エラー出力
-    expected_exit_code INT NOT NULL DEFAULT 0, -- 期待される戻り値
-    FOREIGN KEY (parent_id) REFERENCES EvaluationSummary(id),
+-- SubmissionSummary(一つの提出における、全体の採点結果)
+CREATE TABLE IF NOT EXISTS SubmissionSummary (
+    submission_id INT PRIMARY KEY, -- 対象のSubmissionリクエストのID
+    batch_id INT, -- Submissionリクエストに紐づいたBatchリクエストのID
+    user_id VARCHAR(255), -- 採点対象のユーザのID
+    lecture_id INT NOT NULL, -- 何回目の授業で出される課題か, e.g., 1, 2, ...
+    assignment_id INT NOT NULL, -- 何番目の課題か, e.g., 1, 2, ...
+    for_evaluation BOOLEAN NOT NULL, -- 課題採点用かどうか, True/False
+    /* Aggregation attributes over SubmissionSummary */
+    result ENUM('AC', 'WA', 'TLE', 'MLE', 'RE', 'CE', 'OLE', 'IE', 'FN') NOT NULL, -- Submissionリクエスト全体の実行結果, FN(File Not Found)
+    message VARCHAR(255), -- メッセージ(5文字～10文字程度)
+    detail VARCHAR(255), -- 詳細(ファイルが足りない場合: "main.c func.c....", 実行ファイルが足りない場合: "main, func,...")
+    score INT NOT NULL, -- 集計スコア (該当Submissionリクエストの全scoreの合計)
     FOREIGN KEY (submission_id) REFERENCES Submission(id),
-    FOREIGN KEY (testcase_id) REFERENCES TestCases(id)
+    FOREIGN KEY (batch_id) REFERENCES BatchSubmission(id),
+    FOREIGN KEY (user_id) REFERENCES Users(user_id),
+    FOREIGN KEY (lecture_id, assignment_id, for_evaluation) REFERENCES Problem(lecture_id, assignment_id, for_evaluation)
 );
 
 
@@ -209,23 +202,29 @@ CREATE TABLE IF NOT EXISTS EvaluationSummary (
 );
 
 
--- SubmissionSummary(一つの提出における、全体の採点結果)
-CREATE TABLE IF NOT EXISTS SubmissionSummary (
-    submission_id INT PRIMARY KEY, -- 対象のSubmissionリクエストのID
-    batch_id INT, -- Submissionリクエストに紐づいたBatchリクエストのID
-    user_id VARCHAR(255), -- 採点対象のユーザのID
-    lecture_id INT NOT NULL, -- 何回目の授業で出される課題か, e.g., 1, 2, ...
-    assignment_id INT NOT NULL, -- 何番目の課題か, e.g., 1, 2, ...
-    for_evaluation BOOLEAN NOT NULL, -- 課題採点用かどうか, True/False
-    /* Aggregation attributes over SubmissionSummary */
-    result ENUM('AC', 'WA', 'TLE', 'MLE', 'RE', 'CE', 'OLE', 'IE', 'FN') NOT NULL, -- Submissionリクエスト全体の実行結果, FN(File Not Found)
-    message VARCHAR(255), -- メッセージ(5文字～10文字程度)
-    detail VARCHAR(255), -- 詳細(ファイルが足りない場合: "main.c func.c....", 実行ファイルが足りない場合: "main, func,...")
-    score INT NOT NULL, -- 集計スコア (該当Submissionリクエストの全scoreの合計)
+-- JudgeResultテーブルの作成
+CREATE TABLE IF NOT EXISTS JudgeResult (
+    id INT AUTO_INCREMENT PRIMARY KEY, -- ジャッジ結果のID(auto increment)
+    ts DATETIME DEFAULT CURRENT_TIMESTAMP, -- ジャッジ結果が出た時刻
+    parent_id INT NOT NULL, -- 親のEvaluationSummaryのID
+    submission_id INT NOT NULL, -- ジャッジ結果に紐づいているジャッジリクエストのID
+    testcase_id INT NOT NULL, -- ジャッジ結果に紐づいているテストケースのID
+    result ENUM('AC', 'WA', 'TLE', 'MLE', 'RE', 'CE', 'OLE', 'IE') NOT NULL, -- 実行結果のステータス、 AC/WA/TLE/MLE/CE/RE/OLE/IE, 参考: https://atcoder.jp/contests/abc367/glossary
+    timeMS INT NOT NULL, -- 実行時間[ms]
+    memoryKB INT NOT NULL, -- 消費メモリ[KB]
+    exit_code INT NOT NULL, -- 戻り値
+    stdout TEXT NOT NULL, -- 標準出力
+    stderr TEXT NOT NULL, -- 標準エラー出力
+    -- 以降、外部キー関係ではないけどTestCasesから取ってくる値
+    description TEXT, -- TestCases.description
+    command TEXT NOT NULL, -- 実行したコマンド e.g., "./a.out 1 2 -loption..."
+    stdin TEXT, -- 標準入力(実体)
+    expected_stdout TEXT, -- 期待される標準出力
+    expected_stderr TEXT, -- 期待される標準エラー出力
+    expected_exit_code INT NOT NULL DEFAULT 0, -- 期待される戻り値
+    FOREIGN KEY (parent_id) REFERENCES EvaluationSummary(id),
     FOREIGN KEY (submission_id) REFERENCES Submission(id),
-    FOREIGN KEY (batch_id) REFERENCES BatchSubmission(id),
-    FOREIGN KEY (user_id) REFERENCES Users(user_id),
-    FOREIGN KEY (lecture_id, assignment_id, for_evaluation) REFERENCES Problem(lecture_id, assignment_id, for_evaluation)
+    FOREIGN KEY (testcase_id) REFERENCES TestCases(id)
 );
 
 
