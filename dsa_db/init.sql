@@ -158,8 +158,9 @@ CREATE TABLE IF NOT EXISTS UploadedFiles (
 CREATE TABLE IF NOT EXISTS JudgeResult (
     id INT AUTO_INCREMENT PRIMARY KEY, -- ジャッジ結果のID(auto increment)
     ts DATETIME DEFAULT CURRENT_TIMESTAMP, -- ジャッジ結果が出た時刻
-    submission_id INT, -- ジャッジ結果に紐づいているジャッジリクエストのID
-    testcase_id INT, -- ジャッジ結果に紐づいているテストケースのID
+    parent_id INT NOT NULL, -- 親のEvaluationSummaryのID
+    submission_id INT NOT NULL, -- ジャッジ結果に紐づいているジャッジリクエストのID
+    testcase_id INT NOT NULL, -- ジャッジ結果に紐づいているテストケースのID
     result ENUM('AC', 'WA', 'TLE', 'MLE', 'RE', 'CE', 'OLE', 'IE') NOT NULL, -- 実行結果のステータス、 AC/WA/TLE/MLE/CE/RE/OLE/IE, 参考: https://atcoder.jp/contests/abc367/glossary
     timeMS INT NOT NULL, -- 実行時間[ms]
     memoryKB INT NOT NULL, -- 消費メモリ[KB]
@@ -173,6 +174,7 @@ CREATE TABLE IF NOT EXISTS JudgeResult (
     expected_stdout TEXT, -- 期待される標準出力
     expected_stderr TEXT, -- 期待される標準エラー出力
     expected_exit_code INT NOT NULL DEFAULT 0, -- 期待される戻り値
+    FOREIGN KEY (parent_id) REFERENCES EvaluationSummary(id),
     FOREIGN KEY (submission_id) REFERENCES Submission(id),
     FOREIGN KEY (testcase_id) REFERENCES TestCases(id)
 );
@@ -181,7 +183,7 @@ CREATE TABLE IF NOT EXISTS JudgeResult (
 -- EvaluationSummary(一つの提出における、各評価項目の採点結果)
 CREATE TABLE IF NOT EXISTS EvaluationSummary (
     id INT AUTO_INCREMENT PRIMARY KEY,
-    submission_id INT NOT NULL, -- 対象のSubmissionリクエストのID
+    parent_id INT NOT NULL, -- 対象のSubmissionリクエストのID
     batch_id INT, -- Submissionリクエストに紐づいたBatchリクエストのID
     user_id VARCHAR(255), -- 採点対象のユーザのID
     lecture_id INT NOT NULL, -- 何回目の授業で出される課題か, e.g., 1, 2, ...
@@ -200,7 +202,7 @@ CREATE TABLE IF NOT EXISTS EvaluationSummary (
     eval_type ENUM('Built', 'Judge') NOT NULL, -- EvaluationItems.type
     arranged_file_path VARCHAR(255), -- ArrangedFiles.path
     -- 外部キー関係
-    FOREIGN KEY (submission_id) REFERENCES Submission(id),
+    FOREIGN KEY (parent_id) REFERENCES SubmissionSummary(submission_id),
     FOREIGN KEY (batch_id) REFERENCES BatchSubmission(id),
     FOREIGN KEY (user_id) REFERENCES Users(user_id),
     FOREIGN KEY (lecture_id, assignment_id, for_evaluation) REFERENCES Problem(lecture_id, assignment_id, for_evaluation),
