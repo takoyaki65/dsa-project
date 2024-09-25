@@ -109,8 +109,6 @@ CREATE TABLE IF NOT EXISTS LoginHistory (
     login_at DATETIME NOT NULL,
     logout_at DATETIME NOT NULL, -- ログアウト予定の時刻(リフレッシュトークンにより更新される予定あり)
     refresh_count INT DEFAULT 0,  -- リフレッシュした回数、回数制限つける
-    current_access_token VARCHAR(255) NOT NULL, -- 現在のアクセストークン
-    current_refresh_token VARCHAR(255) NOT NULL, -- 現在のリフレッシュトークン
     PRIMARY KEY (user_id, login_at)
     CONSTRAINT fk_users_id FOREIGN KEY (user_id)
         REFERENCES Users(user_id)
