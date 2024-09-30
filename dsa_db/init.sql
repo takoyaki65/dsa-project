@@ -164,6 +164,8 @@ CREATE TABLE IF NOT EXISTS SubmissionSummary (
     message VARCHAR(255), -- メッセージ(5文字～10文字程度)
     detail VARCHAR(255), -- 詳細(ファイルが足りない場合: "main.c func.c....", 実行ファイルが足りない場合: "main, func,...")
     score INT NOT NULL, -- 集計スコア (該当Submissionリクエストの全scoreの合計)
+    timeMS INT DEFAULT 0, -- 実行時間[ms]
+    memoryKB INT DEFAULT 0, -- 消費メモリ[KB]
     FOREIGN KEY (submission_id) REFERENCES Submission(id),
     FOREIGN KEY (batch_id) REFERENCES BatchSubmission(id),
     FOREIGN KEY (user_id) REFERENCES Users(user_id),
@@ -187,6 +189,8 @@ CREATE TABLE IF NOT EXISTS EvaluationSummary (
     message VARCHAR(255), -- メッセージ(5文字～10文字程度)
     detail VARCHAR(255), -- 詳細 (ファイルが足りない場合: "main.c func.c....", 実行ファイルが足りない場合: "main, func,...")
     score INT NOT NULL, -- 集計結果 (ACの場合、EvaluationItems.scoreの値、それ以外は0点)
+    timeMS INT DEFAULT 0, -- 実行時間[ms]
+    memoryKB INT DEFAULT 0, -- 消費メモリ[KB]
     -- 以下、外部キー関係ではないけどEvaluationItemsやArrangedFilesから取ってくる値
     eval_title VARCHAR(255) NOT NULL, -- EvaluationItems.title
     eval_description TEXT, -- EvaluationItems.description
