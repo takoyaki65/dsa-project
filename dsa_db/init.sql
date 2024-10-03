@@ -110,7 +110,7 @@ CREATE TABLE IF NOT EXISTS LoginHistory (
     logout_at DATETIME NOT NULL, -- ログアウト予定の時刻(リフレッシュトークンにより更新される予定あり)
     refresh_count INT DEFAULT 0,  -- リフレッシュした回数、回数制限つける
     PRIMARY KEY (user_id, login_at),
-    FOREIGN KEY (user_id) REFERENCES Users(user_id)
+    FOREIGN KEY (user_id) REFERENCES Users(user_id) ON DELETE NULL
 );
 
 
@@ -267,20 +267,20 @@ INSERT INTO RequiredFiles (lecture_id, assignment_id, for_evaluation, name) VALU
 
 INSERT INTO EvaluationItems
 (str_id         , lecture_id, assignment_id, for_evaluation, title         , description                        , score, type        , arranged_file_id, message_on_fail      ) VALUES
-('1-1-build'    , 1         , 1            , false         , 'compile'     , ''                                 , 0    , 'Built'     , '1-1-make'       , 'コンパイルに失敗しました'),
-('1-1-check'    , 1         , 1            , false         , 'check'       , ''                                 , 0    , 'Built'     , '1-1-make'       , 'gcd_euclidが定義されていません'),
-('1-1-small'    , 1         , 1            , false         , 'smallNumber' , ''                                 , 0    , 'Judge'     , NULL             , '小さい数同士のGCDを求められていません'),
-('1-1-invalid1' , 1         , 1            , false         , 'invalidArg'  , ''                                 , 0    , 'Judge'     , NULL             , '引数が多い場合のエラー出力ができていません'),
-('1-1-invalid2' , 1         , 1            , false         , 'negative'    , ''                                 , 0    , 'Judge'     , NULL             , 'ゼロ以下の整数が与えられた場合のエラー出力ができていません');
+('1-1-build'    , 1         , 1            , false         , 'compile'     , 'コンパイルできるか'                   , 0    , 'Built'     , '1-1-make'       , 'コンパイルに失敗しました'),
+('1-1-check'    , 1         , 1            , false         , 'check'       , 'gcd_euclidが定義されているか'         , 0    , 'Built'     , '1-1-make'       , 'gcd_euclidが定義されていません'),
+('1-1-small'    , 1         , 1            , false         , 'smallNumber' , '小さい数同士のGCDを求められているか'     , 0    , 'Judge'     , NULL             , '小さい数同士のGCDを求められていません'),
+('1-1-invalid1' , 1         , 1            , false         , 'invalidArg'  , '引数が多いケースをチェックできているか'   , 0    , 'Judge'     , NULL             , '引数が多い場合のエラー出力ができていません'),
+('1-1-invalid2' , 1         , 1            , false         , 'negative'    , 'ゼロ以下の整数を与えられたケース'        , 0    , 'Judge'     , NULL             , 'ゼロ以下の整数が与えられた場合のエラー出力ができていません');
 
 INSERT INTO TestCases 
-(eval_id             , description                                        , command                      , argument_path                    , stdin_path, stdout_path                     , stderr_path                     , exit_code) VALUES
-( '1-1-build'        , 'コンパイルできるか'                                  , 'make gcd_euclid'            , NULL                             , NULL      , NULL                            , NULL                            , 0),
-( '1-1-check'        , 'gcd_euclidが定義されているか'                        , 'make test_link'             , NULL                             , NULL      , NULL                            , NULL                            , 0),
-( '1-1-small'        , '小さい数同士のGCDを求められているか'                    , './gcd_euclid'               , 'ex1-1/testcases/easy1.arg'      , NULL      , 'ex1-1/testcases/easy1.out'     , 'ex1-1/testcases/easy1.err'     , 0),
-( '1-1-small'        , '小さい数同士のGCDを求められているか'                    , './gcd_euclid'               , 'ex1-1/testcases/easy2.arg'      , NULL      , 'ex1-1/testcases/easy2.out'     , 'ex1-1/testcases/easy2.err'     , 0),
-( '1-1-small'        , '小さい数同士のGCDを求められているか'                    , './gcd_euclid'               , 'ex1-1/testcases/easy3.arg'      , NULL      , 'ex1-1/testcases/easy3.out'     , 'ex1-1/testcases/easy3.err'     , 0),
-( '1-1-small'        , '小さい数同士のGCDを求められているか'                    , './gcd_euclid'               , 'ex1-1/testcases/easy4.arg'      , NULL      , 'ex1-1/testcases/easy4.out'     , 'ex1-1/testcases/easy4.err'     , 0),
-( '1-1-invalid1'     , '引数が多いケースをチェックできているか'                  , './gcd_euclid'               , 'ex1-1/testcases/exception1.arg' , NULL      , 'ex1-1/testcases/exception1.out', 'ex1-1/testcases/exception1.err', 1),
-( '1-1-invalid2'     , 'ゼロ以下の整数を与えられたケース'                       , './gcd_euclid'               , 'ex1-1/testcases/exception1.arg' , NULL      , 'ex1-1/testcases/exception1.out', 'ex1-1/testcases/exception1.err', 1);
+(eval_id             , description , command                      , argument_path                    , stdin_path, stdout_path                     , stderr_path                     , exit_code) VALUES
+( '1-1-build'        , ''          , 'make gcd_euclid'            , NULL                             , NULL      , NULL                            , NULL                            , 0),
+( '1-1-check'        , ''          , 'make test_link'             , NULL                             , NULL      , NULL                            , NULL                            , 0),
+( '1-1-small'        , ''          , './gcd_euclid'               , 'ex1-1/testcases/easy1.arg'      , NULL      , 'ex1-1/testcases/easy1.out'     , 'ex1-1/testcases/easy1.err'     , 0),
+( '1-1-small'        , ''          , './gcd_euclid'               , 'ex1-1/testcases/easy2.arg'      , NULL      , 'ex1-1/testcases/easy2.out'     , 'ex1-1/testcases/easy2.err'     , 0),
+( '1-1-small'        , ''          , './gcd_euclid'               , 'ex1-1/testcases/easy3.arg'      , NULL      , 'ex1-1/testcases/easy3.out'     , 'ex1-1/testcases/easy3.err'     , 0),
+( '1-1-small'        , ''          , './gcd_euclid'               , 'ex1-1/testcases/easy4.arg'      , NULL      , 'ex1-1/testcases/easy4.out'     , 'ex1-1/testcases/easy4.err'     , 0),
+( '1-1-invalid1'     , ''          , './gcd_euclid'               , 'ex1-1/testcases/exception1.arg' , NULL      , 'ex1-1/testcases/exception1.out', 'ex1-1/testcases/exception1.err', 1),
+( '1-1-invalid2'     , ''          , './gcd_euclid'               , 'ex1-1/testcases/exception1.arg' , NULL      , 'ex1-1/testcases/exception1.out', 'ex1-1/testcases/exception1.err', 1);
 
