@@ -1,5 +1,7 @@
 .*
 !.gitignore
 !.gitmodules
+/upload/*
+!/upload/sample_submission/
 
 
