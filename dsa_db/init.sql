@@ -110,7 +110,7 @@ CREATE TABLE IF NOT EXISTS LoginHistory (
     logout_at DATETIME NOT NULL, -- ログアウト予定の時刻(リフレッシュトークンにより更新される予定あり)
     refresh_count INT DEFAULT 0,  -- リフレッシュした回数、回数制限つける
     PRIMARY KEY (user_id, login_at),
-    FOREIGN KEY (user_id) REFERENCES Users(user_id) ON DELETE NULL
+    FOREIGN KEY (user_id) REFERENCES Users(user_id) ON DELETE CASCADE
 );
 
 
