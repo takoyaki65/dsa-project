@@ -234,9 +234,11 @@ CREATE TABLE IF NOT EXISTS JudgeResult (
 
 -- EvaluationResult(学生の提出に対する、各授業の採点結果)
 CREATE TABLE IF NOT EXISTS EvaluationResult (
+    id INT AUTO_INCREMENT PRIMARY KEY, -- 採点結果のID(auto increment)
+    ts DATETIME DEFAULT CURRENT_TIMESTAMP, -- 採点結果が出た時刻
     user_id VARCHAR(255), -- 採点対象のユーザのID
     lecture_id INT NOT NULL, -- 何回目の授業で出される課題か, e.g., 1, 2, ...
-    score INT NOT NULL, -- 集計スコア (該当Submissionリクエストの全scoreの合計)
+    score INT, -- 集計スコア (該当Submissionリクエストの全scoreの合計)
     report_path VARCHAR(255), -- 採点結果のレポートのパス
     comment TEXT, -- コメント
     FOREIGN KEY (user_id) REFERENCES Users(user_id),
@@ -277,11 +279,11 @@ INSERT INTO EvaluationItems
 ('1-1-build'    , 1         , 1            , false         , 'compile'     , 'コンパイル'           , 0    , 'Built'     , '1-1-make'       , 'コンパイルに失敗しました'),
 ('1-1-check'    , 1         , 1            , false         , 'check'       , 'gcd_euclidの定義'    , 0    , 'Built'     , '1-1-make'       , 'gcd_euclidが定義されていません'),
 ('1-1-small'    , 1         , 1            , false         , 'smallNumber' , '小さい数同士のGCD'     , 0    , 'Judge'     , NULL             , '小さい数同士のGCDを求められていません'),
-('1-1-invalid1' , 1         , 1            , false         , 'invalidArg'  , '引数が3つでない場合'    , 0    , 'Judge'     , NULL             , '引数が3つでない場合のエラー出力ができていません'),
+('1-1-invalid1' , 1         , 1            , false         , 'invalidArg'  , '引数が2つでない場合'    , 0    , 'Judge'     , NULL             , '引数が2つでない場合のエラー出力ができていません'),
 ('1-2-build'    , 1         , 2            , false         , 'compile'     , 'コンパイル'           , 0    , 'Built'     , '1-2-make'       , 'コンパイルに失敗しました'),
 ('1-2-check'    , 1         , 2            , false         , 'check'       , 'gcd_recursiveの定義' , 0    , 'Built'     , '1-2-make'       , 'gcd_recursiveが定義されていません'),
 ('1-2-small'    , 1         , 2            , false         , 'smallNumber' , '小さい数同士のGCD'     , 0    , 'Judge'     , NULL             , '小さい数同士のGCDを求められていません'),
-('1-2-invalid1' , 1         , 2            , false         , 'invalidArg'  , '引数が3つでない場合'    , 0    , 'Judge'     , NULL             , '引数が3つでない場合のエラー出力ができていません');
+('1-2-invalid1' , 1         , 2            , false         , 'invalidArg'  , '引数が2つでない場合'    , 0    , 'Judge'     , NULL             , '引数が2つでない場合のエラー出力ができていません');
 
 INSERT INTO TestCases 
 (eval_id             , description , command                      , argument_path                    , stdin_path, stdout_path                     , stderr_path                     , exit_code) VALUES
