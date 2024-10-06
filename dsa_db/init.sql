@@ -119,6 +119,26 @@ CREATE TABLE IF NOT EXISTS BatchSubmission (
     id INT AUTO_INCREMENT PRIMARY KEY, -- バッチ採点のID(auto increment)
     ts DATETIME DEFAULT CURRENT_TIMESTAMP, -- バッチ採点のリクエスト時刻
     user_id VARCHAR(255), -- リクエストした管理者のID
+    lecture_id INT NOT NULL, -- 何回目の授業で出される課題が採点対象か
+    message TEXT DEFAULT NULL, -- バッチ採点時のメッセージ(ある学生はUserテーブルに登録されていないため採点されない、など)
+    complete_judge INT DEFAULT NULL, -- 採点が完了した学生の数
+    total_judge INT DEFAULT NULL, -- 採点対象の学生の数
+    FOREIGN KEY (user_id) REFERENCES Users(user_id),
+    FOREIGN KEY (lecture_id) REFERENCES Lecture(id)
+);
+
+
+-- 採点対象の学生ごとに、レポートの提出状況(パス)と、全体の採点結果をまとめたもの
+CREATE TABLE IF NOT EXISTS BatchSubmissionSummary (
+    batch_id INT NOT NULL,
+    user_id VARCHAR(255) NOT NULL,
+    status ENUM('submitted', 'delay', 'non-submitted') NOT NULL, -- 提出状況 (reportlist.xlsの"# 提出"の値が"提出済"の場合は"submitted", "受付終了後提出"の場合は"delay", "未提出"の場合は"non-submitted")
+    result ENUM('AC', 'WA', 'TLE', 'MLE', 'RE', 'CE', 'OLE', 'IE', 'FN') DEFAULT NULL, -- 採点結果
+    upload_dir VARCHAR(255) DEFAULT NULL, -- 提出されたファイルがあるディレクトリのパス(未提出の場合はNULL)
+    report_path VARCHAR(255) DEFAULT NULL, -- 提出されたレポートのパス(未提出の場合はNULL)
+    submit_date DATETIME DEFAULT NULL, -- 提出日時 (reportlist.xlsの"# 提出日時"の値)
+    PRIMARY KEY (batch_id, user_id),
+    FOREIGN KEY (batch_id) REFERENCES BatchSubmission(id),
     FOREIGN KEY (user_id) REFERENCES Users(user_id)
 );
 
@@ -229,20 +249,6 @@ CREATE TABLE IF NOT EXISTS JudgeResult (
     FOREIGN KEY (parent_id) REFERENCES EvaluationSummary(id),
     FOREIGN KEY (submission_id) REFERENCES Submission(id),
     FOREIGN KEY (testcase_id) REFERENCES TestCases(id)
-);
-
-
--- EvaluationResult(学生の提出に対する、各授業の採点結果)
-CREATE TABLE IF NOT EXISTS EvaluationResult (
-    id INT AUTO_INCREMENT PRIMARY KEY, -- 採点結果のID(auto increment)
-    ts DATETIME DEFAULT CURRENT_TIMESTAMP, -- 採点結果が出た時刻
-    user_id VARCHAR(255), -- 採点対象のユーザのID
-    lecture_id INT NOT NULL, -- 何回目の授業で出される課題か, e.g., 1, 2, ...
-    score INT, -- 集計スコア (該当Submissionリクエストの全scoreの合計)
-    report_path VARCHAR(255), -- 採点結果のレポートのパス
-    comment TEXT, -- コメント
-    FOREIGN KEY (user_id) REFERENCES Users(user_id),
-    FOREIGN KEY (lecture_id) REFERENCES Lecture(id)
 );
 
 
