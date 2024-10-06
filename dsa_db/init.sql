@@ -307,3 +307,58 @@ INSERT INTO TestCases
 ( '1-2-small'        , ''          , './gcd_recursive'            , 'ex1-1/testcases/easy3.arg'      , NULL      , 'ex1-1/testcases/easy3.out'     , 'ex1-1/testcases/easy3.err'     , 0),
 ( '1-2-small'        , ''          , './gcd_recursive'            , 'ex1-1/testcases/easy4.arg'      , NULL      , 'ex1-1/testcases/easy4.out'     , 'ex1-1/testcases/easy4.err'     , 0),
 ( '1-2-invalid1'     , ''          , './gcd_recursive'            , 'ex1-2/testcases/exception.arg' , NULL      , 'ex1-2/testcases/exception.out', 'ex1-2/testcases/exception.err', 1);
+
+
+-- 課題1(評価用)のデータを挿入(内容は同じ)
+INSERT INTO Problem (lecture_id, assignment_id, for_evaluation, title, description_path, timeMS, memoryMB) VALUES
+(1, 1, true, '基本課題', 'ex1-1/description.md', 1000, 1024),
+(1, 2, true, '発展課題', 'ex1-2/description.md', 1000, 1024);
+
+INSERT INTO Executables
+(lecture_id, assignment_id, for_evaluation, name) VALUES
+(1         , 1            , true         , 'gcd_euclid'),
+(1         , 2            , true         , 'gcd_recursive');
+
+INSERT INTO ArrangedFiles
+(str_id         , lecture_id, assignment_id, for_evaluation, path) VALUES
+('1-1-make-eval'     , 1         , 1            , true         , 'ex1-1/Makefile'),
+('1-1-testlink-eval' , 1         , 1            , true         , 'ex1-1/test_link.c'),
+('1-2-make-eval'     , 1         , 2            , true         , 'ex1-2/Makefile'),
+('1-2-testlink-eval' , 1         , 2            , true         , 'ex1-2/test_link.c');
+
+INSERT INTO RequiredFiles (lecture_id, assignment_id, for_evaluation, name) VALUES
+(1, 1, true, 'gcd_euclid.c'),
+(1, 1, true, 'main_euclid.c'),
+(1, 1, true, 'Makefile'),
+(1, 2, true, 'gcd_recursive.c'),
+(1, 2, true, 'main_recursive.c'),
+(1, 2, true, 'Makefile');
+
+INSERT INTO EvaluationItems
+(str_id         , lecture_id, assignment_id, for_evaluation, title         , description          , score, type        , arranged_file_id, message_on_fail      ) VALUES
+('1-1-build-eval'    , 1         , 1            , true         , 'compile'     , 'コンパイル'           , 0    , 'Built'     , '1-1-make-eval'       , 'コンパイルに失敗しました'),
+('1-1-check-eval'    , 1         , 1            , true         , 'check'       , 'gcd_euclidの定義'    , 0    , 'Built'     , '1-1-make-eval'       , 'gcd_euclidが定義されていません'),
+('1-1-small-eval'    , 1         , 1            , true         , 'smallNumber' , '小さい数同士のGCD'     , 0    , 'Judge'     , NULL             , '小さい数同士のGCDを求められていません'),
+('1-1-invalid1-eval' , 1         , 1            , true         , 'invalidArg'  , '引数が2つでない場合'    , 0    , 'Judge'     , NULL             , '引数が2つでない場合のエラー出力ができていません'),
+('1-2-build-eval'    , 1         , 2            , true         , 'compile'     , 'コンパイル'           , 0    , 'Built'     , '1-2-make-eval'       , 'コンパイルに失敗しました'),
+('1-2-check-eval'    , 1         , 2            , true         , 'check'       , 'gcd_recursiveの定義' , 0    , 'Built'     , '1-2-make-eval'       , 'gcd_recursiveが定義されていません'),
+('1-2-small-eval'    , 1         , 2            , true         , 'smallNumber' , '小さい数同士のGCD'     , 0    , 'Judge'     , NULL             , '小さい数同士のGCDを求められていません'),
+('1-2-invalid1-eval' , 1         , 2            , true         , 'invalidArg'  , '引数が2つでない場合'    , 0    , 'Judge'     , NULL             , '引数が2つでない場合のエラー出力ができていません');
+
+INSERT INTO TestCases 
+(eval_id             , description , command                      , argument_path                    , stdin_path, stdout_path                     , stderr_path                     , exit_code) VALUES
+( '1-1-build-eval'        , ''          , 'make gcd_euclid'            , NULL                             , NULL      , NULL                            , NULL                            , 0),
+( '1-1-check-eval'        , ''          , 'make test_link'             , NULL                             , NULL      , NULL                            , NULL                            , 0),
+( '1-1-small-eval'        , ''          , './gcd_euclid'               , 'ex1-1/testcases/easy1.arg'      , NULL      , 'ex1-1/testcases/easy1.out'     , 'ex1-1/testcases/easy1.err'     , 0),
+( '1-1-small-eval'        , ''          , './gcd_euclid'               , 'ex1-1/testcases/easy2.arg'      , NULL      , 'ex1-1/testcases/easy2.out'     , 'ex1-1/testcases/easy2.err'     , 0),
+( '1-1-small-eval'        , ''          , './gcd_euclid'               , 'ex1-1/testcases/easy3.arg'      , NULL      , 'ex1-1/testcases/easy3.out'     , 'ex1-1/testcases/easy3.err'     , 0),
+( '1-1-small-eval'        , ''          , './gcd_euclid'               , 'ex1-1/testcases/easy4.arg'      , NULL      , 'ex1-1/testcases/easy4.out'     , 'ex1-1/testcases/easy4.err'     , 0),
+( '1-1-invalid1-eval'     , ''          , './gcd_euclid'               , 'ex1-1/testcases/exception1.arg' , NULL      , 'ex1-1/testcases/exception1.out', 'ex1-1/testcases/exception1.err', 1),
+( '1-2-build-eval'        , ''          , 'make gcd_recursive'         , NULL                             , NULL      , NULL                            , NULL                            , 0),
+( '1-2-check-eval'        , ''          , 'make test_link'             , NULL                             , NULL      , NULL                            , NULL                            , 0),
+( '1-2-small-eval'        , ''          , './gcd_recursive'            , 'ex1-1/testcases/easy1.arg'      , NULL      , 'ex1-1/testcases/easy1.out'     , 'ex1-1/testcases/easy1.err'     , 0),
+( '1-2-small-eval'        , ''          , './gcd_recursive'            , 'ex1-1/testcases/easy2.arg'      , NULL      , 'ex1-1/testcases/easy2.out'     , 'ex1-1/testcases/easy2.err'     , 0),
+( '1-2-small-eval'        , ''          , './gcd_recursive'            , 'ex1-1/testcases/easy3.arg'      , NULL      , 'ex1-1/testcases/easy3.out'     , 'ex1-1/testcases/easy3.err'     , 0),
+( '1-2-small-eval'        , ''          , './gcd_recursive'            , 'ex1-1/testcases/easy4.arg'      , NULL      , 'ex1-1/testcases/easy4.out'     , 'ex1-1/testcases/easy4.err'     , 0),
+( '1-2-invalid1-eval'     , ''          , './gcd_recursive'            , 'ex1-2/testcases/exception.arg' , NULL      , 'ex1-2/testcases/exception.out', 'ex1-2/testcases/exception.err', 1);
+
