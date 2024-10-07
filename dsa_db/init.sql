@@ -110,7 +110,7 @@ CREATE TABLE IF NOT EXISTS LoginHistory (
     logout_at DATETIME NOT NULL, -- ログアウト予定の時刻(リフレッシュトークンにより更新される予定あり)
     refresh_count INT DEFAULT 0,  -- リフレッシュした回数、回数制限つける
     PRIMARY KEY (user_id, login_at),
-    FOREIGN KEY (user_id) REFERENCES Users(user_id) ON DELETE NULL
+    FOREIGN KEY (user_id) REFERENCES Users(user_id) ON DELETE CASCADE
 );
 
 
@@ -119,6 +119,26 @@ CREATE TABLE IF NOT EXISTS BatchSubmission (
     id INT AUTO_INCREMENT PRIMARY KEY, -- バッチ採点のID(auto increment)
     ts DATETIME DEFAULT CURRENT_TIMESTAMP, -- バッチ採点のリクエスト時刻
     user_id VARCHAR(255), -- リクエストした管理者のID
+    lecture_id INT NOT NULL, -- 何回目の授業で出される課題が採点対象か
+    message TEXT DEFAULT NULL, -- バッチ採点時のメッセージ(ある学生はUserテーブルに登録されていないため採点されない、など)
+    complete_judge INT DEFAULT NULL, -- 採点が完了した学生の数
+    total_judge INT DEFAULT NULL, -- 採点対象の学生の数
+    FOREIGN KEY (user_id) REFERENCES Users(user_id),
+    FOREIGN KEY (lecture_id) REFERENCES Lecture(id)
+);
+
+
+-- 採点対象の学生ごとに、レポートの提出状況(パス)と、全体の採点結果をまとめたもの
+CREATE TABLE IF NOT EXISTS BatchSubmissionSummary (
+    batch_id INT NOT NULL,
+    user_id VARCHAR(255) NOT NULL,
+    status ENUM('submitted', 'delay', 'non-submitted') NOT NULL, -- 提出状況 (reportlist.xlsの"# 提出"の値が"提出済"の場合は"submitted", "受付終了後提出"の場合は"delay", "未提出"の場合は"non-submitted")
+    result ENUM('AC', 'WA', 'TLE', 'MLE', 'RE', 'CE', 'OLE', 'IE', 'FN') DEFAULT NULL, -- 採点結果
+    upload_dir VARCHAR(255) DEFAULT NULL, -- 提出されたファイルがあるディレクトリのパス(未提出の場合はNULL)
+    report_path VARCHAR(255) DEFAULT NULL, -- 提出されたレポートのパス(未提出の場合はNULL)
+    submit_date DATETIME DEFAULT NULL, -- 提出日時 (reportlist.xlsの"# 提出日時"の値)
+    PRIMARY KEY (batch_id, user_id),
+    FOREIGN KEY (batch_id) REFERENCES BatchSubmission(id),
     FOREIGN KEY (user_id) REFERENCES Users(user_id)
 );
 
@@ -232,46 +252,44 @@ CREATE TABLE IF NOT EXISTS JudgeResult (
 );
 
 
--- EvaluationResult(学生の提出に対する、各授業の採点結果)
-CREATE TABLE IF NOT EXISTS EvaluationResult (
-    user_id VARCHAR(255), -- 採点対象のユーザのID
-    lecture_id INT NOT NULL, -- 何回目の授業で出される課題か, e.g., 1, 2, ...
-    score INT NOT NULL, -- 集計スコア (該当Submissionリクエストの全scoreの合計)
-    report_path VARCHAR(255), -- 採点結果のレポートのパス
-    comment TEXT, -- コメント
-    FOREIGN KEY (user_id) REFERENCES Users(user_id),
-    FOREIGN KEY (lecture_id) REFERENCES Lecture(id)
-);
-
-
 -- 課題1のデータを挿入
 INSERT INTO Lecture (title, start_date, end_date) VALUES
 ('課題1', '2023-10-01 00:00:00', '2025-12-31 23:59:59');
 
 INSERT INTO Problem (lecture_id, assignment_id, for_evaluation, title, description_path, timeMS, memoryMB) VALUES
-(1, 1, false, '基本課題', 'ex1-1/description.md', 1000, 1024);
+(1, 1, false, '基本課題', 'ex1-1/description.md', 1000, 1024),
+(1, 2, false, '発展課題', 'ex1-2/description.md', 1000, 1024);
 
 INSERT INTO Executables
 (lecture_id, assignment_id, for_evaluation, name) VALUES
-(1         , 1            , false         , 'gcd_euclid');
+(1         , 1            , false         , 'gcd_euclid'),
+(1         , 2            , false         , 'gcd_recursive');
 
 INSERT INTO ArrangedFiles
 (str_id         , lecture_id, assignment_id, for_evaluation, path) VALUES
 ('1-1-make'     , 1         , 1            , false         , 'ex1-1/Makefile'),
-('1-1-testlink' , 1         , 1            , false         , 'ex1-1/test_link.c');
+('1-1-testlink' , 1         , 1            , false         , 'ex1-1/test_link.c'),
+('1-2-make'     , 1         , 2            , false         , 'ex1-2/Makefile'),
+('1-2-testlink' , 1         , 2            , false         , 'ex1-2/test_link.c');
 
 INSERT INTO RequiredFiles (lecture_id, assignment_id, for_evaluation, name) VALUES
 (1, 1, false, 'gcd_euclid.c'),
 (1, 1, false, 'main_euclid.c'),
-(1, 1, false, 'Makefile');
+(1, 1, false, 'Makefile'),
+(1, 2, false, 'gcd_recursive.c'),
+(1, 2, false, 'main_recursive.c'),
+(1, 2, false, 'Makefile');
 
 INSERT INTO EvaluationItems
-(str_id         , lecture_id, assignment_id, for_evaluation, title         , description                        , score, type        , arranged_file_id, message_on_fail      ) VALUES
-('1-1-build'    , 1         , 1            , false         , 'compile'     , 'コンパイルできるか'                   , 0    , 'Built'     , '1-1-make'       , 'コンパイルに失敗しました'),
-('1-1-check'    , 1         , 1            , false         , 'check'       , 'gcd_euclidが定義されているか'         , 0    , 'Built'     , '1-1-make'       , 'gcd_euclidが定義されていません'),
-('1-1-small'    , 1         , 1            , false         , 'smallNumber' , '小さい数同士のGCDを求められているか'     , 0    , 'Judge'     , NULL             , '小さい数同士のGCDを求められていません'),
-('1-1-invalid1' , 1         , 1            , false         , 'invalidArg'  , '引数が多いケースをチェックできているか'   , 0    , 'Judge'     , NULL             , '引数が多い場合のエラー出力ができていません'),
-('1-1-invalid2' , 1         , 1            , false         , 'negative'    , 'ゼロ以下の整数を与えられたケース'        , 0    , 'Judge'     , NULL             , 'ゼロ以下の整数が与えられた場合のエラー出力ができていません');
+(str_id         , lecture_id, assignment_id, for_evaluation, title         , description          , score, type        , arranged_file_id, message_on_fail      ) VALUES
+('1-1-build'    , 1         , 1            , false         , 'compile'     , 'コンパイル'           , 0    , 'Built'     , '1-1-make'       , 'コンパイルに失敗しました'),
+('1-1-check'    , 1         , 1            , false         , 'check'       , 'gcd_euclidの定義'    , 0    , 'Built'     , '1-1-make'       , 'gcd_euclidが定義されていません'),
+('1-1-small'    , 1         , 1            , false         , 'smallNumber' , '小さい数同士のGCD'     , 0    , 'Judge'     , NULL             , '小さい数同士のGCDを求められていません'),
+('1-1-invalid1' , 1         , 1            , false         , 'invalidArg'  , '引数が2つでない場合'    , 0    , 'Judge'     , NULL             , '引数が2つでない場合のエラー出力ができていません'),
+('1-2-build'    , 1         , 2            , false         , 'compile'     , 'コンパイル'           , 0    , 'Built'     , '1-2-make'       , 'コンパイルに失敗しました'),
+('1-2-check'    , 1         , 2            , false         , 'check'       , 'gcd_recursiveの定義' , 0    , 'Built'     , '1-2-make'       , 'gcd_recursiveが定義されていません'),
+('1-2-small'    , 1         , 2            , false         , 'smallNumber' , '小さい数同士のGCD'     , 0    , 'Judge'     , NULL             , '小さい数同士のGCDを求められていません'),
+('1-2-invalid1' , 1         , 2            , false         , 'invalidArg'  , '引数が2つでない場合'    , 0    , 'Judge'     , NULL             , '引数が2つでない場合のエラー出力ができていません');
 
 INSERT INTO TestCases 
 (eval_id             , description , command                      , argument_path                    , stdin_path, stdout_path                     , stderr_path                     , exit_code) VALUES
@@ -282,5 +300,65 @@ INSERT INTO TestCases
 ( '1-1-small'        , ''          , './gcd_euclid'               , 'ex1-1/testcases/easy3.arg'      , NULL      , 'ex1-1/testcases/easy3.out'     , 'ex1-1/testcases/easy3.err'     , 0),
 ( '1-1-small'        , ''          , './gcd_euclid'               , 'ex1-1/testcases/easy4.arg'      , NULL      , 'ex1-1/testcases/easy4.out'     , 'ex1-1/testcases/easy4.err'     , 0),
 ( '1-1-invalid1'     , ''          , './gcd_euclid'               , 'ex1-1/testcases/exception1.arg' , NULL      , 'ex1-1/testcases/exception1.out', 'ex1-1/testcases/exception1.err', 1),
-( '1-1-invalid2'     , ''          , './gcd_euclid'               , 'ex1-1/testcases/exception1.arg' , NULL      , 'ex1-1/testcases/exception1.out', 'ex1-1/testcases/exception1.err', 1);
+( '1-2-build'        , ''          , 'make gcd_recursive'         , NULL                             , NULL      , NULL                            , NULL                            , 0),
+( '1-2-check'        , ''          , 'make test_link'             , NULL                             , NULL      , NULL                            , NULL                            , 0),
+( '1-2-small'        , ''          , './gcd_recursive'            , 'ex1-1/testcases/easy1.arg'      , NULL      , 'ex1-1/testcases/easy1.out'     , 'ex1-1/testcases/easy1.err'     , 0),
+( '1-2-small'        , ''          , './gcd_recursive'            , 'ex1-1/testcases/easy2.arg'      , NULL      , 'ex1-1/testcases/easy2.out'     , 'ex1-1/testcases/easy2.err'     , 0),
+( '1-2-small'        , ''          , './gcd_recursive'            , 'ex1-1/testcases/easy3.arg'      , NULL      , 'ex1-1/testcases/easy3.out'     , 'ex1-1/testcases/easy3.err'     , 0),
+( '1-2-small'        , ''          , './gcd_recursive'            , 'ex1-1/testcases/easy4.arg'      , NULL      , 'ex1-1/testcases/easy4.out'     , 'ex1-1/testcases/easy4.err'     , 0),
+( '1-2-invalid1'     , ''          , './gcd_recursive'            , 'ex1-2/testcases/exception.arg' , NULL      , 'ex1-2/testcases/exception.out', 'ex1-2/testcases/exception.err', 1);
+
+
+-- 課題1(評価用)のデータを挿入(内容は同じ)
+INSERT INTO Problem (lecture_id, assignment_id, for_evaluation, title, description_path, timeMS, memoryMB) VALUES
+(1, 1, true, '基本課題', 'ex1-1/description.md', 1000, 1024),
+(1, 2, true, '発展課題', 'ex1-2/description.md', 1000, 1024);
+
+INSERT INTO Executables
+(lecture_id, assignment_id, for_evaluation, name) VALUES
+(1         , 1            , true         , 'gcd_euclid'),
+(1         , 2            , true         , 'gcd_recursive');
+
+INSERT INTO ArrangedFiles
+(str_id         , lecture_id, assignment_id, for_evaluation, path) VALUES
+('1-1-make-eval'     , 1         , 1            , true         , 'ex1-1/Makefile'),
+('1-1-testlink-eval' , 1         , 1            , true         , 'ex1-1/test_link.c'),
+('1-2-make-eval'     , 1         , 2            , true         , 'ex1-2/Makefile'),
+('1-2-testlink-eval' , 1         , 2            , true         , 'ex1-2/test_link.c');
+
+INSERT INTO RequiredFiles (lecture_id, assignment_id, for_evaluation, name) VALUES
+(1, 1, true, 'gcd_euclid.c'),
+(1, 1, true, 'main_euclid.c'),
+(1, 1, true, 'Makefile'),
+(1, 2, true, 'gcd_recursive.c'),
+(1, 2, true, 'main_recursive.c'),
+(1, 2, true, 'Makefile');
+
+INSERT INTO EvaluationItems
+(str_id         , lecture_id, assignment_id, for_evaluation, title         , description          , score, type        , arranged_file_id, message_on_fail      ) VALUES
+('1-1-build-eval'    , 1         , 1            , true         , 'compile'     , 'コンパイル'           , 0    , 'Built'     , '1-1-make-eval'       , 'コンパイルに失敗しました'),
+('1-1-check-eval'    , 1         , 1            , true         , 'check'       , 'gcd_euclidの定義'    , 0    , 'Built'     , '1-1-make-eval'       , 'gcd_euclidが定義されていません'),
+('1-1-small-eval'    , 1         , 1            , true         , 'smallNumber' , '小さい数同士のGCD'     , 0    , 'Judge'     , NULL             , '小さい数同士のGCDを求められていません'),
+('1-1-invalid1-eval' , 1         , 1            , true         , 'invalidArg'  , '引数が2つでない場合'    , 0    , 'Judge'     , NULL             , '引数が2つでない場合のエラー出力ができていません'),
+('1-2-build-eval'    , 1         , 2            , true         , 'compile'     , 'コンパイル'           , 0    , 'Built'     , '1-2-make-eval'       , 'コンパイルに失敗しました'),
+('1-2-check-eval'    , 1         , 2            , true         , 'check'       , 'gcd_recursiveの定義' , 0    , 'Built'     , '1-2-make-eval'       , 'gcd_recursiveが定義されていません'),
+('1-2-small-eval'    , 1         , 2            , true         , 'smallNumber' , '小さい数同士のGCD'     , 0    , 'Judge'     , NULL             , '小さい数同士のGCDを求められていません'),
+('1-2-invalid1-eval' , 1         , 2            , true         , 'invalidArg'  , '引数が2つでない場合'    , 0    , 'Judge'     , NULL             , '引数が2つでない場合のエラー出力ができていません');
+
+INSERT INTO TestCases 
+(eval_id             , description , command                      , argument_path                    , stdin_path, stdout_path                     , stderr_path                     , exit_code) VALUES
+( '1-1-build-eval'        , ''          , 'make gcd_euclid'            , NULL                             , NULL      , NULL                            , NULL                            , 0),
+( '1-1-check-eval'        , ''          , 'make test_link'             , NULL                             , NULL      , NULL                            , NULL                            , 0),
+( '1-1-small-eval'        , ''          , './gcd_euclid'               , 'ex1-1/testcases/easy1.arg'      , NULL      , 'ex1-1/testcases/easy1.out'     , 'ex1-1/testcases/easy1.err'     , 0),
+( '1-1-small-eval'        , ''          , './gcd_euclid'               , 'ex1-1/testcases/easy2.arg'      , NULL      , 'ex1-1/testcases/easy2.out'     , 'ex1-1/testcases/easy2.err'     , 0),
+( '1-1-small-eval'        , ''          , './gcd_euclid'               , 'ex1-1/testcases/easy3.arg'      , NULL      , 'ex1-1/testcases/easy3.out'     , 'ex1-1/testcases/easy3.err'     , 0),
+( '1-1-small-eval'        , ''          , './gcd_euclid'               , 'ex1-1/testcases/easy4.arg'      , NULL      , 'ex1-1/testcases/easy4.out'     , 'ex1-1/testcases/easy4.err'     , 0),
+( '1-1-invalid1-eval'     , ''          , './gcd_euclid'               , 'ex1-1/testcases/exception1.arg' , NULL      , 'ex1-1/testcases/exception1.out', 'ex1-1/testcases/exception1.err', 1),
+( '1-2-build-eval'        , ''          , 'make gcd_recursive'         , NULL                             , NULL      , NULL                            , NULL                            , 0),
+( '1-2-check-eval'        , ''          , 'make test_link'             , NULL                             , NULL      , NULL                            , NULL                            , 0),
+( '1-2-small-eval'        , ''          , './gcd_recursive'            , 'ex1-1/testcases/easy1.arg'      , NULL      , 'ex1-1/testcases/easy1.out'     , 'ex1-1/testcases/easy1.err'     , 0),
+( '1-2-small-eval'        , ''          , './gcd_recursive'            , 'ex1-1/testcases/easy2.arg'      , NULL      , 'ex1-1/testcases/easy2.out'     , 'ex1-1/testcases/easy2.err'     , 0),
+( '1-2-small-eval'        , ''          , './gcd_recursive'            , 'ex1-1/testcases/easy3.arg'      , NULL      , 'ex1-1/testcases/easy3.out'     , 'ex1-1/testcases/easy3.err'     , 0),
+( '1-2-small-eval'        , ''          , './gcd_recursive'            , 'ex1-1/testcases/easy4.arg'      , NULL      , 'ex1-1/testcases/easy4.out'     , 'ex1-1/testcases/easy4.err'     , 0),
+( '1-2-invalid1-eval'     , ''          , './gcd_recursive'            , 'ex1-2/testcases/exception.arg' , NULL      , 'ex1-2/testcases/exception.out', 'ex1-2/testcases/exception.err', 1);
 
