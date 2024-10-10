@@ -86,8 +86,8 @@ CREATE TABLE IF NOT EXISTS Users (
     disabled BOOLEAN DEFAULT false NOT NULL,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    active_start_date DATETIME NULL,
-    active_end_date DATETIME NULL
+    active_start_date DATETIME NOT NULL,
+    active_end_date DATETIME NOT NULL
 );
 
 
@@ -135,7 +135,7 @@ CREATE TABLE IF NOT EXISTS BatchSubmissionSummary (
 CREATE TABLE IF NOT EXISTS Submission (
     id INT AUTO_INCREMENT PRIMARY KEY, -- 提出されたジャッジリクエストのID(auto increment)
     ts DATETIME DEFAULT CURRENT_TIMESTAMP, -- リクエストされた時刻
-    batch_id INT, -- ジャッジリクエストが属しているバッチリクエストのID, 学生のフォーマットチェック提出ならNULL
+    batch_id INT DEFAULT NULL, -- ジャッジリクエストが属しているバッチリクエストのID, 学生のフォーマットチェック提出ならNULL
     user_id VARCHAR(255) NOT NULL, -- 採点対象のユーザのID
     lecture_id INT NOT NULL, -- 何回目の授業で出される課題か, e.g., 1, 2, ...
     assignment_id INT NOT NULL, -- 何番目の課題か, e.g., 1, 2, ...
@@ -162,8 +162,8 @@ CREATE TABLE IF NOT EXISTS UploadedFiles (
 -- SubmissionSummary(一つの提出における、全体の採点結果)
 CREATE TABLE IF NOT EXISTS SubmissionSummary (
     submission_id INT PRIMARY KEY, -- 対象のSubmissionリクエストのID
-    batch_id INT, -- Submissionリクエストに紐づいたBatchリクエストのID
-    user_id VARCHAR(255), -- 採点対象のユーザのID
+    batch_id INT DEFAULT NULL, -- Submissionリクエストに紐づいたBatchリクエストのID
+    user_id VARCHAR(255) NOT NULL, -- 採点対象のユーザのID
     /* Aggregation attributes over SubmissionSummary */
     result ENUM('AC', 'WA', 'TLE', 'MLE', 'RE', 'CE', 'OLE', 'IE', 'FN') NOT NULL, -- Submissionリクエスト全体の実行結果, FN(File Not Found)
     message VARCHAR(255), -- メッセージ(5文字～10文字程度)
@@ -189,7 +189,6 @@ CREATE TABLE IF NOT EXISTS JudgeResult (
     exit_code INT NOT NULL, -- 戻り値
     stdout TEXT NOT NULL, -- 標準出力
     stderr TEXT NOT NULL, -- 標準エラー出力
-    FOREIGN KEY (parent_id) REFERENCES EvaluationSummary(id),
     FOREIGN KEY (submission_id) REFERENCES Submission(id),
     FOREIGN KEY (testcase_id) REFERENCES TestCases(id)
 );
