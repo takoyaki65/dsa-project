@@ -189,7 +189,7 @@ CREATE TABLE IF NOT EXISTS JudgeResult (
     exit_code INT NOT NULL, -- 戻り値
     stdout TEXT NOT NULL, -- 標準出力
     stderr TEXT NOT NULL, -- 標準エラー出力
-    FOREIGN KEY (submission_id) REFERENCES Submission(id),
+    FOREIGN KEY (submission_id) REFERENCES SubmissionSummary(submission_id),
     FOREIGN KEY (testcase_id) REFERENCES TestCases(id)
 );
 
