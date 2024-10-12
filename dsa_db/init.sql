@@ -225,21 +225,27 @@ INSERT INTO RequiredFiles (lecture_id, assignment_id, name) VALUES
 (1, 2, 'Makefile');
 
 INSERT INTO TestCases 
-(lecture_id, assignment_id, type   , score, title     , description, message_on_fail                  ,  command           , args      , stdin_path , stdout_path                       , stderr_path                 , exit_code) VALUES
-(1         , 1            , 'Built', 0    , 'compile' , ''         , 'コンパイルに失敗しました'            , 'make gcd_euclid'      , NULL        , NULL        , NULL                       ,  NULL                      , 0),
-(1         , 1            , 'Built', 0    , 'check'   , ''         , 'gcd_euclidが定義されていません'     , 'make test_link'       , NULL        ,  NULL        , NULL                       ,  NULL                      , 0),
-(1         , 1            , 'Judge', 0    , 'small'   , ''         , '小さい数同士のGCDを求められていません' , './gcd_euclid'         , '15 30'     , NULL        , 'ex1-1/testcases/easy1.out', 'ex1-1/testcases/easy1.err', 0),
-(1         , 1            , 'Judge', 0    , 'small'   , ''         , '小さい数同士のGCDを求められていません' , './gcd_euclid'         , '18 24'     , NULL        , 'ex1-1/testcases/easy2.out', 'ex1-1/testcases/easy2.err', 0),
-(1         , 1            , 'Judge', 0    , 'small'   , ''         , '小さい数同士のGCDを求められていません' , './gcd_euclid'         , '649 826'   , NULL        , 'ex1-1/testcases/easy3.out', 'ex1-1/testcases/easy3.err', 0),
-(1         , 1            , 'Judge', 0    , 'small'   , ''         , '小さい数同士のGCDを求められていません' , './gcd_euclid'         , '55 165'    , NULL        , 'ex1-1/testcases/easy4.out', 'ex1-1/testcases/easy4.err', 0),
-(1         , 1            , 'Judge', 0    , 'invalid' , ''         , '引数が2つでない場合のエラー出力ができていません' , './gcd_euclid' , '127 41 231', NULL        , 'ex1-1/testcases/exception1.out', 'ex1-1/testcases/exception1.err', 1);
+(lecture_id, assignment_id, type   , score, title     , description, message_on_fail                  ,  command           , args      , stdin_path , stdout_path                       , stderr_path) VALUES
+(1         , 1            , 'Built', 0    , 'compile' , ''         , 'コンパイルに失敗しました'            , 'make gcd_euclid'      , NULL        , NULL        , NULL                       ,  NULL      ),
+(1         , 1            , 'Built', 0    , 'check'   , ''         , 'gcd_euclidが定義されていません'     , 'make test_link'       , NULL        ,  NULL        , NULL                       ,  NULL      ),
+(1         , 1            , 'Judge', 0    , 'small'   , ''         , '小さい数同士のGCDを求められていません' , './gcd_euclid'         , '15 30'     , NULL        , 'ex1-1/testcases/easy1.out', 'ex1-1/testcases/easy1.err'),
+(1         , 1            , 'Judge', 0    , 'small'   , ''         , '小さい数同士のGCDを求められていません' , './gcd_euclid'         , '18 24'     , NULL        , 'ex1-1/testcases/easy2.out', 'ex1-1/testcases/easy2.err'),
+(1         , 1            , 'Judge', 0    , 'small'   , ''         , '小さい数同士のGCDを求められていません' , './gcd_euclid'         , '649 826'   , NULL        , 'ex1-1/testcases/easy3.out', 'ex1-1/testcases/easy3.err'),
+(1         , 1            , 'Judge', 0    , 'small'   , ''         , '小さい数同士のGCDを求められていません' , './gcd_euclid'         , '55 165'    , NULL        , 'ex1-1/testcases/easy4.out', 'ex1-1/testcases/easy4.err');
 
 INSERT INTO TestCases 
-(lecture_id, assignment_id, type   , score, title     , description, message_on_fail                   ,  command               , args      , stdin_path , stdout_path                , stderr_path                 , exit_code) VALUES
-( 1        , 2            , 'Built', 0    , 'compile' , ''          , 'コンパイルに失敗しました'            , 'make gcd_recursive'   , NULL      , NULL       , NULL                       ,  NULL                      , 0),
-( 1        , 2            , 'Built', 0    , 'check'   , ''          , 'gcd_recursiveが定義されていません'    , 'make test_link'       , NULL      ,  NULL      , NULL                       ,  NULL                      , 0),
-( 1        , 2            , 'Judge', 0    , 'small'   , ''          , '小さい数同士のGCDを求められていません' , './gcd_recursive'      , '15 30'   , NULL        , 'ex1-1/testcases/easy1.out', 'ex1-1/testcases/easy1.err', 0),
-( 1        , 2            , 'Judge', 0    , 'small'   , ''          , '小さい数同士のGCDを求められていません' , './gcd_recursive'      , '18 24'     , NULL        , 'ex1-1/testcases/easy2.out', 'ex1-1/testcases/easy2.err', 0),
-( 1        , 2            , 'Judge', 0    , 'small'   , ''          , '小さい数同士のGCDを求められていません' , './gcd_recursive'      , '649 826'   , NULL        , 'ex1-1/testcases/easy3.out', 'ex1-1/testcases/easy3.err', 0),
-( 1        , 2            , 'Judge', 0    , 'small'   , ''          , '小さい数同士のGCDを求められていません' , './gcd_recursive'      , '55 165'    , NULL        , 'ex1-1/testcases/easy4.out', 'ex1-1/testcases/easy4.err', 0),
+(lecture_id, assignment_id, type   , score, title     , description, message_on_fail                          ,  command       , args        , stdin_path  , stdout_path                      , stderr_path                     , exit_code) VALUES
+(1         , 1            , 'Judge', 0    , 'invalid' , ''         , '引数が2つでない場合のエラー出力ができていません' , './gcd_euclid' , '127 41 231', NULL        , 'ex1-1/testcases/exception1.out' , 'ex1-1/testcases/exception1.err', 1);
+
+INSERT INTO TestCases 
+(lecture_id, assignment_id, type   , score, title     , description, message_on_fail                   ,  command               , args      , stdin_path , stdout_path                , stderr_path ) VALUES
+( 1        , 2            , 'Built', 0    , 'compile' , ''          , 'コンパイルに失敗しました'            , 'make gcd_recursive'   , NULL      , NULL       , NULL                       ,  NULL      ),
+( 1        , 2            , 'Built', 0    , 'check'   , ''          , 'gcd_recursiveが定義されていません'    , 'make test_link'       , NULL      ,  NULL      , NULL                       ,  NULL      ),
+( 1        , 2            , 'Judge', 0    , 'small'   , ''          , '小さい数同士のGCDを求められていません' , './gcd_recursive'      , '15 30'   , NULL        , 'ex1-1/testcases/easy1.out', 'ex1-1/testcases/easy1.err'),
+( 1        , 2            , 'Judge', 0    , 'small'   , ''          , '小さい数同士のGCDを求められていません' , './gcd_recursive'      , '18 24'     , NULL        , 'ex1-1/testcases/easy2.out', 'ex1-1/testcases/easy2.err'),
+( 1        , 2            , 'Judge', 0    , 'small'   , ''          , '小さい数同士のGCDを求められていません' , './gcd_recursive'      , '649 826'   , NULL        , 'ex1-1/testcases/easy3.out', 'ex1-1/testcases/easy3.err'),
+( 1        , 2            , 'Judge', 0    , 'small'   , ''          , '小さい数同士のGCDを求められていません' , './gcd_recursive'      , '55 165'    , NULL        , 'ex1-1/testcases/easy4.out', 'ex1-1/testcases/easy4.err');
+
+INSERT INTO TestCases 
+(lecture_id, assignment_id, type   , score, title     , description, message_on_fail                          ,  command          , args        , stdin_path  , stdout_path                     , stderr_path                     , exit_code) VALUES
 ( 1        , 2            , 'Judge', 0    , 'invalid', ''          , '引数が2つでない場合のエラー出力ができていません' , './gcd_recursive' , '127 41 231', NULL        , 'ex1-1/testcases/exception1.out', 'ex1-1/testcases/exception1.err', 1);
