@@ -117,7 +117,8 @@ CREATE TABLE IF NOT EXISTS BatchSubmission (
 
 
 -- 採点対象の学生ごとに、レポートの提出状況(パス)と、全体の採点結果をまとめたもの
-CREATE TABLE IF NOT EXISTS BatchSubmissionSummary (
+CREATE TABLE IF NOT EXISTS EvaluationStatus (
+    id INT AUTO_INCREMENT PRIMARY KEY,
     batch_id INT NOT NULL,
     user_id VARCHAR(255) NOT NULL,
     status ENUM('submitted', 'delay', 'non-submitted') NOT NULL, -- 提出状況 (reportlist.xlsの"# 提出"の値が"提出済"の場合は"submitted", "受付終了後提出"の場合は"delay", "未提出"の場合は"non-submitted")
@@ -125,7 +126,6 @@ CREATE TABLE IF NOT EXISTS BatchSubmissionSummary (
     upload_dir VARCHAR(255) DEFAULT NULL, -- 提出されたファイルがあるディレクトリのパス(未提出の場合はNULL)
     report_path VARCHAR(255) DEFAULT NULL, -- 提出されたレポートのパス(未提出の場合はNULL)
     submit_date DATETIME DEFAULT NULL, -- 提出日時 (reportlist.xlsの"# 提出日時"の値)
-    PRIMARY KEY (batch_id, user_id),
     FOREIGN KEY (batch_id) REFERENCES BatchSubmission(id),
     FOREIGN KEY (user_id) REFERENCES Users(user_id)
 );
@@ -135,7 +135,7 @@ CREATE TABLE IF NOT EXISTS BatchSubmissionSummary (
 CREATE TABLE IF NOT EXISTS Submission (
     id INT AUTO_INCREMENT PRIMARY KEY, -- 提出されたジャッジリクエストのID(auto increment)
     ts DATETIME DEFAULT CURRENT_TIMESTAMP, -- リクエストされた時刻
-    batch_id INT DEFAULT NULL, -- ジャッジリクエストが属しているバッチリクエストのID, 学生のフォーマットチェック提出ならNULL
+    evaluation_status_id INT DEFAULT NULL, -- 採点対象のユーザのID
     user_id VARCHAR(255) NOT NULL, -- 採点対象のユーザのID
     lecture_id INT NOT NULL, -- 何回目の授業で出される課題か, e.g., 1, 2, ...
     assignment_id INT NOT NULL, -- 何番目の課題か, e.g., 1, 2, ...
@@ -143,7 +143,13 @@ CREATE TABLE IF NOT EXISTS Submission (
     progress ENUM('pending', 'queued', 'running', 'done') DEFAULT 'pending', -- リクエストの処理状況, pending/queued/running/done
     total_task INT NOT NULL DEFAULT 0, -- 実行しなければならないTestCaseの数
     completed_task INT NOT NULL DEFAULT 0, -- 現在実行完了しているTestCaseの数
-    FOREIGN KEY (batch_id) REFERENCES BatchSubmission(id),
+    result ENUM('AC', 'WA', 'TLE', 'MLE', 'RE', 'CE', 'OLE', 'IE', 'FN') DEFAULT NULL, -- 採点結果
+    message VARCHAR(255) DEFAULT NULL, -- メッセージ(5文字～10文字程度)
+    detail VARCHAR(255) DEFAULT NULL, -- 詳細(ファイルが足りない場合: "main.c func.c....", 実行ファイルが足りない場合: "main, func,...")
+    score INT DEFAULT NULL, -- 集計スコア (該当Submissionリクエストの全scoreの合計)
+    timeMS INT DEFAULT NULL, -- 実行時間[ms]
+    memoryKB INT DEFAULT NULL, -- 消費メモリ[KB]
+    FOREIGN KEY (evaluation_status_id) REFERENCES EvaluationStatus(id),
     FOREIGN KEY (user_id) REFERENCES Users(user_id),
     FOREIGN KEY (lecture_id, assignment_id) REFERENCES Problem(lecture_id, assignment_id)
 );
@@ -152,35 +158,15 @@ CREATE TABLE IF NOT EXISTS Submission (
 -- UploadedFilesテーブルの作成
 CREATE TABLE IF NOT EXISTS UploadedFiles (
     id INT AUTO_INCREMENT PRIMARY KEY, -- アップロードされたファイルのID(auto increment)
-    ts DATETIME DEFAULT CURRENT_TIMESTAMP, -- アップロードされた時刻
     submission_id INT, -- そのファイルが必要なジャッジリクエストのID
     path VARCHAR(255) NOT NULL, -- アップロードされたファイルのパス
     FOREIGN KEY (submission_id) REFERENCES Submission(id)
 );
 
 
--- SubmissionSummary(一つの提出における、全体の採点結果)
-CREATE TABLE IF NOT EXISTS SubmissionSummary (
-    submission_id INT PRIMARY KEY, -- 対象のSubmissionリクエストのID
-    batch_id INT DEFAULT NULL, -- Submissionリクエストに紐づいたBatchリクエストのID
-    user_id VARCHAR(255) NOT NULL, -- 採点対象のユーザのID
-    /* Aggregation attributes over SubmissionSummary */
-    result ENUM('AC', 'WA', 'TLE', 'MLE', 'RE', 'CE', 'OLE', 'IE', 'FN') NOT NULL, -- Submissionリクエスト全体の実行結果, FN(File Not Found)
-    message VARCHAR(255), -- メッセージ(5文字～10文字程度)
-    detail VARCHAR(255), -- 詳細(ファイルが足りない場合: "main.c func.c....", 実行ファイルが足りない場合: "main, func,...")
-    score INT NOT NULL, -- 集計スコア (該当Submissionリクエストの全scoreの合計)
-    timeMS INT DEFAULT 0, -- 実行時間[ms]
-    memoryKB INT DEFAULT 0, -- 消費メモリ[KB]
-    FOREIGN KEY (submission_id) REFERENCES Submission(id),
-    FOREIGN KEY (batch_id) REFERENCES BatchSubmission(id),
-    FOREIGN KEY (user_id) REFERENCES Users(user_id)
-);
-
-
 -- JudgeResultテーブルの作成
 CREATE TABLE IF NOT EXISTS JudgeResult (
     id INT AUTO_INCREMENT PRIMARY KEY, -- ジャッジ結果のID(auto increment)
-    ts DATETIME DEFAULT CURRENT_TIMESTAMP, -- ジャッジ結果が出た時刻
     submission_id INT NOT NULL, -- ジャッジ結果に紐づいているSubmissionのID
     testcase_id INT NOT NULL, -- ジャッジ結果に紐づいているテストケースのID
     result ENUM('AC', 'WA', 'TLE', 'MLE', 'RE', 'CE', 'OLE', 'IE') NOT NULL, -- 実行結果のステータス、 AC/WA/TLE/MLE/CE/RE/OLE/IE, 参考: https://atcoder.jp/contests/abc367/glossary
@@ -189,7 +175,7 @@ CREATE TABLE IF NOT EXISTS JudgeResult (
     exit_code INT NOT NULL, -- 戻り値
     stdout TEXT NOT NULL, -- 標準出力
     stderr TEXT NOT NULL, -- 標準エラー出力
-    FOREIGN KEY (submission_id) REFERENCES SubmissionSummary(submission_id),
+    FOREIGN KEY (submission_id) REFERENCES Submission(id),
     FOREIGN KEY (testcase_id) REFERENCES TestCases(id)
 );
 
