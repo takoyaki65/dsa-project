@@ -170,6 +170,7 @@ CREATE TABLE IF NOT EXISTS JudgeResult (
     submission_id INT NOT NULL, -- ジャッジ結果に紐づいているSubmissionのID
     testcase_id INT NOT NULL, -- ジャッジ結果に紐づいているテストケースのID
     result ENUM('AC', 'WA', 'TLE', 'MLE', 'RE', 'CE', 'OLE', 'IE') NOT NULL, -- 実行結果のステータス、 AC/WA/TLE/MLE/CE/RE/OLE/IE, 参考: https://atcoder.jp/contests/abc367/glossary
+    command VARCHAR(255) NOT NULL, -- 実行したコマンド
     timeMS INT NOT NULL, -- 実行時間[ms]
     memoryKB INT NOT NULL, -- 消費メモリ[KB]
     exit_code INT NOT NULL, -- 戻り値
@@ -234,4 +235,4 @@ INSERT INTO TestCases
 
 INSERT INTO TestCases 
 (lecture_id, assignment_id, type   , score, title     , description, message_on_fail                          ,  command          , args        , stdin_path  , stdout_path                     , stderr_path                     , exit_code) VALUES
-( 1        , 2            , 'Judge', 0    , 'invalid', ''          , '引数が2つでない場合のエラー出力ができていません' , './gcd_recursive' , '127 41 231', NULL        , 'ex1-1/testcases/exception1.out', 'ex1-1/testcases/exception1.err', 1);
+( 1        , 2            , 'Judge', 0    , 'invalid', ''          , '引数が2つでない場合のエラー出力ができていません' , './gcd_recursive' , '127 41 231', NULL        , 'ex1-2/testcases/exception.out', 'ex1-2/testcases/exception.err', 1);
