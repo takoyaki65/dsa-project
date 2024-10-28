@@ -261,10 +261,12 @@ INSERT INTO ArrangedFiles
 (3         , 1            , 'ex3/ex3-1/test_display.c'),
 (3         , 1            , 'ex3/sort_array.sh'),
 (3         , 1            , 'ex3/ex3-1/test.c'),
+(3         , 1            , 'ex3/ex3-1/test_display.sh'),
 (3         , 2            , 'ex3/ex3-2/Makefile'),
 (3         , 2            , 'ex3/ex3-2/test_display.c'),
 (3         , 2            , 'ex3/sort_array.sh'),
-(3         , 2            , 'ex3/ex3-2/test.c');
+(3         , 2            , 'ex3/ex3-2/test.c'),
+(3         , 2            , 'ex3/ex3-2/test_display.sh');
 
 INSERT INTO RequiredFiles (lecture_id, assignment_id, name) VALUES
 (3, 1, 'open_addressing.h'),
@@ -283,7 +285,7 @@ INSERT INTO TestCases
 (3         , 1            , false , 'Built' , 0    , 'compile-display' , 'displayテストのコンパイル' , 'displayテストのコンパイルに失敗しました' , 'make test_display'                      , NULL, NULL      , NULL                                , NULL        , 0        ),
 (3         , 1            , true  , 'Built' , 0    , 'compile-test'    , 'testのコンパイル'         , 'testのコンパイルに失敗しました'         , 'make test'                              , NULL, NULL      , NULL                                , NULL        , 0        ),
 (3         , 1            , false , 'Judge' , 0    , 'main'            , 'mainプログラムの実行'      , 'mainプログラムが異常終了しました'       , './open_addressing'                      , NULL, NULL      , NULL                                , NULL        , 0        ),
-(3         , 1            , false , 'Judge' , 0    , 'display'         , 'display関数のテスト'      , 'display関数の出力が間違っています'      , 'sh -c ./test_display | ./sort_array.sh' , NULL, NULL      , 'ex3/ex3-1/test_display_expect.out' , NULL        , 0        );
+(3         , 1            , false , 'Judge' , 0    , 'display'         , 'display関数のテスト'      , 'display関数の出力が間違っています'      , './test_display.sh'                     , NULL, NULL      , 'ex3/ex3-1/test_display_expect.out' , NULL        , 0        );
 
 INSERT INTO TestCases   
 (lecture_id, assignment_id, eval  , type    , score, title             , description              , message_on_fail           , command  , args, stdin_path                       , stdout_path                     , stderr_path , exit_code) VALUES
@@ -299,7 +301,7 @@ INSERT INTO TestCases
 (3         , 2            , false , 'Built' , 0    , 'compile-display' , 'displayテストのコンパイル' , 'displayテストのコンパイルに失敗しました' , 'make test_display'                      , NULL, NULL      , NULL                                , NULL        , 0        ),
 (3         , 2            , true  , 'Built' , 0    , 'compile-test'    , 'testのコンパイル'         , 'testのコンパイルに失敗しました'         , 'make test'                              , NULL, NULL      , NULL                                , NULL        , 0        ),
 (3         , 2            , false , 'Judge' , 0    , 'main'            , 'mainプログラムの実行'      , 'mainプログラムが異常終了しました'       , './double_hashing'                       , NULL, NULL      , NULL                                , NULL        , 0        ),
-(3         , 2            , false , 'Judge' , 0    , 'display'         , 'display関数のテスト'      , 'display関数の出力が間違っています'      , 'sh -c ./test_display | ./sort_array.sh' , NULL, NULL      , 'ex3/ex3-2/test_display_expect.out' , NULL        , 0        );
+(3         , 2            , false , 'Judge' , 0    , 'display'         , 'display関数のテスト'      , 'display関数の出力が間違っています'      , './test_display.sh'                     , NULL, NULL      , 'ex3/ex3-2/test_display_expect.out' , NULL        , 0        );
 
 INSERT INTO TestCases   
 (lecture_id, assignment_id, eval  , type    , score, title             , description              , message_on_fail           , command  , args, stdin_path                       , stdout_path                     , stderr_path , exit_code) VALUES
