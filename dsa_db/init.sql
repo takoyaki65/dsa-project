@@ -6,7 +6,7 @@ USE dsa;
 
 -- Lectureテーブル(第1回授業, 第2回授業,...)の作成
 CREATE TABLE IF NOT EXISTS Lecture (
-    id INT AUTO_INCREMENT PRIMARY KEY, -- 授業エントリのID
+    id INT PRIMARY KEY, -- 授業エントリのID
     title VARCHAR(255) NOT NULL, -- 授業のタイトル名 e.g., 課題1, 課題2, ...
     start_date DATETIME NOT NULL, -- 課題ページの公開日
     end_date DATETIME NOT NULL -- 課題ページの公開終了日
@@ -183,8 +183,8 @@ CREATE TABLE IF NOT EXISTS JudgeResult (
 
 -- 課題1のデータを挿入
 INSERT INTO Lecture
-(title, start_date, end_date) VALUES
-('課題1', '2023-10-01 00:00:00', '2025-12-31 23:59:59');
+(id, title, start_date, end_date) VALUES
+(1 , '課題1', '2023-10-01 00:00:00', '2025-12-31 23:59:59');
 
 INSERT INTO Problem
 (lecture_id, assignment_id, title, description_path, timeMS, memoryMB) VALUES
@@ -236,3 +236,76 @@ INSERT INTO TestCases
 INSERT INTO TestCases 
 (lecture_id, assignment_id, type   , score, title     , description, message_on_fail                          ,  command          , args        , stdin_path  , stdout_path                     , stderr_path                     , exit_code) VALUES
 ( 1        , 2            , 'Judge', 0    , 'invalid', ''          , '引数が2つでない場合のエラー出力ができていません' , './gcd_recursive' , '127 41 231', NULL        , 'ex1-2/testcases/exception.out', 'ex1-2/testcases/exception.err', 1);
+
+
+-- 課題3のデータを挿入
+INSERT INTO Lecture
+(id, title, start_date, end_date) VALUES
+(3 , '課題3', '2023-10-01 00:00:00', '2025-12-31 23:59:59');
+
+INSERT INTO Problem
+(lecture_id, assignment_id, title, description_path, timeMS, memoryMB) VALUES
+(3, 1, '基本課題', 'ex3/ex3-1/description.md', 1000, 1024),
+(3, 2, '発展課題', 'ex3/ex3-2/description.md', 1000, 1024);
+
+INSERT INTO Executables
+(lecture_id, assignment_id, name) VALUES
+(3         , 1            , 'open_addressing'),
+(3         , 1            , 'test_display'),
+(3         , 2            , 'double_hashing'),
+(3         , 2            , 'test_display');
+
+INSERT INTO ArrangedFiles
+(lecture_id, assignment_id, path) VALUES
+(3         , 1            , 'ex3/ex3-1/Makefile'),
+(3         , 1            , 'ex3/ex3-1/test_display.c'),
+(3         , 1            , 'ex3/sort_array.sh'),
+(3         , 1            , 'ex3/ex3-1/test.c'),
+(3         , 2            , 'ex3/ex3-2/Makefile'),
+(3         , 2            , 'ex3/ex3-2/test_display.c'),
+(3         , 2            , 'ex3/sort_array.sh'),
+(3         , 2            , 'ex3/ex3-2/test.c');
+
+INSERT INTO RequiredFiles (lecture_id, assignment_id, name) VALUES
+(3, 1, 'open_addressing.h'),
+(3, 1, 'open_addressing.c'),
+(3, 1, 'main_open_addressing.c'),
+(3, 1, 'Makefile'),
+(3, 2, 'double_hashing.h'),
+(3, 2, 'double_hashing.c'),
+(3, 2, 'main_double_hashing.c'),
+(3, 2, 'Makefile');
+
+
+INSERT INTO TestCases
+(lecture_id, assignment_id, eval  , type    , score, title             , description              , message_on_fail                     , command                                  , args, stdin_path, stdout_path                        , stderr_path, exit_code) VALUES
+(3         , 1            , false , 'Built' , 0    , 'compile-main'    , 'mainのコンパイル'         , 'mainのコンパイルに失敗しました'         , 'make open_addressing'                   , NULL, NULL      , NULL                                , NULL        , 0        ),
+(3         , 1            , false , 'Built' , 0    , 'compile-display' , 'displayテストのコンパイル' , 'displayテストのコンパイルに失敗しました' , 'make test_display'                      , NULL, NULL      , NULL                                , NULL        , 0        ),
+(3         , 1            , true  , 'Built' , 0    , 'compile-test'    , 'testのコンパイル'         , 'testのコンパイルに失敗しました'         , 'make test'                              , NULL, NULL      , NULL                                , NULL        , 0        ),
+(3         , 1            , false , 'Judge' , 0    , 'main'            , 'mainプログラムの実行'      , 'mainプログラムが異常終了しました'       , './open_addressing'                      , NULL, NULL      , NULL                                , NULL        , 0        ),
+(3         , 1            , false , 'Judge' , 0    , 'display'         , 'display関数のテスト'      , 'display関数の出力が間違っています'      , 'sh -c ./test_display | ./sort_array.sh' , NULL, NULL      , 'ex3/ex3-1/test_display_expect.out' , NULL        , 0        );
+
+INSERT INTO TestCases   
+(lecture_id, assignment_id, eval  , type    , score, title             , description              , message_on_fail           , command  , args, stdin_path                       , stdout_path                     , stderr_path , exit_code) VALUES
+(3         , 1            , true  , 'Judge' , 0    , 'easy1'           , 'easy1'                  , 'fail for easy1'          , './test' , NULL, 'ex3/ex3-1/testcase/easy1.in'    , 'ex3/ex3-1/testcase/easy1.out'  , NULL        , 0        ),
+(3         , 1            , true  , 'Judge' , 0    , 'easy2'           , 'overflow'               , 'fail for detect overflow', './test' , NULL, 'ex3/ex3-1/testcase/overflow.in' , NULL                            , NULL        , 1        ),
+(3         , 1            , true  , 'Judge' , 0    , 'random1'         , 'random1'                , 'fail for random1'        , './test' , NULL, 'ex3/ex3-1/testcase/random1.in'  , 'ex3/ex3-1/testcase/random1.out', NULL        , 0        ),
+(3         , 1            , true  , 'Judge' , 0    , 'random2'         , 'random2'                , 'fail for random2'        , './test' , NULL, 'ex3/ex3-1/testcase/random2.in'  , 'ex3/ex3-1/testcase/random2.out', NULL        , 0        ),
+(3         , 1            , true  , 'Judge' , 0    , 'random3'         , 'random3'                , 'fail for random3'        , './test' , NULL, 'ex3/ex3-1/testcase/random3.in'  , 'ex3/ex3-1/testcase/random3.out', NULL        , 0        );
+
+INSERT INTO TestCases
+(lecture_id, assignment_id, eval  , type    , score, title             , description              , message_on_fail                     , command                                  , args, stdin_path, stdout_path                        , stderr_path, exit_code) VALUES
+(3         , 2            , false , 'Built' , 0    , 'compile-main'    , 'mainのコンパイル'         , 'mainのコンパイルに失敗しました'         , 'make double_hashing'                    , NULL, NULL      , NULL                                , NULL        , 0        ),
+(3         , 2            , false , 'Built' , 0    , 'compile-display' , 'displayテストのコンパイル' , 'displayテストのコンパイルに失敗しました' , 'make test_display'                      , NULL, NULL      , NULL                                , NULL        , 0        ),
+(3         , 2            , true  , 'Built' , 0    , 'compile-test'    , 'testのコンパイル'         , 'testのコンパイルに失敗しました'         , 'make test'                              , NULL, NULL      , NULL                                , NULL        , 0        ),
+(3         , 2            , false , 'Judge' , 0    , 'main'            , 'mainプログラムの実行'      , 'mainプログラムが異常終了しました'       , './double_hashing'                       , NULL, NULL      , NULL                                , NULL        , 0        ),
+(3         , 2            , false , 'Judge' , 0    , 'display'         , 'display関数のテスト'      , 'display関数の出力が間違っています'      , 'sh -c ./test_display | ./sort_array.sh' , NULL, NULL      , 'ex3/ex3-2/test_display_expect.out' , NULL        , 0        );
+
+INSERT INTO TestCases   
+(lecture_id, assignment_id, eval  , type    , score, title             , description              , message_on_fail           , command  , args, stdin_path                       , stdout_path                     , stderr_path , exit_code) VALUES
+(3         , 2            , true  , 'Judge' , 0    , 'easy1'           , 'easy1'                  , 'fail for easy1'          , './test' , NULL, 'ex3/ex3-2/testcase/easy1.in'    , 'ex3/ex3-2/testcase/easy1.out'  , NULL        , 0        ),
+(3         , 2            , true  , 'Judge' , 0    , 'easy2'           , 'overflow'               , 'fail for detect overflow', './test' , NULL, 'ex3/ex3-2/testcase/overflow.in' , NULL                            , NULL        , 1        ),
+(3         , 2            , true  , 'Judge' , 0    , 'random1'         , 'random1'                , 'fail for random1'        , './test' , NULL, 'ex3/ex3-2/testcase/random1.in'  , 'ex3/ex3-2/testcase/random1.out', NULL        , 0        ),
+(3         , 2            , true  , 'Judge' , 0    , 'random2'         , 'random2'                , 'fail for random2'        , './test' , NULL, 'ex3/ex3-2/testcase/random2.in'  , 'ex3/ex3-2/testcase/random2.out', NULL        , 0        ),
+(3         , 2            , true  , 'Judge' , 0    , 'random3'         , 'random3'                , 'fail for random3'        , './test' , NULL, 'ex3/ex3-2/testcase/random3.in'  , 'ex3/ex3-2/testcase/random3.out', NULL        , 0        ),
+(3         , 2            , true  , 'Judge' , 0    , 'random4'         , 'random4'                , 'fail for random4'        , './test' , NULL, 'ex3/ex3-2/testcase/random4.in'  , 'ex3/ex3-2/testcase/random4.out', NULL        , 0        );
