@@ -21,7 +21,7 @@ CREATE TABLE IF NOT EXISTS Problem (
     timeMS INT NOT NULL, -- ジャッジの制限時間[ms] e.g., 1000
     memoryMB INT NOT NULL, -- ジャッジの制限メモリ[MB] e.g., 1024
     PRIMARY KEY (lecture_id, assignment_id),
-    FOREIGN KEY (lecture_id) REFERENCES Lecture(id)
+    FOREIGN KEY (lecture_id) REFERENCES Lecture(id) ON DELETE CASCADE
 );
 
 -- Executablesテーブル(実行ファイル名のリスト)の作成
@@ -31,7 +31,7 @@ CREATE TABLE IF NOT EXISTS Executables (
     assignment_id INT,
     eval BOOLEAN DEFAULT FALSE, -- 課題採点時に追加で要求される実行バイナリの場合、True
     name VARCHAR(255) NOT NULL, -- 実行ファイル名
-    FOREIGN KEY (lecture_id, assignment_id) REFERENCES Problem(lecture_id, assignment_id)
+    FOREIGN KEY (lecture_id, assignment_id) REFERENCES Problem(lecture_id, assignment_id) ON DELETE CASCADE
 );
 
 -- ArrangedFilesテーブル(あらかじめこちらで用意したファイルリスト)の作成
@@ -41,7 +41,7 @@ CREATE TABLE IF NOT EXISTS ArrangedFiles (
     assignment_id INT, -- 何番目の課題か, e.g., 1, 2, ...
     eval BOOLEAN DEFAULT FALSE, -- 課題採点時に追加で必要となる場合、True
     path VARCHAR(255) NOT NULL, -- ソースコードのパス(Makefileも全部含める)
-    FOREIGN KEY (lecture_id, assignment_id) REFERENCES Problem(lecture_id, assignment_id)
+    FOREIGN KEY (lecture_id, assignment_id) REFERENCES Problem(lecture_id, assignment_id) ON DELETE CASCADE
 );
 
 -- RequiredFilesテーブル(ユーザに提出を求めれているファイルのリスト)の作成
@@ -51,7 +51,7 @@ CREATE TABLE IF NOT EXISTS RequiredFiles (
     lecture_id INT, -- 何回目の授業で出される課題か, e.g., 1, 2, ...
     assignment_id INT, -- 何番目の課題か, e.g., 1, 2, ...
     name VARCHAR(255) NOT NULL, -- 提出が求められるファイルの名前
-    FOREIGN KEY (lecture_id, assignment_id) REFERENCES Problem(lecture_id, assignment_id)
+    FOREIGN KEY (lecture_id, assignment_id) REFERENCES Problem(lecture_id, assignment_id) ON DELETE CASCADE
 );
 
 
@@ -72,7 +72,7 @@ CREATE TABLE IF NOT EXISTS TestCases (
     stdout_path VARCHAR(255), -- 想定される標準出力のパス, path/to/stdout.txt
     stderr_path VARCHAR(255), -- 想定される標準エラー出力のパス, path/to/stderr.txt
     exit_code INT NOT NULL DEFAULT 0, -- 想定される戻り値
-    FOREIGN KEY (lecture_id, assignment_id) REFERENCES Problem(lecture_id, assignment_id)
+    FOREIGN KEY (lecture_id, assignment_id) REFERENCES Problem(lecture_id, assignment_id) ON DELETE CASCADE
 );
 
 
@@ -111,8 +111,8 @@ CREATE TABLE IF NOT EXISTS BatchSubmission (
     message TEXT DEFAULT NULL, -- バッチ採点時のメッセージ(ある学生はUserテーブルに登録されていないため採点されない、など)
     complete_judge INT DEFAULT NULL, -- ジャッジが完了したSubmissionの数
     total_judge INT DEFAULT NULL, -- 採点対象のSubmissionの数
-    FOREIGN KEY (user_id) REFERENCES Users(user_id),
-    FOREIGN KEY (lecture_id) REFERENCES Lecture(id)
+    FOREIGN KEY (user_id) REFERENCES Users(user_id) ON DELETE CASCADE,
+    FOREIGN KEY (lecture_id) REFERENCES Lecture(id) ON DELETE CASCADE
 );
 
 
@@ -126,8 +126,8 @@ CREATE TABLE IF NOT EXISTS EvaluationStatus (
     upload_dir VARCHAR(255) DEFAULT NULL, -- 提出されたファイルがあるディレクトリのパス(未提出の場合はNULL)
     report_path VARCHAR(255) DEFAULT NULL, -- 提出されたレポートのパス(未提出の場合はNULL)
     submit_date DATETIME DEFAULT NULL, -- 提出日時 (reportlist.xlsの"# 提出日時"の値)
-    FOREIGN KEY (batch_id) REFERENCES BatchSubmission(id),
-    FOREIGN KEY (user_id) REFERENCES Users(user_id)
+    FOREIGN KEY (batch_id) REFERENCES BatchSubmission(id) ON DELETE CASCADE,
+    FOREIGN KEY (user_id) REFERENCES Users(user_id) ON DELETE CASCADE
 );
 
 
@@ -149,9 +149,9 @@ CREATE TABLE IF NOT EXISTS Submission (
     score INT DEFAULT NULL, -- 集計スコア (該当Submissionリクエストの全scoreの合計)
     timeMS INT DEFAULT NULL, -- 実行時間[ms]
     memoryKB INT DEFAULT NULL, -- 消費メモリ[KB]
-    FOREIGN KEY (evaluation_status_id) REFERENCES EvaluationStatus(id),
-    FOREIGN KEY (user_id) REFERENCES Users(user_id),
-    FOREIGN KEY (lecture_id, assignment_id) REFERENCES Problem(lecture_id, assignment_id)
+    FOREIGN KEY (evaluation_status_id) REFERENCES EvaluationStatus(id) ON DELETE SET NULL,
+    FOREIGN KEY (user_id) REFERENCES Users(user_id) ON DELETE CASCADE,
+    FOREIGN KEY (lecture_id, assignment_id) REFERENCES Problem(lecture_id, assignment_id) ON DELETE CASCADE
 );
 
 
@@ -160,7 +160,7 @@ CREATE TABLE IF NOT EXISTS UploadedFiles (
     id INT AUTO_INCREMENT PRIMARY KEY, -- アップロードされたファイルのID(auto increment)
     submission_id INT, -- そのファイルが必要なジャッジリクエストのID
     path VARCHAR(255) NOT NULL, -- アップロードされたファイルのパス
-    FOREIGN KEY (submission_id) REFERENCES Submission(id)
+    FOREIGN KEY (submission_id) REFERENCES Submission(id) ON DELETE CASCADE
 );
 
 
@@ -176,8 +176,8 @@ CREATE TABLE IF NOT EXISTS JudgeResult (
     exit_code INT NOT NULL, -- 戻り値
     stdout TEXT NOT NULL, -- 標準出力
     stderr TEXT NOT NULL, -- 標準エラー出力
-    FOREIGN KEY (submission_id) REFERENCES Submission(id),
-    FOREIGN KEY (testcase_id) REFERENCES TestCases(id)
+    FOREIGN KEY (submission_id) REFERENCES Submission(id) ON DELETE CASCADE,
+    FOREIGN KEY (testcase_id) REFERENCES TestCases(id) ON DELETE CASCADE
 );
 
 
