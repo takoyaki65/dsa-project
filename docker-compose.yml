@@ -47,9 +47,6 @@ services:
       - ./resource:/resource
       # ログディレクトリのマウント
       - ./dsa-judge/logs:/logs
-      # Sandboxコンテナのメモリ使用量のリアルタイム計測のために、sysgroupディレクトリのマウント
-      # 注) ホスト環境がUbuntuである必要あり
-      - /sys/fs/cgroup:/sys-host/fs/cgroup
     environment:
       DATABASE_HOST: db
       DATABASE_NAME: dsa 
