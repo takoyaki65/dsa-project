@@ -39,8 +39,14 @@
       docker --version
       ```
         などのコマンドでインストールが完了していることを確認する．
+   
+   2. セットアップ
+        サンドボックス用のコンテナ(`checker-lang-gcc`, `binary-runner`)をビルドし、`resource`ディレクトリ内のファイルのオーナーをゲストユーザーに変更する．
+        ```bash
+        ./setup.sh
+        ```
 
-   2. 起動  
+   3. 起動  
         docker desktopを起動する．  
         その後，dsa_projectをクローンしたディレクトリへ移動し，
       ```bash

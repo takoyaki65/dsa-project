@@ -1,8 +1,13 @@
 #!/bin/bash
 
+set -e
+
+# sandboxコンテナのビルド
 ./dsa-judge/langs/build.sh
 
-./dsa-judge/prepare-sandbox.sh
+if [[ "$(uname)" == "Linux" ]]; then
+    ./dsa-judge/prepare-sandbox.sh
+fi
 
 # resource/ディレクトリ内の全てのファイルについてsandbox内でパーミッションエラーが起きないために、
 #   1. ファイルのuid:gidを1000:1000に変更
