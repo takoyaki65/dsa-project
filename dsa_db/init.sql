@@ -24,6 +24,17 @@ CREATE TABLE IF NOT EXISTS Problem (
     FOREIGN KEY (lecture_id) REFERENCES Lecture(id) ON DELETE CASCADE
 );
 
+-- Problemのデータの最新zipファイルのパス
+-- 課題更新時に、アップロードされたzipファイルを保持しておいて、そのファイルパスを記録する
+CREATE TABLE IF NOT EXISTS ProblemZipPath (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    ts DATETIME DEFAULT CURRENT_TIMESTAMP,
+    lecture_id INT NOT NULL,
+    assignment_id INT NOT NULL,
+    zip_path VARCHAR(255) NOT NULL,
+    FOREIGN KEY (lecture_id, assignment_id) REFERENCES Problem(lecture_id, assignment_id) ON DELETE CASCADE
+);
+
 -- Executablesテーブル(実行ファイル名のリスト)の作成
 CREATE TABLE IF NOT EXISTS Executables (
     id INT AUTO_INCREMENT PRIMARY KEY,
