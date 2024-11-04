@@ -24,6 +24,17 @@ CREATE TABLE IF NOT EXISTS Problem (
     FOREIGN KEY (lecture_id) REFERENCES Lecture(id) ON DELETE CASCADE
 );
 
+-- Problemのデータの最新zipファイルのパス
+-- 課題更新時に、アップロードされたzipファイルを保持しておいて、そのファイルパスを記録する
+CREATE TABLE IF NOT EXISTS ProblemZipPath (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    ts DATETIME DEFAULT CURRENT_TIMESTAMP,
+    lecture_id INT NOT NULL,
+    assignment_id INT NOT NULL,
+    zip_path VARCHAR(255) NOT NULL,
+    FOREIGN KEY (lecture_id, assignment_id) REFERENCES Problem(lecture_id, assignment_id) ON DELETE CASCADE
+);
+
 -- Executablesテーブル(実行ファイル名のリスト)の作成
 CREATE TABLE IF NOT EXISTS Executables (
     id INT AUTO_INCREMENT PRIMARY KEY,
@@ -179,64 +190,6 @@ CREATE TABLE IF NOT EXISTS JudgeResult (
     FOREIGN KEY (submission_id) REFERENCES Submission(id) ON DELETE CASCADE,
     FOREIGN KEY (testcase_id) REFERENCES TestCases(id) ON DELETE CASCADE
 );
-
-
--- 課題1のデータを挿入
-INSERT INTO Lecture
-(id, title, start_date, end_date) VALUES
-(1 , '課題1', '2023-10-01 00:00:00', '2025-12-31 23:59:59');
-
-INSERT INTO Problem
-(lecture_id, assignment_id, title, description_path, timeMS, memoryMB) VALUES
-(1, 1, '基本課題', 'ex1-1/description.md', 1000, 1024),
-(1, 2, '発展課題', 'ex1-2/description.md', 1000, 1024);
-
-INSERT INTO Executables
-(lecture_id, assignment_id, name) VALUES
-(1         , 1            , 'gcd_euclid'),
-(1         , 2            , 'gcd_recursive');
-
-INSERT INTO ArrangedFiles
-(lecture_id, assignment_id, path) VALUES
-(1         , 1            , 'ex1-1/Makefile'),
-(1         , 1            , 'ex1-1/test_link.c'),
-(1         , 2            , 'ex1-2/Makefile'),
-(1         , 2            , 'ex1-2/test_link.c');
-
-INSERT INTO RequiredFiles (lecture_id, assignment_id, name) VALUES
-(1, 1, 'gcd_euclid.c'),
-(1, 1, 'main_euclid.c'),
-(1, 1, 'Makefile'),
-(1, 2, 'gcd_recursive.c'),
-(1, 2, 'main_recursive.c'),
-(1, 2, 'Makefile');
-
-INSERT INTO TestCases 
-(lecture_id, assignment_id, type   , score, title     , description, message_on_fail                  ,  command           , args      , stdin_path , stdout_path                       , stderr_path) VALUES
-(1         , 1            , 'Built', 0    , 'compile' , ''         , 'コンパイルに失敗しました'            , 'make gcd_euclid'      , NULL        , NULL        , NULL                       ,  NULL      ),
-(1         , 1            , 'Built', 0    , 'check'   , ''         , 'gcd_euclidが定義されていません'     , 'make test_link'       , NULL        ,  NULL        , NULL                       ,  NULL      ),
-(1         , 1            , 'Judge', 0    , 'small'   , ''         , '小さい数同士のGCDを求められていません' , './gcd_euclid'         , '15 30'     , NULL        , 'ex1-1/testcases/easy1.out', 'ex1-1/testcases/easy1.err'),
-(1         , 1            , 'Judge', 0    , 'small'   , ''         , '小さい数同士のGCDを求められていません' , './gcd_euclid'         , '18 24'     , NULL        , 'ex1-1/testcases/easy2.out', 'ex1-1/testcases/easy2.err'),
-(1         , 1            , 'Judge', 0    , 'small'   , ''         , '小さい数同士のGCDを求められていません' , './gcd_euclid'         , '649 826'   , NULL        , 'ex1-1/testcases/easy3.out', 'ex1-1/testcases/easy3.err'),
-(1         , 1            , 'Judge', 0    , 'small'   , ''         , '小さい数同士のGCDを求められていません' , './gcd_euclid'         , '55 165'    , NULL        , 'ex1-1/testcases/easy4.out', 'ex1-1/testcases/easy4.err');
-
-INSERT INTO TestCases 
-(lecture_id, assignment_id, type   , score, title     , description, message_on_fail                          ,  command       , args        , stdin_path  , stdout_path                      , stderr_path                     , exit_code) VALUES
-(1         , 1            , 'Judge', 0    , 'invalid' , ''         , '引数が2つでない場合のエラー出力ができていません' , './gcd_euclid' , '127 41 231', NULL        , 'ex1-1/testcases/exception1.out' , 'ex1-1/testcases/exception1.err', 1);
-
-INSERT INTO TestCases 
-(lecture_id, assignment_id, type   , score, title     , description, message_on_fail                   ,  command               , args      , stdin_path , stdout_path                , stderr_path ) VALUES
-( 1        , 2            , 'Built', 0    , 'compile' , ''          , 'コンパイルに失敗しました'            , 'make gcd_recursive'   , NULL      , NULL       , NULL                       ,  NULL      ),
-( 1        , 2            , 'Built', 0    , 'check'   , ''          , 'gcd_recursiveが定義されていません'    , 'make test_link'       , NULL      ,  NULL      , NULL                       ,  NULL      ),
-( 1        , 2            , 'Judge', 0    , 'small'   , ''          , '小さい数同士のGCDを求められていません' , './gcd_recursive'      , '15 30'   , NULL        , 'ex1-1/testcases/easy1.out', 'ex1-1/testcases/easy1.err'),
-( 1        , 2            , 'Judge', 0    , 'small'   , ''          , '小さい数同士のGCDを求められていません' , './gcd_recursive'      , '18 24'     , NULL        , 'ex1-1/testcases/easy2.out', 'ex1-1/testcases/easy2.err'),
-( 1        , 2            , 'Judge', 0    , 'small'   , ''          , '小さい数同士のGCDを求められていません' , './gcd_recursive'      , '649 826'   , NULL        , 'ex1-1/testcases/easy3.out', 'ex1-1/testcases/easy3.err'),
-( 1        , 2            , 'Judge', 0    , 'small'   , ''          , '小さい数同士のGCDを求められていません' , './gcd_recursive'      , '55 165'    , NULL        , 'ex1-1/testcases/easy4.out', 'ex1-1/testcases/easy4.err');
-
-INSERT INTO TestCases 
-(lecture_id, assignment_id, type   , score, title     , description, message_on_fail                          ,  command          , args        , stdin_path  , stdout_path                     , stderr_path                     , exit_code) VALUES
-( 1        , 2            , 'Judge', 0    , 'invalid', ''          , '引数が2つでない場合のエラー出力ができていません' , './gcd_recursive' , '127 41 231', NULL        , 'ex1-2/testcases/exception.out', 'ex1-2/testcases/exception.err', 1);
-
 
 -- 課題3のデータを挿入
 INSERT INTO Lecture
