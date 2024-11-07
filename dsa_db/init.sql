@@ -151,6 +151,7 @@ CREATE TABLE IF NOT EXISTS Submission (
     lecture_id INT NOT NULL, -- 何回目の授業で出される課題か, e.g., 1, 2, ...
     assignment_id INT NOT NULL, -- 何番目の課題か, e.g., 1, 2, ...
     eval BOOLEAN NOT NULL, -- 課題採点リクエストかどうか, True/False
+    upload_dir VARCHAR(255) NOT NULL, -- 提出されたファイルがあるディレクトリへのパス
     progress ENUM('pending', 'queued', 'running', 'done') DEFAULT 'pending', -- リクエストの処理状況, pending/queued/running/done
     total_task INT NOT NULL DEFAULT 0, -- 実行しなければならないTestCaseの数
     completed_task INT NOT NULL DEFAULT 0, -- 現在実行完了しているTestCaseの数
@@ -163,15 +164,6 @@ CREATE TABLE IF NOT EXISTS Submission (
     FOREIGN KEY (evaluation_status_id) REFERENCES EvaluationStatus(id) ON DELETE SET NULL,
     FOREIGN KEY (user_id) REFERENCES Users(user_id) ON DELETE CASCADE,
     FOREIGN KEY (lecture_id, assignment_id) REFERENCES Problem(lecture_id, assignment_id) ON DELETE CASCADE
-);
-
-
--- UploadedFilesテーブルの作成
-CREATE TABLE IF NOT EXISTS UploadedFiles (
-    id INT AUTO_INCREMENT PRIMARY KEY, -- アップロードされたファイルのID(auto increment)
-    submission_id INT, -- そのファイルが必要なジャッジリクエストのID
-    path VARCHAR(255) NOT NULL, -- アップロードされたファイルのパス
-    FOREIGN KEY (submission_id) REFERENCES Submission(id) ON DELETE CASCADE
 );
 
 
