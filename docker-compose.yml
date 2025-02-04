@@ -68,6 +68,8 @@ services:
       - db-data:/var/lib/mysql
       - ./dsa_db/init.sql:/docker-entrypoint-initdb.d/init.sql
       - ./dsa_db/my.cnf:/etc/mysql/conf.d/my.cnf
+      # バックアップのための、ダンプファイル共有ディレクトリ
+      - ./backup:/backup
     environment:
       MYSQL_ROOT_PASSWORD: dsa-root
       MYSQL_DATABASE: dsa
