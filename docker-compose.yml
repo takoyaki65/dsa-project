@@ -2,7 +2,10 @@ services:
   frontend:
     build: ./dsa_front
     ports:
-      - "3000:3000"
+      # ホストのlocalhost:3000番ポートをコンテナの3000番ポートにマッピング
+      # 注意) デフォルトだとグローバルIPアドレスからアクセスできてしまうため，
+      #       ホストのlocalhostのみにマッピングする
+      - "127.0.0.1:3000:3000"
     volumes:
       - ./dsa_front:/app
     entrypoint: ["sh", "-c", "npm install && npm start"]
@@ -16,7 +19,7 @@ services:
       # context: .
       # dockerfile: dsa_back/Dockerfile
     ports:
-      - "8000:8000"
+      - "127.0.0.1:8000:8000"
     volumes:
       - ./dsa_back:/app
       - ./upload:/upload
@@ -34,7 +37,7 @@ services:
         condition: service_healthy
     build: ./dsa-judge
     ports:
-      - "8080:8080"
+      - "127.0.0.1:8080:8080"
     volumes:
       # ホスト環境のDockerサービスにアクセスするためのDockerソケットのマウント
       # 注) ホスト環境がUbuntuである必要あり
@@ -77,7 +80,7 @@ services:
       MYSQL_PASSWORD: dsa-jikken
       TZ: Asia/Tokyo
     ports:
-      - "3306:3306"
+      - "127.0.0.1:3306:3306"
 
 volumes:
   db-data:
