@@ -1,8 +1,0 @@
-inorder: 5 10 13 14 20 26 
-20(10(5(null, null), 14(13(null, null), null)), 26(null, null))
-Found!: 14
-Not found!: 7
-Minimum value of this bst: 5
-Value 10 deleted
-inorder: 5 13 14 20 26 
-20(13(5(null, null), 14(null, null)), 26(null, null))

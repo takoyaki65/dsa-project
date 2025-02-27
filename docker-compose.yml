@@ -1,27 +1,24 @@
 services:
   frontend:
-    build: ./dsa_front
+    build: ./dsa-front
     ports:
       # ホストのlocalhost:3000番ポートをコンテナの3000番ポートにマッピング
       # 注意) デフォルトだとグローバルIPアドレスからアクセスできてしまうため，
       #       ホストのlocalhostのみにマッピングする
       - "127.0.0.1:3000:3000"
     volumes:
-      - ./dsa_front:/app
+      - ./dsa-front:/app
     entrypoint: ["sh", "-c", "npm install && npm start"]
 
   backend:
     depends_on:
       db:
         condition: service_healthy
-    build: ./dsa_back
-      # うまくいかなかったから仕方なくvolumesでマウント．本当はローカルに反映させたくないからCOPY使いたい．
-      # context: .
-      # dockerfile: dsa_back/Dockerfile
+    build: ./dsa-back
     ports:
       - "127.0.0.1:8000:8000"
     volumes:
-      - ./dsa_back:/app
+      - ./dsa-back:/app
       - ./upload:/upload
       - ./resource:/resource
     environment:
@@ -69,8 +66,8 @@ services:
       start_period: 30s
     volumes:
       - db-data:/var/lib/mysql
-      - ./dsa_db/init.sql:/docker-entrypoint-initdb.d/init.sql
-      - ./dsa_db/my.cnf:/etc/mysql/conf.d/my.cnf
+      - ./dsa-db/init.sql:/docker-entrypoint-initdb.d/init.sql
+      - ./dsa-db/my.cnf:/etc/mysql/conf.d/my.cnf
       # バックアップのための、ダンプファイル共有ディレクトリ
       - ./backup:/backup
     environment:

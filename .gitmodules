@@ -1,17 +1,9 @@
-[submodule "dsa_front"]
-	path = dsa_front
-	url = https://github.com/zakkii-k/dsa_front
-	branch = main
-[submodule "dsa_back"]
-	path = dsa_back
-	url = https://github.com/zakkii-k/dsa_back
-	branch = main
-[submodule "dsa_sample_answer"]
-	path = dsa_sample_answer
-	url = https://github.com/zakkii-k/dsa_sample_answer
-[submodule "dsa_test_program"]
-	path = dsa_test_program
-	url = https://github.com/zakkii-k/dsa_test_program.git
+[submodule "dsa-front"]
+	path = dsa-front
+	url = https://github.com/dsa-uts/dsa-front.git
+[submodule "dsa-back"]
+	path = dsa-back
+	url = https://github.com/dsa-uts/dsa-back.git
 [submodule "dsa-judge"]
 	path = dsa-judge
-	url = https://github.com/takoyaki65/dsa-judge.git
+	url = https://github.com/dsa-uts/dsa-judge.git

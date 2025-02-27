@@ -1,6 +1,0 @@
-preorder: J I H G F E D C B A 
-inorder: A B C D E F G H I J 
-postorder: A B C D E F G H I J 
-bfs: J I H G F E D C B A 
-J(I(H(G(F(E(D(C(B(A(null, null), null), null), null), null), null), null), null), null), null)
-height: 10

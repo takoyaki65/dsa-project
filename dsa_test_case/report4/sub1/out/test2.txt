@@ -1,6 +1,0 @@
-preorder: A 
-inorder: A 
-postorder: A 
-bfs: A 
-A(null, null)
-height: 1

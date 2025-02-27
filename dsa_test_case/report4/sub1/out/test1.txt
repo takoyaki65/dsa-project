@@ -1,6 +1,0 @@
-preorder: C A I D F L G 
-inorder: I A F D C L G 
-postorder: I F D A G L C 
-bfs: C A L I D G F 
-C(A(I(null, null), D(F(null, null), null)), L(null, G(null, null)))
-height: 4
