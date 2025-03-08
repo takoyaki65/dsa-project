@@ -40,13 +40,16 @@ services:
       # 注) ホスト環境がUbuntuである必要あり
       - /var/run/docker.sock:/var/run/docker.sock
       # ソースコードのマウント
-      - ./dsa-judge/src:/app
+      - ./dsa-judge:/app
+      # ホストの./dsa-judge/.venvをコンテナ内の/app/.venvに反映させないために、
+      # コンテナ内の/app/.venvをAnonymous Volumeとしてマウント
+      - /app/.venv
       # アップロードされたファイル用のディレクトリのマウント
       - ./upload:/upload
       # リソースディレクトリ(テストケース、サンプルプログラム等)のマウント
       - ./resource:/resource
       # ログディレクトリのマウント
-      - ./dsa-judge/logs:/logs
+      - ./logs/dsa-judge:/logs
     environment:
       DATABASE_HOST: db
       DATABASE_NAME: dsa 

@@ -2,4 +2,6 @@
 !.gitignore
 !.gitmodules
 upload
-resource
+resource/*
+!resource/schema.json
+logs/*
