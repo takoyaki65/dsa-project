@@ -18,7 +18,7 @@
 
 3. 最新のdsa_projectとサブモジュールのクローン
    ```bash
-   git clone --recurse-submodules https://github.com/zakkii-k/dsa_project
+   git clone --recurse-submodules https://github.com/dsa-uts/dsa_project
    ```
    もし既にクローンしている場合は
    ```bash
@@ -30,7 +30,7 @@
    ```
 
 4. サブモジュールの環境設定  
-   [dsa_backのREADME](https://github.com/zakkii-k/dsa_back/blob/main/README.md )と，[dsa_frontのREADME](https://github.com/zakkii-k/dsa_front/blob/main/README.md )を見ながら必要なパッケージ等をインストール
+   [dsa_backのREADME](https://github.com/dsa-uts/dsa_back/blob/main/README.md)
 
 5. dockerの準備
    1. インストール  
