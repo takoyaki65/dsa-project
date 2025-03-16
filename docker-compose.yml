@@ -13,6 +13,11 @@ services:
       db:
         condition: service_healthy
     build: ./dsa-back
+    ports:
+      # ホストのlocalhost:8000番ポートをコンテナの8000番ポートにマッピング
+      # 注) Swagger UIにアクセスし、APIをテストするために開放している。
+      #     WebUIからアクセスする場合は開放しなくても良い。
+      - "127.0.0.1:8000:8000"
     volumes:
       - ./dsa-back:/app
       # ホストの./dsa-back/.venvをコンテナ内の/app/.venvに反映させないために、
