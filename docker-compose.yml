@@ -1,11 +1,6 @@
 services:
   frontend:
     build: ./dsa-front
-    ports:
-      # ホストのlocalhost:3000番ポートをコンテナの3000番ポートにマッピング
-      # 注意) デフォルトだとグローバルIPアドレスからアクセスできてしまうため，
-      #       ホストのlocalhostのみにマッピングする
-      - "127.0.0.1:3000:3000"
     volumes:
       - ./dsa-front:/app
       # ホストの./dsa-front/node_modulesをコンテナ内の/app/node_modulesに反映させないために、
@@ -18,8 +13,6 @@ services:
       db:
         condition: service_healthy
     build: ./dsa-back
-    ports:
-      - "127.0.0.1:8000:8000"
     volumes:
       - ./dsa-back:/app
       # ホストの./dsa-back/.venvをコンテナ内の/app/.venvに反映させないために、
@@ -40,6 +33,9 @@ services:
         condition: service_healthy
     build: ./dsa-judge
     ports:
+      # ホストのlocalhost:8080番ポートをコンテナの8080番ポートにマッピング
+      # 注意) デフォルトだとグローバルIPアドレスからアクセスできてしまうため，
+      #       ホストのlocalhostのみにマッピングする
       - "127.0.0.1:8080:8080"
     volumes:
       # ホスト環境のDockerサービスにアクセスするためのDockerソケットのマウント
@@ -64,6 +60,21 @@ services:
       DATABASE_PORT: 3306
       DOCKER_HOST: unix:///var/run/docker.sock
       TZ: Asia/Tokyo
+
+  nginx:
+    image: nginx:latest
+    ports:
+      - "127.0.0.1:80:80"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx/conf.d/:/etc/nginx/conf.d/:ro
+      - ./nginx/log/:/var/log/nginx/:rw
+    restart: always
+    depends_on:
+      frontend:
+        condition: service_started
+      backend:
+        condition: service_started
 
   db:
     image: mysql:8.3

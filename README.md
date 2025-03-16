@@ -1,3 +1,26 @@
+# 構成
+```mermaid
+flowchart LR
+  client
+
+  subgraph "ホスト"
+    GW[ゲートウェイ]
+    BE[backend]
+    FE[frontend]
+    DB[database]
+    JD[judge]
+    DockerEngine
+  end
+
+  client -->| localhost:80 | GW
+  GW -->| /api/... | BE
+  GW -->| /その他 | FE
+
+  BE -->| CRUD | DB
+  JD -->| poll&update | DB
+  JD -->| サンドボックス生成リクエスト | DockerEngine
+```
+
 # はじめかた
 1. homebrewのインストール  
    [homebrewのページ](https://brew.sh/ja/)を開いてインストールコマンドをターミナルにコピペ&実行．  
