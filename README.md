@@ -3,13 +3,12 @@
 flowchart LR
   client
 
-  subgraph "ホスト"
+  subgraph "ホスト(docker-compose)"
     GW[ゲートウェイ]
     BE[backend]
     FE[frontend]
     DB[database]
     JD[judge]
-    DockerEngine
   end
 
   client -->| localhost:80 | GW
@@ -18,7 +17,9 @@ flowchart LR
 
   BE -->| CRUD | DB
   JD -->| poll&update | DB
+  JD -->| 実行 | sandbox
   JD -->| サンドボックス生成リクエスト | DockerEngine
+  DockerEngine -->| 生成 | sandbox
 ```
 
 # はじめかた
