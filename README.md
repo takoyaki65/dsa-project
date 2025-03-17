@@ -1,26 +1,34 @@
-# 構成
+# 構成(ローカル)
 ```mermaid
 flowchart LR
-  client
+  subgraph "HostMachine(Linux,macOS,Windows)"
+    client
+    subgraph "Host(docker-compose)"
+      GW[gateway]
+      BE[backend]
+      FE[frontend]
+      DB[database]
+      JD[judge]
+    end
+    DockerEngine
+    
+    client -->| localhost:80 | GW
+    GW -->| /api/... | BE
+    GW -->| /その他 | FE
 
-  subgraph "ホスト(docker-compose)"
-    GW[ゲートウェイ]
-    BE[backend]
-    FE[frontend]
-    DB[database]
-    JD[judge]
+    BE -->| CRUD | DB
+    JD -->| poll&update | DB
+    JD -->| 実行 | sandbox
+    JD -->| サンドボックス生成リクエスト | DockerEngine
+    DockerEngine -->| 生成 | sandbox["sandbox(temporary)"]
   end
-
-  client -->| localhost:80 | GW
-  GW -->| /api/... | BE
-  GW -->| /その他 | FE
-
-  BE -->| CRUD | DB
-  JD -->| poll&update | DB
-  JD -->| 実行 | sandbox
-  JD -->| サンドボックス生成リクエスト | DockerEngine
-  DockerEngine -->| 生成 | sandbox
 ```
+
+* gateway: ゲートウェイサーバー(Nginx)。クライアントから来たリクエストのURLを読み、フロントとバックエンドに適切にフォワードする。また、ファイルのアップロードサイズの上限などを設けたり、その他フィルタリングも行う。
+* frontend: フロントエンドサーバー(React)。WebUI(デプロイ時はHTML + Javascriptの静的コンテンツ)をクライアントに送る。
+* backend: バックエンドサーバー(FastAPI)。バックエンドロジックを処理し、データベースにCRUD(Create,Read,Update,Delete)リクエストを送る。
+* database: データベースサーバー(MySQL)
+* judge: ジャッジサーバー(Docker client)。DBを定期的にpollし、ジャッジリクエストが合ったらそれを処理する。DockerEngineにsandbox生成リクエストを送り、一時的なsandboxを生成してもらい、そのsandbox上でプログラムのコンパイル・実行を行う。
 
 # はじめかた
 1. homebrewのインストール  
