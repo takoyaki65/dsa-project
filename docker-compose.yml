@@ -4,8 +4,8 @@ services:
     volumes:
       - ./dsa-front:/app
       # ホストの./dsa-front/node_modulesをコンテナ内の/app/node_modulesに反映させないために、
-      # コンテナ内の/app/node_modulesをAnonymous Volumeとしてマウント
-      - /app/node_modules
+      # コンテナ内の/app/node_modulesを専用のボリュームにマウント
+      - frontend-node_modules:/app/node_modules
     entrypoint: ["sh", "-c", "npm install && npm start"]
 
   backend:
@@ -106,4 +106,4 @@ services:
 
 volumes:
   db-data:
-
+  frontend-node_modules:
