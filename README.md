@@ -48,21 +48,21 @@ flowchart LR
    source ~/.zshrc
    ```
 
-3. 最新のdsa_projectとサブモジュールのクローン
+3. 最新のdsa-projectとサブモジュールのクローン
    ```bash
-   git clone --recurse-submodules https://github.com/dsa-uts/dsa_project
+   git clone --recurse-submodules https://github.com/dsa-uts/dsa-project
    ```
    もし既にクローンしている場合は
    ```bash
    git submodule update --init --recursive
    ```
-   dsa_project自体のアップデートは
+   dsa-project自体のアップデートは
    ```bash
    git pull origin master #もしくは利用中のブランチ名
    ```
 
 4. サブモジュールの環境設定  
-   [dsa_backのREADME](https://github.com/dsa-uts/dsa_back/blob/main/README.md)
+   [dsa-backのREADME](https://github.com/dsa-uts/dsa-back/blob/main/README.md)
 
 5. dockerの準備
    1. インストール  
@@ -80,7 +80,7 @@ flowchart LR
 
    3. 起動  
         docker desktopを起動する．  
-        その後，dsa_projectをクローンしたディレクトリへ移動し，
+        その後，dsa-projectをクローンしたディレクトリへ移動し，
       ```bash
       docker-compose up --build
       ```
