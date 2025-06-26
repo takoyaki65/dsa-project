@@ -1,9 +1,0 @@
-[submodule "dsa-front"]
-	path = dsa-front
-	url = https://github.com/dsa-uts/dsa-front.git
-[submodule "dsa-back"]
-	path = dsa-back
-	url = https://github.com/dsa-uts/dsa-back.git
-[submodule "dsa-judge"]
-	path = dsa-judge
-	url = https://github.com/dsa-uts/dsa-judge.git

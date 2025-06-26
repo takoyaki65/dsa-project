@@ -1,8 +1,8 @@
 services:
   frontend:
-    build: ./dsa-front
+    build: ./dsa-frontend
     volumes:
-      - ./dsa-front:/app
+      - ./dsa-frontend:/app
       # ホストの./dsa-front/node_modulesをコンテナ内の/app/node_modulesに反映させないために、
       # コンテナ内の/app/node_modulesを専用のボリュームにマウント
       - frontend-node_modules:/app/node_modules
@@ -12,14 +12,14 @@ services:
     depends_on:
       db:
         condition: service_healthy
-    build: ./dsa-back
+    build: ./dsa-backend
     ports:
       # ホストのlocalhost:8000番ポートをコンテナの8000番ポートにマッピング
       # 注) Swagger UIにアクセスし、APIをテストするために開放している。
       #     WebUIからアクセスする場合は開放しなくても良い。
       - "127.0.0.1:8000:8000"
     volumes:
-      - ./dsa-back:/app
+      - ./dsa-backend:/app
       # ホストの./dsa-back/.venvをコンテナ内の/app/.venvに反映させないために、
       # コンテナ内の/app/.venvをAnonymous Volumeとしてマウント
       - /app/.venv
@@ -36,7 +36,7 @@ services:
     depends_on:
       db:
         condition: service_healthy
-    build: ./dsa-judge
+    build: ./dsa-judgeserver
     ports:
       # ホストのlocalhost:8080番ポートをコンテナの8080番ポートにマッピング
       # 注意) デフォルトだとグローバルIPアドレスからアクセスできてしまうため，
@@ -47,7 +47,7 @@ services:
       # 注) ホスト環境がUbuntuである必要あり
       - /var/run/docker.sock:/var/run/docker.sock
       # ソースコードのマウント
-      - ./dsa-judge:/app
+      - ./dsa-judgeserver:/app
       # ホストの./dsa-judge/.venvをコンテナ内の/app/.venvに反映させないために、
       # コンテナ内の/app/.venvをAnonymous Volumeとしてマウント
       - /app/.venv
@@ -56,7 +56,7 @@ services:
       # リソースディレクトリ(テストケース、サンプルプログラム等)のマウント
       - ./resource:/resource
       # ログディレクトリのマウント
-      - ./logs/dsa-judge:/logs
+      - ./logs/dsa-judgeserver:/logs
     environment:
       DATABASE_HOST: db
       DATABASE_NAME: dsa 
