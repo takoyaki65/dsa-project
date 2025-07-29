@@ -111,6 +111,7 @@
     - 授業IDと課題IDの組み合わせで一意
   - **title**: 課題タイトル (文字列)
   - **resource_location_id**: 課題リソースファイルへのパス (FileLocation.id)
+  - **detail**: 課題の詳細 (JSON)
 - **Submission**: ジャッジリクエスト情報管理
   - **id**: ジャッジリクエストID (auto increment)
   - **ts**: ジャッジリクエスト時刻 (datetime, 1s精度)
@@ -122,13 +123,29 @@
   - **request_user_id**: ジャッジリクエストしたユーザーのID (文字列)
     - 管理者が学生の提出ファイルをジャッジする場合、提出者と採点対象が一致しない場合がある
   - **eval**: 課題採点リクエストかどうか, True/False
-  - **lecture_id**: 授業ID (整数)
-  - **problem_id**: 課題ID (整数)
-  - **upload_location_id**: 提出ファイルへのパス (FileLocation.id)
+  - **lecture_id**: 授業ID (**Lecture.id**)
+  - **problem_id**: 課題ID (**Problem.problem_id**)
+  - **upload_dir_id**: 提出ファイルが格納されたディレクトリのID (FileLocation.id)
   - **total_task**: 実行しなければならないTestCaseの数 (整数, デフォルト0)
   - **completed_task**: 現在実行完了しているTestCaseの数 (整数, デフォルト0)
-  - **result**: 採点結果 (enum: 'WJ', 'Judging', 'AC', 'WA', 'TLE', 'MLE', 'RE', 'CE', 'OLE', 'IE', 'FN')
-    - 種類:
+  - **result**: 採点結果 (**ResultValues.value**)
+    - 種類: **ResultValues.name**を参照
+    - デフォルトは-2 (WJ)
+    - 各タスクのジャッジ結果の内、最大値がストアされる
+  - **log**: ジャッジログ (JSON)
+    - 各テストケースの実行結果が記録される
+      - 実行結果 (AC～IE)、実行時間、消費メモリ、実行コマンド、標準入力、標準出力、標準エラー出力
+    - その他、メッセージログ等も記録される。
+  - **timeMS**: 全タスクの最大実行時間[ms]
+  - **memoryKB**: 全タスクの最大消費メモリ[KB]
+- **FileLocation**: アップロードされたファイルの管理
+  - **id**: アップロードファイルID (auto increment)
+  - **path**: アップロードファイルへのパス (文字列)
+  - **ts**: アップロード日時 (datetime, 1s精度)
+- **ResultValues**: ジャッジ結果の値
+  - **value**: ジャッジ結果の値 (整数)
+  - **name**: ジャッジ結果の名前 (文字列)
+    - デフォルトで、(value, name) = (-2, "WJ"), (-1, "Judging"), (0, "AC"), (1, "WA"), (2, "TLE"), (3, "MLE"), (4, "RE"), (5, "CE"), (6, "OLE"), (7, "IE"), (8, "FN")
       - 'WJ': Wait for Judge
       - 'Judging': Under Judging
       - 'AC': Accepted, all tasks have passed
@@ -140,21 +157,17 @@
       - 'OLE': Output Limit Exceeded, output exceeds the limit in some tasks
       - 'IE': Internal Error, internal error occurs in some tasks
       - 'FN': File Not Found, all tasks have aborted because some required file not found
-    - デフォルトは'WJ'
-    - 全順序: 'WJ' < 'Judging' < 'AC' < 'WA' < 'TLE' < 'MLE' < 'RE' < 'CE' < 'OLE' < 'IE' < 'FN'
-    - 各タスクのジャッジ結果の内、最大値がストアされる
-  - **log_location_id**: ジャッジログへのパス (FileLocation.id)
-    - 各テストケースの実行結果が記録される
-      - 実行結果 (AC～IE)、実行時間、消費メモリ、実行コマンド、標準入力、標準出力、標準エラー出力
-    - その他、メッセージログ等も記録される。
-  - **timeMS**: 全タスクの最大実行時間[ms]
-  - **memoryKB**: 全タスクの最大消費メモリ[KB]
-- **FileLocation**: アップロードされたファイルの管理
-  - **id**: アップロードファイルID (auto increment)
-  - **path**: アップロードファイルへのパス (文字列)
+- **ImageReference**: 画像ファイルの管理。課題リソースファイルのdescription (markdown) に埋め込まれた画像ファイルの管理
+  - **lecture_id**: 授業ID (**Lecture.id**)
+  - **problem_id**: 課題ID (**Problem.problem_id**)
+  - **location_id**: 画像ファイルへのパス (FileLocation.id)
+  - **ts**: アップロード日時 (datetime, 1s精度)
+- **FileReference**: ファイルの管理。課題リソースファイルのdescription (markdown) にリンクされたファイルの管理
+  - **lecture_id**: 授業ID (**Lecture.id**)
+  - **problem_id**: 課題ID (**Problem.problem_id**)
+  - **location_id**: ファイルへのパス (FileLocation.id)
   - **ts**: アップロード日時 (datetime, 1s精度)
 
-* 注意: テーブルの数が膨大になり、ORM wrapperの実装やスキーマの管理が非常に煩雑になるため、課題リソースデータに関する詳細 (各テストケースの入出力データ、テストケースの実行時間制限、メモリ制限等) は、データベースに保存しない。代わりに該当フォルダへのパスをDBに保存し、設定データはJSONファイルで管理する。
 * 実装の簡潔さのために、課題情報が更新された場合、古い課題情報及びその課題に対するジャッジ結果・アップロードファイルは全て削除される。
 
 ## 9. 付録
