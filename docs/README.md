@@ -85,14 +85,14 @@
 
 ### 4.1 主要テーブル
 強調したカラムは必須項目。
-- **Users**: ユーザ情報管理
+- **User**: ユーザ情報管理
   - **id**: ユーザーID (文字列)
   - **name**: ユーザー名 (文字列)
   - **hashed_password**: パスワードのハッシュ値 (文字列)
   - **role**: ユーザーの権限 (enum: 'admin', 'manager', 'student')
   - **disabled**: ユーザーが無効化されているかどうか (boolean)
   - email: メールアドレス (文字列)
-- **LoginHistory**: ログイン履歴管理、及び強制ログアウト機能のためのテーブル
+- **LoginHistory**: ログイン履歴を用いた認証、及び強制ログアウト機能のためのテーブル
   - **id**: ログイン履歴ID (auto increment)
   - **user_id**: ユーザーID (文字列)
   - **login_at**: ログイン時刻 (datetime, 1s精度)
@@ -112,15 +112,15 @@
   - **title**: 課題タイトル (文字列)
   - **resource_location_id**: 課題リソースファイルへのパス (FileLocation.id)
   - **detail**: 課題の詳細 (JSON)
-- **Submission**: ジャッジリクエスト情報管理
-  - **id**: ジャッジリクエストID (auto increment)
-  - **ts**: ジャッジリクエスト時刻 (datetime, 1s精度)
+- **Request**: リクエスト情報管理
+  - **id**: リクエストID (auto increment)
+  - **ts**: リクエスト時刻 (datetime, 1s精度)
   - **user_id**: 採点対象のユーザーID (文字列)
   - **submission_ts**: 提出時刻 (datetime, 1s精度)
     - 提出時刻は、実際に課題がManaba等の媒体で提出された際の時刻
     - 採点リクエスト時に提出時刻が指定される
     - 採点リクエストでも無い場合は、提出時刻はジャッジリクエスト時刻と同一となる
-  - **request_user_id**: ジャッジリクエストしたユーザーのID (文字列)
+  - **request_user_id**: リクエストしたユーザーのID (文字列)
     - 管理者が学生の提出ファイルをジャッジする場合、提出者と採点対象が一致しない場合がある
   - **eval**: 課題採点リクエストかどうか, True/False
   - **lecture_id**: 授業ID (**Lecture.id**)
@@ -131,7 +131,7 @@
   - **result**: 採点結果 (**ResultValues.value**)
     - 種類: **ResultValues.name**を参照
     - デフォルトは-2 (WJ)
-    - 各タスクのジャッジ結果の内、最大値がストアされる
+    - 各タスクの実行結果の内、最大値がストアされる
   - **log**: ジャッジログ (JSON)
     - 各テストケースの実行結果が記録される
       - 実行結果 (AC～IE)、実行時間、消費メモリ、実行コマンド、標準入力、標準出力、標準エラー出力
@@ -157,24 +157,19 @@
       - 'OLE': Output Limit Exceeded, output exceeds the limit in some tasks
       - 'IE': Internal Error, internal error occurs in some tasks
       - 'FN': File Not Found, all tasks have aborted because some required file not found
-- **ImageReference**: 画像ファイルの管理。課題リソースファイルのdescription (markdown) に埋め込まれた画像ファイルの管理
-  - **lecture_id**: 授業ID (**Lecture.id**)
-  - **problem_id**: 課題ID (**Problem.problem_id**)
-  - **location_id**: 画像ファイルへのパス (FileLocation.id)
-  - **ts**: アップロード日時 (datetime, 1s精度)
-- **FileReference**: ファイルの管理。課題リソースファイルのdescription (markdown) にリンクされたファイルの管理
+- **FileReference**: ファイルの管理。課題リソースファイルのdescription (markdown) にリンクされたファイル(テキスト、画像)の管理
   - **lecture_id**: 授業ID (**Lecture.id**)
   - **problem_id**: 課題ID (**Problem.problem_id**)
   - **location_id**: ファイルへのパス (FileLocation.id)
-  - **ts**: アップロード日時 (datetime, 1s精度)
 
 * 実装の簡潔さのために、課題情報が更新された場合、古い課題情報及びその課題に対するジャッジ結果・アップロードファイルは全て削除される。
 
 ## 9. 付録
 ### 9.1 用語集
-- Judge: 提出されたソースコードのに対していくつかのタスクを行い、想定された出力をするか確認すること。タスクには以下の種類がある。
+- Task: 課題に対して実行されるタスク。以下の種類がある。
   - Build Task: ソースコードをコンパイルするタスク
   - Run Task: コンパイルされたプログラムを実行し、与えられた入力に対して想定された出力をするか確認するタスク
-- Validation: 提出されたソースコードがコンパイルが通るか、実行ができるか確認すること。全てのテストケースは実行しない。
+- Judge: 提出されたソースコードのに対して全てのタスクを実行し、結果を表示すること。
+- Validation: 提出されたソースコードがコンパイルが通るか、実行ができるか確認すること。全てのタスクは実行しない。
 - Lecture (授業): 複数の課題を含む、授業の単位。具体例としては、「ハッシュ」「木構造」「グラフ」「動的計画法」等がある。
 - Problem (課題): 授業内の課題。具体例としては、「必須課題1」「必須課題2」「応用課題」等がある。
