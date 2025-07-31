@@ -130,7 +130,7 @@
   - **completed_task**: 現在実行完了しているTestCaseの数 (整数, デフォルト0)
   - **result**: 採点結果 (**ResultValues.value**)
     - 種類: **ResultValues.name**を参照
-    - デフォルトは-2 (WJ)
+    - デフォルトは10 (WJ)
     - 各タスクの実行結果の内、最大値がストアされる
   - **log**: ジャッジログ (JSON)
     - 各テストケースの実行結果が記録される
@@ -145,22 +145,22 @@
 - **ResultValues**: ジャッジ結果の値
   - **value**: ジャッジ結果の値 (整数)
   - **name**: ジャッジ結果の名前 (文字列)
-    - デフォルトで、(value, name) = (-2, "WJ"), (-1, "Judging"), (0, "AC"), (1, "WA"), (2, "TLE"), (3, "MLE"), (4, "RE"), (5, "CE"), (6, "OLE"), (7, "IE"), (8, "FN")
-      - 'WJ': Wait for Judge
-      - 'Judging': Under Judging
-      - 'AC': Accepted, all tasks have passed
-      - 'WA': Wrong Answer, some judge tasks have wrong answer
-      - 'TLE': Time Limit Exceeded, execution time exceeds the limit in some tasks
-      - 'MLE': Memory Limit Exceeded, memory usage exceeds the limit in some tasks
-      - 'RE': Runtime Error, runtime error occurs in some tasks
-      - 'CE': Compile Error, compile error occurs in some tasks
-      - 'OLE': Output Limit Exceeded, output exceeds the limit in some tasks
-      - 'IE': Internal Error, internal error occurs in some tasks
-      - 'FN': File Not Found, all tasks have aborted because some required file not found
+    - デフォルトで、(value, name)の組み合わせは以下の通り。
+      - (0, 'AC'): Accepted, all tasks have passed
+      - (1, 'WA'): Wrong Answer, some judge tasks have wrong answer
+      - (2, 'TLE'): Time Limit Exceeded, execution time exceeds the limit in some tasks
+      - (3, 'MLE'): Memory Limit Exceeded, memory usage exceeds the limit in some tasks
+      - (4, 'RE'): Runtime Error, runtime error occurs in some tasks
+      - (5, 'CE'): Compile Error, compile error occurs in some tasks
+      - (6, 'OLE'): Output Limit Exceeded, output exceeds the limit in some tasks
+      - (7, 'IE'): Internal Error, internal error occurs in some tasks
+      - (8, 'FN'): File Not Found, all tasks have aborted because some required file not found
+      - (9, 'Judging'): Judging now
+      - (10, 'WJ'): Wait for Judge
 - **FileReference**: ファイルの管理。課題リソースファイルのdescription (markdown) にリンクされたファイル(テキスト、画像)の管理
   - **lecture_id**: 授業ID (**Lecture.id**)
   - **problem_id**: 課題ID (**Problem.problem_id**)
-  - **location_id**: ファイルへのパス (FileLocation.id)
+  - **location_id**: ファイルへのパス (**FileLocation.id**)
 
 * 実装の簡潔さのために、課題情報が更新された場合、古い課題情報及びその課題に対するジャッジ結果・アップロードファイルは全て削除される。
 
