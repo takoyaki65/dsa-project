@@ -57,6 +57,8 @@
     - ダッシュボードでシステム負荷を監視
     - WARN以上のログをメールで通知
     - 高負荷時にメール・Slackメッセージで通知
+  - 開発
+    - データベースのパスワード、シークレットトークン等はGitリポジトリにハードコーディングせず、Gitで追跡していないenvファイルで設定する。もしくはDocker Secretsを使用する。
 - パフォーマンス
   - 同時アクセス対応
     - 必要に応じて、バックエンドサーバーのプロセス数を増やしてスケーリングさせる
@@ -76,7 +78,7 @@
 ## 3. システム構成
 
 ### 3.1 アーキテクチャ
-- フロントエンド: React (Vite) + TypeScript
+- フロントエンド: React (Vite) + TypeScript + TailwindCSS
 - バックエンド: Python (FastAPI)
 - データベース: PostgreSQL
 - ジャッジサーバー: Python + Docker
@@ -85,19 +87,25 @@
 
 ### 4.1 主要テーブル
 強調したカラムは必須項目。
-- **User**: ユーザ情報管理
-  - **id**: ユーザーID (文字列)
+- **UserList**: ユーザ情報管理
+  - **id**: ユーザーID (整数)
   - **name**: ユーザー名 (文字列)
   - **hashed_password**: パスワードのハッシュ値 (文字列)
-  - **role**: ユーザーの権限 (enum: 'admin', 'manager', 'student')
-  - **disabled**: ユーザーが無効化されているかどうか (boolean)
+  - **role_id**: ユーザーの権限 (**UserRole.id**)
+  - **disabled_at**: ユーザーが無効化されているかどうか (datetime, 1s精度)
   - email: メールアドレス (文字列)
+- **UserRole**: ユーザーの権限
+  - **id**: ユーザー権限ID (整数)
+  - **name**: ユーザー権限名 (文字列)
+    - デフォルトで、(id, name)の組み合わせは以下の通り。
+      - (1, 'admin'): 管理者
+      - (2, 'manager'): 運用管理者
+      - (3, 'student'): 学生
 - **LoginHistory**: ログイン履歴を用いた認証、及び強制ログアウト機能のためのテーブル
   - **id**: ログイン履歴ID (auto increment)
-  - **user_id**: ユーザーID (文字列)
+  - **user_id**: ユーザーID (**UserList.id**)
   - **login_at**: ログイン時刻 (datetime, 1s精度)
   - **logout_at**: ログアウト予定時刻 (datetime, 1s精度)
-  - **is_revoked**: ログアウトされたかどうか (boolean)
 - **Lecture**: 授業情報管理
   - **id**: 授業 (整数)
   - **title**: 授業タイトル (文字列)
@@ -115,12 +123,12 @@
 - **Request**: リクエスト情報管理
   - **id**: リクエストID (auto increment)
   - **ts**: リクエスト時刻 (datetime, 1s精度)
-  - **user_id**: 採点対象のユーザーID (文字列)
+  - **user_id**: 採点対象のユーザーID (**UserList.id**)
   - **submission_ts**: 提出時刻 (datetime, 1s精度)
     - 提出時刻は、実際に課題がManaba等の媒体で提出された際の時刻
     - 採点リクエスト時に提出時刻が指定される
     - 採点リクエストでも無い場合は、提出時刻はジャッジリクエスト時刻と同一となる
-  - **request_user_id**: リクエストしたユーザーのID (文字列)
+  - **request_user_id**: リクエストしたユーザーのID (**UserList.id**)
     - 管理者が学生の提出ファイルをジャッジする場合、提出者と採点対象が一致しない場合がある
   - **eval**: 課題採点リクエストかどうか, True/False
   - **lecture_id**: 授業ID (**Lecture.id**)
@@ -158,6 +166,7 @@
       - (9, 'Judging'): Judging now
       - (10, 'WJ'): Wait for Judge
 - **FileReference**: ファイルの管理。課題リソースファイルのdescription (markdown) にリンクされたファイル(テキスト、画像)の管理
+  - **id**: リファレンスID (auto increment)
   - **lecture_id**: 授業ID (**Lecture.id**)
   - **problem_id**: 課題ID (**Problem.problem_id**)
   - **location_id**: ファイルへのパス (**FileLocation.id**)

@@ -82,28 +82,39 @@ services:
         condition: service_started
 
   db:
-    image: mysql:8.3
+    build: ./dsa-db
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      test: ["CMD", "pg_isready", "-U", "postgres", "-d", "postgres"]
       interval: 10s
       timeout: 5s
       retries: 5
       start_period: 30s
+    secrets:
+      - db_app_password
+      - db_root_password
+    environment:
+      - POSTGRES_PASSWORD_FILE=/run/secrets/db_root_password
     volumes:
-      - db-data:/var/lib/mysql
+      - db-data:/var/lib/postgresql/data
       - ./dsa-db/init.sql:/docker-entrypoint-initdb.d/init.sql
-      - ./dsa-db/my.cnf:/etc/mysql/conf.d/my.cnf
       # バックアップのための、ダンプファイル共有ディレクトリ
       - ./backup:/backup
-    environment:
-      MYSQL_ROOT_PASSWORD: dsa-root
-      MYSQL_DATABASE: dsa
-      MYSQL_USER: dsa
-      MYSQL_PASSWORD: dsa-jikken
-      TZ: Asia/Tokyo
+  
+  adminer:
+    image: adminer:5.3.0
+    restart: always
     ports:
-      - "127.0.0.1:3306:3306"
+      - "127.0.0.1:18080:8080"
+    depends_on:
+      db:
+        condition: service_started
 
 volumes:
   db-data:
   frontend-node_modules:
+
+secrets:
+  db_app_password:
+    file: ./config/db_app_password.txt
+  db_root_password:
+    file: ./config/db_root_password.txt
