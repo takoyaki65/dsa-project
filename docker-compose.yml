@@ -6,7 +6,7 @@ services:
       # ホストの./dsa-front/node_modulesをコンテナ内の/app/node_modulesに反映させないために、
       # コンテナ内の/app/node_modulesを専用のボリュームにマウント
       - frontend-node_modules:/app/node_modules
-    entrypoint: ["sh", "-c", "npm install && npm start"]
+    entrypoint: [ "sh", "-c", "npm install && npm start" ]
 
   backend:
     depends_on:
@@ -26,11 +26,10 @@ services:
       - ./upload:/upload
       - ./resource:/resource
     environment:
-      DATABASE_HOST: db
-      DATABASE_NAME: dsa 
-      DATABASE_USER: dsa 
-      DATABASE_PASSWORD: dsa-jikken 
-      DATABASE_PORT: 3306
+      ACCESS_TOKEN_EXPIRE_MINUTES: 180
+    secrets:
+      - jwt_secret_key
+      - db_app_password
 
   judge:
     depends_on:
@@ -59,9 +58,9 @@ services:
       - ./logs/dsa-judgeserver:/logs
     environment:
       DATABASE_HOST: db
-      DATABASE_NAME: dsa 
-      DATABASE_USER: dsa 
-      DATABASE_PASSWORD: dsa-jikken 
+      DATABASE_NAME: dsa
+      DATABASE_USER: dsa
+      DATABASE_PASSWORD: dsa-jikken
       DATABASE_PORT: 3306
       DOCKER_HOST: unix:///var/run/docker.sock
       TZ: Asia/Tokyo
@@ -84,7 +83,7 @@ services:
   db:
     build: ./dsa-db
     healthcheck:
-      test: ["CMD", "pg_isready", "-U", "postgres", "-d", "postgres"]
+      test: [ "CMD", "pg_isready", "-U", "postgres", "-d", "postgres" ]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -99,7 +98,7 @@ services:
       - ./dsa-db/init.sql:/docker-entrypoint-initdb.d/init.sql
       # バックアップのための、ダンプファイル共有ディレクトリ
       - ./backup:/backup
-  
+
   adminer:
     image: adminer:5.3.0
     restart: always
@@ -113,8 +112,11 @@ volumes:
   db-data:
   frontend-node_modules:
 
+
 secrets:
   db_app_password:
     file: ./config/db_app_password.txt
   db_root_password:
     file: ./config/db_root_password.txt
+  jwt_secret_key:
+    file: ./config/jwt_secret_key.txt

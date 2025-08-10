@@ -134,8 +134,6 @@
   - **lecture_id**: 授業ID (**Lecture.id**)
   - **problem_id**: 課題ID (**Problem.problem_id**)
   - **upload_dir_id**: 提出ファイルが格納されたディレクトリのID (FileLocation.id)
-  - **total_task**: 実行しなければならないTestCaseの数 (整数, デフォルト0)
-  - **completed_task**: 現在実行完了しているTestCaseの数 (整数, デフォルト0)
   - **result**: 採点結果 (**ResultValues.value**)
     - 種類: **ResultValues.name**を参照
     - デフォルトは10 (WJ)

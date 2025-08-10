@@ -31,7 +31,7 @@ CREATE TABLE IF NOT EXISTS UserList (
     name VARCHAR(255) NOT NULL,
     hashed_password VARCHAR(255) NOT NULL,
     role_id INTEGER NOT NULL REFERENCES UserRole(id),
-    disabled_at TIMESTAMP(0) WITH TIME ZONE,
+    disabled_at TIMESTAMP(0) WITH TIME ZONE NOT NULL,
     email VARCHAR(255)
 );
 
@@ -90,8 +90,6 @@ CREATE TABLE IF NOT EXISTS Request (
     lecture_id INTEGER NOT NULL,
     problem_id INTEGER NOT NULL,
     upload_dir_id INTEGER NOT NULL REFERENCES FileLocation(id),
-    total_task INTEGER NOT NULL,
-    completed_task INTEGER NOT NULL,
     result INTEGER NOT NULL REFERENCES ResultValues(value),
     log JSONB NOT NULL,
     timeMS INTEGER NOT NULL,
