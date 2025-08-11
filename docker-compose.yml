@@ -26,6 +26,7 @@ services:
       - ./upload:/upload
       - ./resource:/resource
     environment:
+      TZ: Asia/Tokyo
       ACCESS_TOKEN_EXPIRE_MINUTES: 180
     secrets:
       - jwt_secret_key

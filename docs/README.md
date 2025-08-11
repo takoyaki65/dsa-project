@@ -88,7 +88,9 @@
 ### 4.1 主要テーブル
 強調したカラムは必須項目。
 - **UserList**: ユーザ情報管理
-  - **id**: ユーザーID (整数)
+  - **id**: ID (整数, auto increment)
+  - **userid**: ユーザーID (文字列, unique)
+    - 学籍番号などの一意な識別子を使用
   - **name**: ユーザー名 (文字列)
   - **hashed_password**: パスワードのハッシュ値 (文字列)
   - **role_id**: ユーザーの権限 (**UserRole.id**)

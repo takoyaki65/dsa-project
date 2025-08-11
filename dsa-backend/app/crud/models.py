@@ -10,6 +10,7 @@ class UserRole(SQLModel, table=True):
 
 class UserList(SQLModel, table=True):
     id: int = Field(primary_key=True)
+    userid: str = Field(max_length=255, unique=True)
     name: str = Field(max_length=255)
     hashed_password: str = Field(max_length=255)
     role_id: int = Field(foreign_key="userrole.id")

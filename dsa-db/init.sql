@@ -28,6 +28,7 @@ INSERT INTO UserRole (id, name) VALUES (1, 'admin'), (2, 'manager'), (3, 'studen
 
 CREATE TABLE IF NOT EXISTS UserList (
     id SERIAL PRIMARY KEY,
+    userid VARCHAR(255) NOT NULL UNIQUE,
     name VARCHAR(255) NOT NULL,
     hashed_password VARCHAR(255) NOT NULL,
     role_id INTEGER NOT NULL REFERENCES UserRole(id),
