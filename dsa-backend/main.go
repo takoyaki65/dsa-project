@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"dsa-backend/handler"
 	"dsa-backend/router"
+	"fmt"
 	"log"
 	"os"
 	"strings"
@@ -18,7 +19,7 @@ func main() {
 
 	db_user := "dsa_app"
 	db_password := read_db_password()
-	dsn := "postgres://" + db_user + ":" + db_password + "@db:5432/dsa_db"
+	dsn := fmt.Sprintf("postgres://%s:%s@db:5432/dsa_db", db_user, db_password)
 
 	// initialize connection
 	sqldb := sql.OpenDB(pgdriver.NewConnector(pgdriver.WithDSN(dsn)))

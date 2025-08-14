@@ -39,8 +39,8 @@ type LoginHistory struct {
 	User *UserList `bun:"rel:belongs-to,join:user_id=id"`
 }
 
-// This line is just for validating we do implement BeforeAppendModel method with correct args.
-// Therefore, this line does not affect the logic.
+// This line is just for validating we do implement BeforeAppendModel method with correct args at compile time.
+// Therefore, this line does not affect its logic.
 var _ bun.BeforeAppendModelHook = (*UserList)(nil)
 
 func (u *UserList) BeforeAppendModel(ctx context.Context, query bun.Query) error {
