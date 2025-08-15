@@ -1,21 +1,52 @@
 package handler
 
 import (
+	"context"
+	"crypto/rand"
+	"dsa-backend/store"
+	"encoding/hex"
+	"fmt"
+
 	"github.com/labstack/echo/v4"
 	"github.com/uptrace/bun"
 )
 
 type Handler struct {
-	db *bun.DB
+	userStore store.UserStore
+	jwtSecret string
 }
 
 func NewHandler(db *bun.DB) *Handler {
 	return &Handler{
-		db: db,
+		userStore: *store.NewUserStore(db),
+		jwtSecret: generateSecretKey(),
 	}
 }
 
 func (h *Handler) RegisterRoutes(r *echo.Echo) {
-	// not impelemnted yet
-	panic("RegisterRoutes not implemented")
+	// Check if the admin user exists, if not, only expose the admin creation endpoint
+	ctx := context.Background()
+	admins, err := h.userStore.GetUserListByUserRole(&ctx, "admin")
+	if err != nil {
+		panic(fmt.Sprintf("failed to check admin user: %v", err))
+	}
+
+	if len(*admins) == 0 {
+		r.POST("/admin/create", h.CreateAdminUser)
+		return
+	}
+
+	// If admin user exists, register all routes
+	r.POST("/login", h.Login)
+}
+
+func generateSecretKey() string {
+	// generate random 32-byte key
+	key := make([]byte, 32)
+	_, err := rand.Read(key)
+	if err != nil {
+		panic(fmt.Sprintf("failed to generate secret key: %v", err))
+	}
+	// convert to hex
+	return hex.EncodeToString(key)
 }
