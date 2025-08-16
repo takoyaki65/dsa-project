@@ -57,6 +57,20 @@ func (h *Handler) Login(c echo.Context) error {
 	})
 }
 
+// CreateAdmin godoc
+// @Summary Create Admin User. This endpoint is exposed only if no admin user exists.
+// @Description Create an admin user with the provided credentials. Note that this endpoint is only available if no admin user exists.
+// @Tags initialization
+// @Accept application/x-www-form-urlencoded
+// @Product plain
+// @Param userid formData string true "User ID of admin, used to login."
+// @Param username formData string true "Username of admin, just used for displaying."
+// @Param password formData string true "Password of admin, used to login."
+// @Param email formData string false "(Optional) Email address for the admin account"
+// @Success 200 {string} string "Admin user created successfully. Server will shutdown for restart."
+// @Failure 400 {string} string "Userid, username, and password are required."
+// @Failure 500 {string} string "Internal server error."
+// @Router /admin/create [post]
 func (h *Handler) CreateAdminUser(c echo.Context) error {
 	userid := c.FormValue("userid")
 	username := c.FormValue("username")

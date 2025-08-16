@@ -1,0 +1,51 @@
+basePath: /api
+host: localhost:8000
+info:
+  contact: {}
+  description: This is the API for the DSA Backend application.
+  title: DSA Backend API
+  version: 0.0.1
+paths:
+  /admin/create:
+    post:
+      consumes:
+      - application/x-www-form-urlencoded
+      description: Create an admin user with the provided credentials. Note that this
+        endpoint is only available if no admin user exists.
+      parameters:
+      - description: User ID of admin, used to login.
+        in: formData
+        name: userid
+        required: true
+        type: string
+      - description: Username of admin, just used for displaying.
+        in: formData
+        name: username
+        required: true
+        type: string
+      - description: Password of admin, used to login.
+        in: formData
+        name: password
+        required: true
+        type: string
+      - description: (Optional) Email address for the admin account
+        in: formData
+        name: email
+        type: string
+      responses:
+        "200":
+          description: Admin user created successfully. Server will shutdown for restart.
+          schema:
+            type: string
+        "400":
+          description: Userid, username, and password are required.
+          schema:
+            type: string
+        "500":
+          description: Internal server error.
+          schema:
+            type: string
+      summary: Create Admin User, available only if no admin user exists.
+      tags:
+      - initialization
+swagger: "2.0"

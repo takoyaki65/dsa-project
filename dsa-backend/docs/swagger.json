@@ -1,0 +1,74 @@
+{
+    "swagger": "2.0",
+    "info": {
+        "description": "This is the API for the DSA Backend application.",
+        "title": "DSA Backend API",
+        "contact": {},
+        "version": "0.0.1"
+    },
+    "host": "localhost:8000",
+    "basePath": "/api",
+    "paths": {
+        "/admin/create": {
+            "post": {
+                "description": "Create an admin user with the provided credentials. Note that this endpoint is only available if no admin user exists.",
+                "consumes": [
+                    "application/x-www-form-urlencoded"
+                ],
+                "tags": [
+                    "initialization"
+                ],
+                "summary": "Create Admin User, available only if no admin user exists.",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "User ID of admin, used to login.",
+                        "name": "userid",
+                        "in": "formData",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Username of admin, just used for displaying.",
+                        "name": "username",
+                        "in": "formData",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Password of admin, used to login.",
+                        "name": "password",
+                        "in": "formData",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "(Optional) Email address for the admin account",
+                        "name": "email",
+                        "in": "formData"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Admin user created successfully. Server will shutdown for restart.",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "400": {
+                        "description": "Userid, username, and password are required.",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error.",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

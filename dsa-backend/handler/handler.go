@@ -29,7 +29,7 @@ func (h *Handler) GetShutdownChan() chan struct{} {
 	return h.shutdownChan
 }
 
-func (h *Handler) RegisterRoutes(r *echo.Echo) {
+func (h *Handler) RegisterRoutes(r *echo.Group) {
 	// Check if the admin user exists, if not, only expose the admin creation endpoint
 	ctx := context.Background()
 	admins, err := h.userStore.GetUserListByUserRole(&ctx, "admin")
