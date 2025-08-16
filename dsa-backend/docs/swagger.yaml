@@ -1,4 +1,36 @@
 basePath: /api
+definitions:
+  handler.createUserSuccess:
+    properties:
+      message:
+        type: string
+    type: object
+  handler.initCheckResponse:
+    properties:
+      initialized:
+        type: boolean
+    type: object
+  handler.userRegisterRequest:
+    properties:
+      email:
+        type: string
+      password:
+        type: string
+      userid:
+        type: string
+      username:
+        type: string
+    required:
+    - password
+    - userid
+    - username
+    type: object
+  utils.Error:
+    properties:
+      errors:
+        additionalProperties: true
+        type: object
+    type: object
 host: localhost:8000
 info:
   contact: {}
@@ -9,43 +41,45 @@ paths:
   /admin/create:
     post:
       consumes:
-      - application/x-www-form-urlencoded
+      - application/json
       description: Create an admin user with the provided credentials. Note that this
         endpoint is only available if no admin user exists.
       parameters:
-      - description: User ID of admin, used to login.
-        in: formData
-        name: userid
+      - description: User info for registration
+        in: body
+        name: user
         required: true
-        type: string
-      - description: Username of admin, just used for displaying.
-        in: formData
-        name: username
-        required: true
-        type: string
-      - description: Password of admin, used to login.
-        in: formData
-        name: password
-        required: true
-        type: string
-      - description: (Optional) Email address for the admin account
-        in: formData
-        name: email
-        type: string
+        schema:
+          $ref: '#/definitions/handler.userRegisterRequest'
       responses:
         "200":
           description: Admin user created successfully. Server will shutdown for restart.
           schema:
-            type: string
+            $ref: '#/definitions/handler.createUserSuccess'
         "400":
-          description: Userid, username, and password are required.
+          description: Bad request. This error occurs if the admin user already exists
+            or if the required fields are missing.
           schema:
-            type: string
+            $ref: '#/definitions/utils.Error'
         "500":
-          description: Internal server error.
+          description: Internal server error. This error occurs if there is an issue
+            with the database or password hashing.
           schema:
             type: string
-      summary: Create Admin User, available only if no admin user exists.
+      summary: Create Admin User. This endpoint is exposed only if no admin user exists.
       tags:
       - initialization
+  /initialized:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Returns a JSON object with the key 'initialized' set to true
+            or false.
+          schema:
+            $ref: '#/definitions/handler.initCheckResponse'
+      summary: Check if the application is initialized.
+      tags:
+      - Initialization
 swagger: "2.0"

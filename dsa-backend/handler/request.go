@@ -20,12 +20,10 @@ func (r *userLoginRequest) bind(c echo.Context) error {
 }
 
 type userRegisterRequest struct {
-	User struct {
-		UserId   string `json:"userid" validate:"required"`
-		Username string `json:"username" validate:"required"`
-		Password string `json:"password" validate:"required"`
-		Email    string `json:"email" validate:"omitempty,email"`
-	}
+	UserId   string `json:"userid" validate:"required"`
+	Username string `json:"username" validate:"required"`
+	Password string `json:"password" validate:"required"`
+	Email    string `json:"email" validate:"omitempty,email"`
 }
 
 func (r *userRegisterRequest) bind(c echo.Context) error {

@@ -19,60 +19,110 @@ const docTemplate = `{
             "post": {
                 "description": "Create an admin user with the provided credentials. Note that this endpoint is only available if no admin user exists.",
                 "consumes": [
-                    "application/x-www-form-urlencoded"
+                    "application/json"
                 ],
                 "tags": [
                     "initialization"
                 ],
-                "summary": "Create Admin User, available only if no admin user exists.",
+                "summary": "Create Admin User. This endpoint is exposed only if no admin user exists.",
                 "parameters": [
                     {
-                        "type": "string",
-                        "description": "User ID of admin, used to login.",
-                        "name": "userid",
-                        "in": "formData",
-                        "required": true
-                    },
-                    {
-                        "type": "string",
-                        "description": "Username of admin, just used for displaying.",
-                        "name": "username",
-                        "in": "formData",
-                        "required": true
-                    },
-                    {
-                        "type": "string",
-                        "description": "Password of admin, used to login.",
-                        "name": "password",
-                        "in": "formData",
-                        "required": true
-                    },
-                    {
-                        "type": "string",
-                        "description": "(Optional) Email address for the admin account",
-                        "name": "email",
-                        "in": "formData"
+                        "description": "User info for registration",
+                        "name": "user",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/handler.userRegisterRequest"
+                        }
                     }
                 ],
                 "responses": {
                     "200": {
                         "description": "Admin user created successfully. Server will shutdown for restart.",
                         "schema": {
-                            "type": "string"
+                            "$ref": "#/definitions/handler.createUserSuccess"
                         }
                     },
                     "400": {
-                        "description": "Userid, username, and password are required.",
+                        "description": "Bad request. This error occurs if the admin user already exists or if the required fields are missing.",
                         "schema": {
-                            "type": "string"
+                            "$ref": "#/definitions/utils.Error"
                         }
                     },
                     "500": {
-                        "description": "Internal server error.",
+                        "description": "Internal server error. This error occurs if there is an issue with the database or password hashing.",
                         "schema": {
                             "type": "string"
                         }
                     }
+                }
+            }
+        },
+        "/initialized": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Initialization"
+                ],
+                "summary": "Check if the application is initialized.",
+                "responses": {
+                    "200": {
+                        "description": "Returns a JSON object with the key 'initialized' set to true or false.",
+                        "schema": {
+                            "$ref": "#/definitions/handler.initCheckResponse"
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "definitions": {
+        "handler.createUserSuccess": {
+            "type": "object",
+            "properties": {
+                "message": {
+                    "type": "string"
+                }
+            }
+        },
+        "handler.initCheckResponse": {
+            "type": "object",
+            "properties": {
+                "initialized": {
+                    "type": "boolean"
+                }
+            }
+        },
+        "handler.userRegisterRequest": {
+            "type": "object",
+            "required": [
+                "password",
+                "userid",
+                "username"
+            ],
+            "properties": {
+                "email": {
+                    "type": "string"
+                },
+                "password": {
+                    "type": "string"
+                },
+                "userid": {
+                    "type": "string"
+                },
+                "username": {
+                    "type": "string"
+                }
+            }
+        },
+        "utils.Error": {
+            "type": "object",
+            "properties": {
+                "errors": {
+                    "type": "object",
+                    "additionalProperties": true
                 }
             }
         }
