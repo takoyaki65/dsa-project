@@ -25,7 +25,7 @@ type UserList struct {
 	DisabledAt     time.Time `bun:"disabled_at,notnull" json:"disabled_at"`
 	Email          *string   `bun:"email,type:varchar(255)" json:"email,omitempty"`
 
-	Role *UserRole `bun:"rel:has-one,join:role_id=id"`
+	UserRole *UserRole `bun:"rel:has-one,join:role_id=id"`
 }
 
 type LoginHistory struct {

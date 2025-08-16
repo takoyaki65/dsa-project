@@ -22,15 +22,14 @@ services:
       - ./dsa-backend:/app
       # ホストの./dsa-back/.venvをコンテナ内の/app/.venvに反映させないために、
       # コンテナ内の/app/.venvをAnonymous Volumeとしてマウント
-      - /app/.venv
       - ./upload:/upload
       - ./resource:/resource
     environment:
       TZ: Asia/Tokyo
       ACCESS_TOKEN_EXPIRE_MINUTES: 180
     secrets:
-      - jwt_secret_key
       - db_app_password
+    restart: always
 
   judge:
     depends_on:
@@ -89,6 +88,9 @@ services:
       timeout: 5s
       retries: 5
       start_period: 30s
+    ports:
+      # Just for debugging of backend, need to delete in production.
+      - "127.0.0.1:5432:5432"
     secrets:
       - db_app_password
       - db_root_password
@@ -119,5 +121,3 @@ secrets:
     file: ./config/db_app_password.txt
   db_root_password:
     file: ./config/db_root_password.txt
-  jwt_secret_key:
-    file: ./config/jwt_secret_key.txt

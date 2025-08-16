@@ -12,15 +12,21 @@ import (
 )
 
 type Handler struct {
-	userStore store.UserStore
-	jwtSecret string
+	userStore    store.UserStore
+	jwtSecret    string
+	shutdownChan chan struct{}
 }
 
 func NewHandler(db *bun.DB) *Handler {
 	return &Handler{
-		userStore: *store.NewUserStore(db),
-		jwtSecret: generateSecretKey(),
+		userStore:    *store.NewUserStore(db),
+		jwtSecret:    generateSecretKey(),
+		shutdownChan: make(chan struct{}),
 	}
+}
+
+func (h *Handler) GetShutdownChan() chan struct{} {
+	return h.shutdownChan
 }
 
 func (h *Handler) RegisterRoutes(r *echo.Echo) {
