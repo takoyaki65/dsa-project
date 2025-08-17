@@ -9,36 +9,36 @@
     "host": "localhost:8000",
     "basePath": "/api",
     "paths": {
-        "/admin/create": {
+        "/login": {
             "post": {
-                "description": "Create an admin user with the provided credentials. Note that this endpoint is only available if no admin user exists.",
+                "description": "User login with user ID and password. Returns a JWT token if successful.",
                 "consumes": [
                     "application/json"
                 ],
                 "tags": [
-                    "initialization"
+                    "user"
                 ],
-                "summary": "Create Admin User. This endpoint is exposed only if no admin user exists.",
+                "summary": "User Login",
                 "parameters": [
                     {
-                        "description": "User info for registration",
+                        "description": "User login info",
                         "name": "user",
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/handler.userRegisterRequest"
+                            "$ref": "#/definitions/handler.userLoginRequest"
                         }
                     }
                 ],
                 "responses": {
                     "200": {
-                        "description": "Admin user created successfully. Server will shutdown for restart.",
+                        "description": "Login successful. Returns a JWT token.",
                         "schema": {
-                            "$ref": "#/definitions/handler.createUserSuccess"
+                            "$ref": "#/definitions/handler.userLoginResponse"
                         }
                     },
                     "400": {
-                        "description": "Bad request. This error occurs if the admin user already exists or if the required fields are missing.",
+                        "description": "Bad request. This error occurs if the user ID or password is missing or incorrect.",
                         "schema": {
                             "$ref": "#/definitions/utils.Error"
                         }
@@ -51,62 +51,28 @@
                     }
                 }
             }
-        },
-        "/initialized": {
-            "get": {
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Initialization"
-                ],
-                "summary": "Check if the application is initialized.",
-                "responses": {
-                    "200": {
-                        "description": "Returns a JSON object with the key 'initialized' set to true or false.",
-                        "schema": {
-                            "$ref": "#/definitions/handler.initCheckResponse"
-                        }
-                    }
-                }
-            }
         }
     },
     "definitions": {
-        "handler.createUserSuccess": {
-            "type": "object",
-            "properties": {
-                "message": {
-                    "type": "string"
-                }
-            }
-        },
-        "handler.initCheckResponse": {
-            "type": "object",
-            "properties": {
-                "initialized": {
-                    "type": "boolean"
-                }
-            }
-        },
-        "handler.userRegisterRequest": {
+        "handler.userLoginRequest": {
             "type": "object",
             "required": [
                 "password",
-                "userid",
-                "username"
+                "userid"
             ],
             "properties": {
-                "email": {
-                    "type": "string"
-                },
                 "password": {
                     "type": "string"
                 },
                 "userid": {
                     "type": "string"
-                },
-                "username": {
+                }
+            }
+        },
+        "handler.userLoginResponse": {
+            "type": "object",
+            "properties": {
+                "token": {
                     "type": "string"
                 }
             }

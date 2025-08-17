@@ -49,6 +49,18 @@ func (us *UserStore) GetUserListByUserRole(ctx *context.Context, role string) (*
 	return &users, nil
 }
 
+func (us *UserStore) GetRoleID(ctx *context.Context, role string) (int64, error) {
+	var roleID int64
+	var userRole model.UserRole
+
+	err := us.db.NewSelect().Model(&userRole).Column("id").Where("name = ?", role).Scan(*ctx, &roleID)
+	if err != nil {
+		return 0, fmt.Errorf("failed to get role ID for %s: %w", role, err)
+	}
+
+	return roleID, nil
+}
+
 func (us *UserStore) CreateUser(ctx *context.Context, user *model.UserList) error {
 	_, err := us.db.NewInsert().Model(user).Exec(*ctx)
 	if err != nil {

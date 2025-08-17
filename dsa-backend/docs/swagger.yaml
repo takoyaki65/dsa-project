@@ -1,29 +1,19 @@
 basePath: /api
 definitions:
-  handler.createUserSuccess:
+  handler.userLoginRequest:
     properties:
-      message:
-        type: string
-    type: object
-  handler.initCheckResponse:
-    properties:
-      initialized:
-        type: boolean
-    type: object
-  handler.userRegisterRequest:
-    properties:
-      email:
-        type: string
       password:
         type: string
       userid:
         type: string
-      username:
-        type: string
     required:
     - password
     - userid
-    - username
+    type: object
+  handler.userLoginResponse:
+    properties:
+      token:
+        type: string
     type: object
   utils.Error:
     properties:
@@ -38,27 +28,26 @@ info:
   title: DSA Backend API
   version: 0.0.1
 paths:
-  /admin/create:
+  /login:
     post:
       consumes:
       - application/json
-      description: Create an admin user with the provided credentials. Note that this
-        endpoint is only available if no admin user exists.
+      description: User login with user ID and password. Returns a JWT token if successful.
       parameters:
-      - description: User info for registration
+      - description: User login info
         in: body
         name: user
         required: true
         schema:
-          $ref: '#/definitions/handler.userRegisterRequest'
+          $ref: '#/definitions/handler.userLoginRequest'
       responses:
         "200":
-          description: Admin user created successfully. Server will shutdown for restart.
+          description: Login successful. Returns a JWT token.
           schema:
-            $ref: '#/definitions/handler.createUserSuccess'
+            $ref: '#/definitions/handler.userLoginResponse'
         "400":
-          description: Bad request. This error occurs if the admin user already exists
-            or if the required fields are missing.
+          description: Bad request. This error occurs if the user ID or password is
+            missing or incorrect.
           schema:
             $ref: '#/definitions/utils.Error'
         "500":
@@ -66,20 +55,7 @@ paths:
             with the database or password hashing.
           schema:
             type: string
-      summary: Create Admin User. This endpoint is exposed only if no admin user exists.
+      summary: User Login
       tags:
-      - initialization
-  /initialized:
-    get:
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: Returns a JSON object with the key 'initialized' set to true
-            or false.
-          schema:
-            $ref: '#/definitions/handler.initCheckResponse'
-      summary: Check if the application is initialized.
-      tags:
-      - Initialization
+      - user
 swagger: "2.0"

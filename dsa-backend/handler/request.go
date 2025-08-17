@@ -3,10 +3,8 @@ package handler
 import "github.com/labstack/echo/v4"
 
 type userLoginRequest struct {
-	User struct {
-		UserId   string `json:"userid" validate:"required"`
-		Password string `json:"password" validate:"required"`
-	} `json:"user"`
+	UserId   string `json:"userid" validate:"required"`
+	Password string `json:"password" validate:"required"`
 }
 
 func (r *userLoginRequest) bind(c echo.Context) error {

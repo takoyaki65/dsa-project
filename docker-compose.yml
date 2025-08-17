@@ -29,6 +29,7 @@ services:
       ACCESS_TOKEN_EXPIRE_MINUTES: 180
     secrets:
       - db_app_password
+      - admin_info_json
     restart: always
 
   judge:
@@ -121,3 +122,5 @@ secrets:
     file: ./config/db_app_password.txt
   db_root_password:
     file: ./config/db_root_password.txt
+  admin_info_json:
+    file: ./config/admin.json
