@@ -32,11 +32,11 @@ type LoginHistory struct {
 	bun.BaseModel `bun:"table:loginhistory"`
 
 	ID       int64     `bun:",pk,autoincrement" json:"id"`
-	UserID   int64     `bun:"user_id,notnull" json:"user_id"`
+	UserID   string    `bun:"user_id,notnull" json:"user_id"`
 	LoginAt  time.Time `bun:"login_at,notnull" json:"login_at"`
 	LogoutAt time.Time `bun:"logout_at,notnull" json:"logout_at"`
 
-	User *UserList `bun:"rel:belongs-to,join:user_id=id"`
+	User *UserList `bun:"rel:belongs-to,join:user_id=userid"`
 }
 
 // This line is just for validating we do implement BeforeAppendModel method with correct args at compile time.

@@ -14,8 +14,8 @@ type JwtCustomClaims struct {
 	jwt.RegisteredClaims
 }
 
-func IssueNewToken(userid string, scopes []string, secret string) (string, error) {
-	newClaim := newJwtCustomClaims(userid, scopes)
+func IssueNewToken(userid string, scopes []string, secret string, issuedAt time.Time) (string, error) {
+	newClaim := newJwtCustomClaims(userid, scopes, issuedAt)
 	newToken := createToken(newClaim)
 	newTokenStr, err := newToken.SignedString([]byte(secret))
 	if err != nil {
@@ -28,13 +28,13 @@ func createToken(claim *JwtCustomClaims) *jwt.Token {
 	return jwt.NewWithClaims(jwt.SigningMethodHS256, claim)
 }
 
-func newJwtCustomClaims(userid string, scopes []string) *JwtCustomClaims {
+func newJwtCustomClaims(userid string, scopes []string, issuedAt time.Time) *JwtCustomClaims {
 	return &JwtCustomClaims{
 		UserID: userid,
 		Scopes: scopes,
 		RegisteredClaims: jwt.RegisteredClaims{
-			IssuedAt:  jwt.NewNumericDate(time.Now()),
-			ExpiresAt: jwt.NewNumericDate(time.Now().Add(time.Hour * 12)),
+			IssuedAt:  jwt.NewNumericDate(issuedAt),
+			ExpiresAt: jwt.NewNumericDate(issuedAt.Add(time.Hour * 12)),
 		},
 	}
 }

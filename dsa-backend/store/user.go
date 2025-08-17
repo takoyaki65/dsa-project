@@ -68,3 +68,11 @@ func (us *UserStore) CreateUser(ctx *context.Context, user *model.UserList) erro
 	}
 	return nil
 }
+
+func (us *UserStore) RegisterLoginHistory(ctx *context.Context, loginHistory *model.LoginHistory) error {
+	_, err := us.db.NewInsert().Model(loginHistory).Exec(*ctx)
+	if err != nil {
+		return fmt.Errorf("failed to register loginHistory: %w", err)
+	}
+	return nil
+}

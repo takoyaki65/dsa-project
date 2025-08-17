@@ -2,8 +2,10 @@ package handler
 
 import (
 	"context"
+	"dsa-backend/model"
 	"dsa-backend/utils"
 	"net/http"
+	"time"
 
 	"github.com/labstack/echo/v4"
 	"golang.org/x/crypto/bcrypt"
@@ -58,8 +60,23 @@ func (h *Handler) Login(c echo.Context) error {
 		return c.String(http.StatusInternalServerError, "invalid user role: "+userRole)
 	}
 
+	issuedAt := time.Now()
+
+	// register LoginHistory
+	{
+		err := h.userStore.RegisterLoginHistory(&ctx, &model.LoginHistory{
+			UserID:   userRecord.UserID,
+			LoginAt:  issuedAt,
+			LogoutAt: issuedAt.Add(time.Hour * 12), // assuming logout is 12 hours later
+		})
+
+		if err != nil {
+			return c.JSON(http.StatusInternalServerError, utils.NewErrorWithMessage("failed to register login history: "+err.Error()))
+		}
+	}
+
 	// create JWT token
-	token, err := utils.IssueNewToken(userRecord.UserID, scopes, h.jwtSecret)
+	token, err := utils.IssueNewToken(userRecord.UserID, scopes, h.jwtSecret, issuedAt)
 
 	if err != nil {
 		return c.String(http.StatusInternalServerError, "failed to issue token")
