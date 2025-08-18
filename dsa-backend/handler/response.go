@@ -10,6 +10,13 @@ func newCreateUserSuccess(msg string) createUserSuccess {
 	}
 }
 
+type userResponse struct {
+	ID    string  `json:"id"`
+	Name  string  `json:"name"`
+	Email *string `json:"email,omitempty"`
+}
+
 type userLoginResponse struct {
-	Token string `json:"token"`
+	Token string       `json:"token"`
+	User  userResponse `json:"user"`
 }

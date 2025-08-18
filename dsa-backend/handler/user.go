@@ -84,5 +84,10 @@ func (h *Handler) Login(c echo.Context) error {
 
 	return c.JSON(http.StatusOK, userLoginResponse{
 		Token: token,
+		User: userResponse{
+			ID:    userRecord.UserID,
+			Name:  userRecord.Name,
+			Email: userRecord.Email,
+		},
 	})
 }
