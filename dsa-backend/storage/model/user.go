@@ -31,10 +31,9 @@ type UserList struct {
 type LoginHistory struct {
 	bun.BaseModel `bun:"table:loginhistory"`
 
-	ID       int64     `bun:",pk,autoincrement" json:"id"`
-	UserID   string    `bun:"user_id,notnull" json:"user_id"`
-	LoginAt  time.Time `bun:"login_at,notnull" json:"login_at"`
-	LogoutAt time.Time `bun:"logout_at,notnull" json:"logout_at"`
+	ID      int64     `bun:",pk,autoincrement" json:"id"`
+	UserID  string    `bun:"user_id,notnull" json:"user_id"`
+	LoginAt time.Time `bun:"login_at,notnull" json:"login_at"`
 
 	User *UserList `bun:"rel:belongs-to,join:user_id=userid"`
 }
@@ -59,7 +58,6 @@ func (h *LoginHistory) BeforeAppendModel(ctx context.Context, query bun.Query) e
 	case *bun.InsertQuery, *bun.UpdateQuery:
 		// remove fraction less than seconds (milliseconds, microeconds, ...)
 		h.LoginAt = h.LoginAt.Truncate(time.Second)
-		h.LogoutAt = h.LogoutAt.Truncate(time.Second)
 	}
 	return nil
 }

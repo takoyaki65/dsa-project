@@ -4,9 +4,9 @@ import (
 	"context"
 	"database/sql"
 	"dsa-backend/handler"
-	"dsa-backend/model"
 	"dsa-backend/router"
-	"dsa-backend/store"
+	store "dsa-backend/storage"
+	"dsa-backend/storage/model"
 	"encoding/json"
 	"fmt"
 	"log"
@@ -27,12 +27,18 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
-// @title DSA Backend API
-// @version 0.0.1
-// @description This is the API for the DSA Backend application.
+//	@title			DSA Backend API
+//	@version		0.0.1
+//	@description	This is the API for the DSA Backend application.
 
-// @host localhost:8000
-// @BasePath /api
+//	@host		localhost:8000
+//	@BasePath	/api
+
+// @securitydefinitions.oauth2.password	OAuth2Password
+// @tokenUrl								/api/login
+// @scope.me								Grants any rights related to the current user
+// @scope.manager							Grants any rights related to manager user
+// @scope.admin							Grants any rights related to admin user
 func main() {
 	r := router.New()
 

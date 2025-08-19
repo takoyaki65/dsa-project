@@ -1,9 +1,10 @@
-package store
+package storage
 
 import (
 	"context"
-	"dsa-backend/model"
+	"dsa-backend/storage/model"
 	"fmt"
+	"time"
 
 	"github.com/uptrace/bun"
 )
@@ -67,6 +68,20 @@ func (us *UserStore) CreateUser(ctx *context.Context, user *model.UserList) erro
 		return fmt.Errorf("failed to create user: %w", err)
 	}
 	return nil
+}
+
+func (us *UserStore) GetLoginHistory(ctx *context.Context, userID string, loginAt time.Time) (*model.LoginHistory, error) {
+	var loginHistory model.LoginHistory
+
+	err := us.db.NewSelect().Model(&loginHistory).
+		Where("user_id = ? AND login_at = ?", userID, loginAt).
+		Scan(*ctx)
+
+	if err != nil {
+		return nil, fmt.Errorf("failed to get login history: %w", err)
+	}
+
+	return &loginHistory, nil
 }
 
 func (us *UserStore) RegisterLoginHistory(ctx *context.Context, loginHistory *model.LoginHistory) error {

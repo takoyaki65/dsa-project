@@ -15,11 +15,47 @@ const docTemplate = `{
     "host": "{{.Host}}",
     "basePath": "{{.BasePath}}",
     "paths": {
+        "/currentUser/me": {
+            "get": {
+                "security": [
+                    {
+                        "OAuth2Password": [
+                            "me"
+                        ]
+                    }
+                ],
+                "description": "Get current user information from JWT token",
+                "tags": [
+                    "user"
+                ],
+                "summary": "Get current user information",
+                "responses": {
+                    "200": {
+                        "description": "Current user information",
+                        "schema": {
+                            "$ref": "#/definitions/handler.userResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/utils.Error"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
         "/login": {
             "post": {
                 "description": "User login with user ID and password. Returns a JWT token if successful.",
                 "consumes": [
-                    "application/json"
+                    "application/x-www-form-urlencoded"
                 ],
                 "tags": [
                     "user"
@@ -27,13 +63,18 @@ const docTemplate = `{
                 "summary": "User Login",
                 "parameters": [
                     {
-                        "description": "User login info",
-                        "name": "user",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/handler.userLoginRequest"
-                        }
+                        "type": "string",
+                        "description": "User ID",
+                        "name": "username",
+                        "in": "formData",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Password",
+                        "name": "password",
+                        "in": "formData",
+                        "required": true
                     }
                 ],
                 "responses": {
@@ -60,25 +101,30 @@ const docTemplate = `{
         }
     },
     "definitions": {
-        "handler.userLoginRequest": {
-            "type": "object",
-            "required": [
-                "password",
-                "userid"
-            ],
-            "properties": {
-                "password": {
-                    "type": "string"
-                },
-                "userid": {
-                    "type": "string"
-                }
-            }
-        },
         "handler.userLoginResponse": {
             "type": "object",
             "properties": {
-                "token": {
+                "access_token": {
+                    "type": "string"
+                },
+                "token_type": {
+                    "type": "string"
+                },
+                "user": {
+                    "$ref": "#/definitions/handler.userResponse"
+                }
+            }
+        },
+        "handler.userResponse": {
+            "type": "object",
+            "properties": {
+                "email": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "name": {
                     "type": "string"
                 }
             }
@@ -90,6 +136,18 @@ const docTemplate = `{
                     "type": "object",
                     "additionalProperties": true
                 }
+            }
+        }
+    },
+    "securityDefinitions": {
+        "OAuth2Password": {
+            "type": "oauth2",
+            "flow": "password",
+            "tokenUrl": "/api/login",
+            "scopes": {
+                "admin": "Grants any rights related to admin user",
+                "manager": "Grants any rights related to manager user",
+                "me": "Grants any rights related to the current user"
             }
         }
     }

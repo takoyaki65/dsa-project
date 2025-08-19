@@ -1,18 +1,21 @@
 basePath: /api
 definitions:
-  handler.userLoginRequest:
-    properties:
-      password:
-        type: string
-      userid:
-        type: string
-    required:
-    - password
-    - userid
-    type: object
   handler.userLoginResponse:
     properties:
-      token:
+      access_token:
+        type: string
+      token_type:
+        type: string
+      user:
+        $ref: '#/definitions/handler.userResponse'
+    type: object
+  handler.userResponse:
+    properties:
+      email:
+        type: string
+      id:
+        type: string
+      name:
         type: string
     type: object
   utils.Error:
@@ -28,18 +31,44 @@ info:
   title: DSA Backend API
   version: 0.0.1
 paths:
+  /currentUser/me:
+    get:
+      description: Get current user information from JWT token
+      responses:
+        "200":
+          description: Current user information
+          schema:
+            $ref: '#/definitions/handler.userResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/utils.Error'
+        "500":
+          description: Internal server error
+          schema:
+            type: string
+      security:
+      - OAuth2Password:
+        - me
+      summary: Get current user information
+      tags:
+      - user
   /login:
     post:
       consumes:
-      - application/json
+      - application/x-www-form-urlencoded
       description: User login with user ID and password. Returns a JWT token if successful.
       parameters:
-      - description: User login info
-        in: body
-        name: user
+      - description: User ID
+        in: formData
+        name: username
         required: true
-        schema:
-          $ref: '#/definitions/handler.userLoginRequest'
+        type: string
+      - description: Password
+        in: formData
+        name: password
+        required: true
+        type: string
       responses:
         "200":
           description: Login successful. Returns a JWT token.
@@ -58,4 +87,13 @@ paths:
       summary: User Login
       tags:
       - user
+securityDefinitions:
+  OAuth2Password:
+    flow: password
+    scopes:
+      admin: Grants any rights related to admin user
+      manager: Grants any rights related to manager user
+      me: Grants any rights related to the current user
+    tokenUrl: /api/login
+    type: oauth2
 swagger: "2.0"
