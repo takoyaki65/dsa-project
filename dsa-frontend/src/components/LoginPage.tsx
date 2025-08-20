@@ -1,78 +1,22 @@
-import { useMutation } from "@tanstack/react-query";
 import React, { useState, type ChangeEvent, type FormEvent } from "react";
-import { Navigate, useNavigate } from "react-router";
-
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
-
-interface LoginCredentials {
-  userid: string;
-  password: string;
-}
-
-interface LoginResponse {
-  token: string;
-}
-
-interface ErrorResponse {
-  errors?: {
-    message?: string;
-    [key: string]: any;
-  };
-}
-
-const loginUser = async (credentials: LoginCredentials): Promise<LoginResponse> => {
-  const response = await fetch(`${API_BASE_URL}/login`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify(credentials),
-  });
-
-  if (!response.ok) {
-    const error: ErrorResponse = await response.json();
-    throw new Error(error.errors?.message || 'Login failed');
-  }
-
-  return response.json();
-};
-
-const saveToken = (token: string): void => {
-  localStorage.setItem('authToken', token);
-};
-
-export const getToken = (): string | null => {
-  return localStorage.getItem('authToken');
-};
-
-export const logout = (): void => {
-  localStorage.removeItem('authToken');
-};
+import { useNavigate } from "react-router";
+import { useAuth, type LoginCredentials } from "../auth/hooks";
 
 const LoginPage: React.FC = () => {
-  const [credentials, setCredentials] = useState<LoginCredentials>({ userid: '', password: '' });
+  const [credentials, setCredentials] = useState<LoginCredentials>({ username: '', password: '' });
 
   const navigate = useNavigate();
 
-  const loginMutation = useMutation<LoginResponse, ErrorResponse, LoginCredentials>({
-    mutationFn: loginUser,
-    onSuccess: (data) => {
-      saveToken(data.token);
-      navigate('/dashboard');
-    },
-    onError: (error) => {
-      console.error('Login failed:', error);
-    },
-  })
+  const { login: loginMutation, loginResponse, isLoginPending, loginError } = useAuth();
 
   const handleSubmit = (e: FormEvent<HTMLFormElement> | React.MouseEvent<HTMLButtonElement>): void => {
     e.preventDefault();
-    if (credentials.userid.trim().length === 0 || credentials.password.trim().length === 0) {
+    if (credentials.username.trim().length === 0 || credentials.password.trim().length === 0) {
       alert('ユーザーIDとパスワードを入力してください');
       return;
     }
 
-    loginMutation.mutate(credentials);
+    loginMutation(credentials);
   }
 
   const handleInputChange = (e: ChangeEvent<HTMLInputElement>): void => {
@@ -85,6 +29,10 @@ const LoginPage: React.FC = () => {
       e.preventDefault();
       handleSubmit(e as any);
     }
+  }
+
+  if (loginResponse) {
+    navigate('/dashboard');
   }
 
   return (
@@ -107,12 +55,12 @@ const LoginPage: React.FC = () => {
                 name="userid"
                 type="text"
                 required
-                value={credentials.userid}
+                value={credentials.username}
                 onChange={handleInputChange}
                 placeholder="ユーザーIDを入力してください"
                 className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition duration-200"
                 autoComplete="username"
-                disabled={loginMutation.isPending}
+                disabled={isLoginPending}
               />
             </div>
             <div>
@@ -133,24 +81,24 @@ const LoginPage: React.FC = () => {
                 className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparen outline-none transition duration-200"
                 autoComplete="current-password"
                 onKeyDown={handleKeyDown}
-                disabled={loginMutation.isPending}
+                disabled={isLoginPending}
               />
             </div>
 
             <button
               type="submit"
               className="w-full py-3 px-4 bg-red-50 border border-red-200 rounded-lg"
-              disabled={loginMutation.isPending}
+              disabled={isLoginPending}
               onClick={handleSubmit}
             >
-              {loginMutation.isPending ? "ログイン中..." : "ログイン"}
+              {isLoginPending ? "ログイン中..." : "ログイン"}
             </button>
           </form>
 
-          {loginMutation.isError && (
+          {loginError && (
             <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-lg">
               <p className="text-sm text-red-600">
-                {loginMutation.error?.errors?.message || "ログインに失敗しました。"}
+                {loginError?.message || "ログインに失敗しました。"}
               </p>
             </div>
           )}

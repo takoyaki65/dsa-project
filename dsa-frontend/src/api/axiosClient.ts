@@ -1,0 +1,47 @@
+import axios, { AxiosError, type AxiosInstance, type AxiosResponse, type InternalAxiosRequestConfig } from "axios";
+import { TOKEN_KEY } from "../auth/hooks";
+
+export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+
+
+interface ErrorResponse {
+  errors?: {
+    body?: string;
+    [key: string]: any;
+  }
+}
+
+export const axiosClient: AxiosInstance = axios.create({
+  baseURL: API_BASE_URL,
+});
+
+axiosClient.interceptors.request.use(
+  (config: InternalAxiosRequestConfig) => {
+    const token = localStorage.getItem(TOKEN_KEY);
+    if (token && config.headers) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+    return config;
+  },
+  (error: AxiosError) => {
+    return Promise.reject(error);
+  }
+)
+
+axiosClient.interceptors.response.use(
+  (response: AxiosResponse) => {
+    return response;
+  },
+  (error: AxiosError<ErrorResponse>) => {
+    if (error.response?.status === 401) {
+      localStorage.removeItem(TOKEN_KEY);
+      window.location.href = '/login'; // Redirect to login page
+      return Promise.reject(new Error('Unauthorized'))
+    }
+
+    const message = error.response?.data?.errors?.body || 'Request failed';
+
+    return Promise.reject(new Error(message));
+  }
+);
+
