@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient, type UseMutationOptions, type UseQueryOptions } from "@tanstack/react-query";
-import { useCallback, useState } from "react";
-import axios, { type AxiosRequestConfig } from "axios";
-import { API_BASE_URL, axiosClient } from "../api/axiosClient";
+import { useCallback, useEffect, useState } from "react";
+import { type AxiosRequestConfig } from "axios";
+import { axiosClient } from "../api/axiosClient";
 
 export interface User {
   id: string;
@@ -17,34 +17,72 @@ export interface LoginCredentials {
 interface LoginResponse {
   access_token: string;
   token_type: string;
-  user: User
+  exp: number;
+  user: User;
+};
+
+export const TOKEN_KEY = 'authToken';
+export const TOKEN_EXPIRY_KEY = 'tokenExpiry';
+
+export const getStoredToken = (): { token: string | null; expiry: number | null } => {
+  const token = localStorage.getItem(TOKEN_KEY);
+  const expiry = localStorage.getItem(TOKEN_EXPIRY_KEY);
+  return {
+    token,
+    expiry: expiry ? parseInt(expiry, 10) : null,
+  };
+};
+
+export const saveToken = (token: string, exp: number): void => {
+  localStorage.setItem(TOKEN_KEY, token);
+  localStorage.setItem(TOKEN_EXPIRY_KEY, exp.toString());
+};
+
+export const clearStoredToken = (): void => {
+  localStorage.removeItem(TOKEN_KEY);
+  localStorage.removeItem(TOKEN_EXPIRY_KEY);
+};
+
+export const isTokenValid = (): boolean => {
+  const { token, expiry } = getStoredToken();
+  const elapsedSecondsFromEpoch = Math.floor(Date.now() / 1000);
+  return !!token && !!expiry && expiry > elapsedSecondsFromEpoch + 10;
 }
 
-export const TOKEN_KEY = 'authToken'
-
 export const useToken = () => {
-  const [token, setTokenState] = useState<string | null>(() => {
-    return localStorage.getItem(TOKEN_KEY);
-  });
-
-  const setToken = useCallback((newToken: string | null) => {
-    if (newToken) {
-      localStorage.setItem(TOKEN_KEY, newToken);
+  const setToken = useCallback((newToken: string | null, exp?: number) => {
+    if (newToken && exp) {
+      saveToken(newToken, exp);
     } else {
-      localStorage.removeItem(TOKEN_KEY);
+      clearStoredToken();
     }
-    setTokenState(newToken);
-  }, []);
-
-  const clearToken = useCallback(() => {
-    localStorage.removeItem(TOKEN_KEY);
-    setTokenState(null);
   }, []);
 
   return {
-    token,
+    getStoredToken,
     setToken,
-    clearToken
+    isValid: isTokenValid,
+  };
+};
+
+const addAuthorizationHeader = (config: AxiosRequestConfig | undefined): AxiosRequestConfig => {
+  const { token, expiry } = getStoredToken();
+
+  if (!token) {
+    throw new Error('No token found');
+  }
+
+  if (!expiry || expiry < Date.now()) {
+    clearStoredToken();
+    throw new Error('Token expired');
+  }
+
+  return {
+    ...config,
+    headers: {
+      ...config?.headers,
+      Authorization: `Bearer ${token}`,
+    },
   };
 };
 
@@ -63,10 +101,12 @@ export const useAuthQuery = <TData = any>(
     axiosConfig?: AxiosRequestConfig;
   }
 ) => {
+
   return useQuery<TData, Error>({
     queryKey,
     queryFn: async () => {
-      const response = await axiosClient.get<TData>(endpoint, options?.axiosConfig);
+      const newAxiosConfig = addAuthorizationHeader(options?.axiosConfig);
+      const response = await axiosClient.get<TData>(endpoint, newAxiosConfig);
       return response.data;
     },
     ...options?.queryOptions,
@@ -92,20 +132,21 @@ export const useAuthMutation = <TData = any, TVariables = any>(
   return useMutation<TData, Error, TVariables>({
     mutationFn: async (variables) => {
       const url = typeof endpoint === 'function' ? endpoint(variables) : endpoint;
+      const newAxiosConfig = addAuthorizationHeader(options?.axiosConfig);
 
       let response;
       switch (method) {
         case 'DELETE':
-          response = await axiosClient.delete<TData>(url, options?.axiosConfig);
+          response = await axiosClient.delete<TData>(url, newAxiosConfig);
           break;
         case 'PUT':
-          response = await axiosClient.put<TData>(url, variables, options?.axiosConfig);
+          response = await axiosClient.put<TData>(url, variables, newAxiosConfig);
           break;
         case 'PATCH':
-          response = await axiosClient.patch<TData>(url, variables, options?.axiosConfig);
+          response = await axiosClient.patch<TData>(url, variables, newAxiosConfig);
           break;
         default:
-          response = await axiosClient.post<TData>(url, variables, options?.axiosConfig);
+          response = await axiosClient.post<TData>(url, variables, newAxiosConfig);
       }
 
       return response.data;
@@ -121,22 +162,21 @@ export const useAuthFetch = () => {
   const authFetch = useCallback(async <T = any>(
     config: AxiosRequestConfig
   ): Promise<T> => {
-    const response = await axiosClient.request<T>(config);
+    const newConfig = addAuthorizationHeader(config);
+    const response = await axiosClient.request<T>(newConfig);
     return response.data;
   }, []);
 
   return { authFetch, axiosClient };
 };
 
-export const useLogin = () => {
-  const { setToken } = useToken();
+export const useLoginMutation = () => {
   const queryClient = useQueryClient();
 
   return useMutation<LoginResponse, Error, LoginCredentials>({
     mutationFn: async (credentials) => {
-      // we request login api without any authorization.
-      const response = await axios.post<LoginResponse>(
-        `${API_BASE_URL}/login`,
+      const response = await axiosClient.post<LoginResponse>(
+        `/login`,
         credentials,
         {
           headers: {
@@ -147,7 +187,7 @@ export const useLogin = () => {
       return response.data;
     },
     onSuccess: (data) => {
-      setToken(data.access_token);
+      saveToken(data.access_token, data.exp);
       if (data.user) {
         // save current user information to cache
         queryClient.setQueryData(['currentUser'], data.user);
@@ -159,7 +199,6 @@ export const useLogin = () => {
 };
 
 export const useLogout = () => {
-  const { clearToken } = useToken();
   const queryClient = useQueryClient();
 
   const logoutMutation = useAuthMutation<void, void>(
@@ -167,17 +206,12 @@ export const useLogout = () => {
     {
       method: 'POST',
       mutationOptions: {
-        onSuccess: () => {
-          clearToken();
+        onSettled: () => {
+          // clear auth information whatever api fails
+          clearStoredToken();
           queryClient.clear();
           window.location.href = '/login'; // Redirect to login page
         },
-        onError: () => {
-          // clear auth information whatever api fails.
-          clearToken();
-          queryClient.clear();
-          window.location.href = '/login'; // Redirect to login page
-        }
       }
     }
   );
@@ -189,14 +223,14 @@ export const useLogout = () => {
 };
 
 export const useCurrentUser = () => {
-  const { token } = useToken();
+  const isValid = isTokenValid();
 
   return useAuthQuery<User>(
     ['currentUser'],
     'currentUser/me',
     {
       queryOptions: {
-        enabled: !!token,
+        enabled: isValid,
         staleTime: 5 * 60 * 1000, // 5 minutes
         retry: false, // when error encounters, we don't retry
       },
@@ -205,18 +239,17 @@ export const useCurrentUser = () => {
 };
 
 export const useAuth = () => {
-  const { token } = useToken();
-  // const { data: user, isLoading } = useCurrentUser();
-  const loginMutation = useLogin();
+  const loginMutation = useLoginMutation();
   const { logout, isLoading: isLogoutLoading } = useLogout();
 
+
   return {
-    isAuthenticated: !!token,
+    isAuthenticated: isTokenValid,
     login: loginMutation.mutate,
     loginResponse: loginMutation.data,
-    logout,
     isLoginPending: loginMutation.isPending,
-    isLogoutPending: isLogoutLoading,
     loginError: loginMutation.error,
+    logout,
+    isLogoutLoading
   }
 }

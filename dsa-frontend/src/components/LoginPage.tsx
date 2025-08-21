@@ -1,13 +1,11 @@
-import React, { useState, type ChangeEvent, type FormEvent } from "react";
-import { useNavigate } from "react-router";
+import React, { useEffect, useState, type ChangeEvent, type FormEvent } from "react";
+import { Navigate, useNavigate } from "react-router";
 import { useAuth, type LoginCredentials } from "../auth/hooks";
 
 const LoginPage: React.FC = () => {
   const [credentials, setCredentials] = useState<LoginCredentials>({ username: '', password: '' });
 
-  const navigate = useNavigate();
-
-  const { login: loginMutation, loginResponse, isLoginPending, loginError } = useAuth();
+  const { login: loginMutation, loginResponse, isLoginPending, loginError, isAuthenticated } = useAuth();
 
   const handleSubmit = (e: FormEvent<HTMLFormElement> | React.MouseEvent<HTMLButtonElement>): void => {
     e.preventDefault();
@@ -31,8 +29,9 @@ const LoginPage: React.FC = () => {
     }
   }
 
-  if (loginResponse) {
-    navigate('/dashboard');
+  // When login is successful, loginResponse is materialized, then navigate to /dashboard
+  if (!!loginResponse || isAuthenticated()) {
+    return <Navigate to="/dashboard" />;
   }
 
   return (
@@ -46,13 +45,13 @@ const LoginPage: React.FC = () => {
 
           <form onSubmit={handleSubmit} className="space-y-6">
             <div>
-              <label htmlFor="userid" className="block text-sm font-medium text-gray-700 mb-2">
+              <label htmlFor="username" className="block text-sm font-medium text-gray-700 mb-2">
                 ユーザーID
               </label>
 
               <input
-                id="userid"
-                name="userid"
+                id="username"
+                name="username"
                 type="text"
                 required
                 value={credentials.username}

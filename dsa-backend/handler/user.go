@@ -88,6 +88,7 @@ func (h *Handler) Login(c echo.Context) error {
 	return c.JSON(http.StatusOK, userLoginResponse{
 		Token:     token,
 		TokenType: "bearer",
+		ExpiredAt: expiredAt.Unix(),
 		User: userResponse{
 			ID:    userRecord.UserID,
 			Name:  userRecord.Name,

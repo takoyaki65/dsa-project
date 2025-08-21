@@ -19,5 +19,6 @@ type userResponse struct {
 type userLoginResponse struct {
 	Token     string       `json:"access_token"` // DO NOT modify json name, 'access_token' is required in Swagger UI
 	TokenType string       `json:"token_type"`   // DO NOT modify json name, 'token_type' is required in Swagger UI
+	ExpiredAt int64        `json:"exp"`
 	User      userResponse `json:"user"`
 }

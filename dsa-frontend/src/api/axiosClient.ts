@@ -1,5 +1,5 @@
 import axios, { AxiosError, type AxiosInstance, type AxiosResponse, type InternalAxiosRequestConfig } from "axios";
-import { TOKEN_KEY } from "../auth/hooks";
+import { TOKEN_EXPIRY_KEY, TOKEN_KEY } from "../auth/hooks";
 
 export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
@@ -17,10 +17,7 @@ export const axiosClient: AxiosInstance = axios.create({
 
 axiosClient.interceptors.request.use(
   (config: InternalAxiosRequestConfig) => {
-    const token = localStorage.getItem(TOKEN_KEY);
-    if (token && config.headers) {
-      config.headers.Authorization = `Bearer ${token}`;
-    }
+    // At now, it does not add Authorization header automatically
     return config;
   },
   (error: AxiosError) => {
@@ -35,6 +32,7 @@ axiosClient.interceptors.response.use(
   (error: AxiosError<ErrorResponse>) => {
     if (error.response?.status === 401) {
       localStorage.removeItem(TOKEN_KEY);
+      localStorage.removeItem(TOKEN_EXPIRY_KEY);
       window.location.href = '/login'; // Redirect to login page
       return Promise.reject(new Error('Unauthorized'))
     }
