@@ -38,8 +38,9 @@ CREATE TABLE IF NOT EXISTS UserList (
 
 CREATE TABLE IF NOT EXISTS LoginHistory (
     id SERIAL PRIMARY KEY,
-    user_id VARCHAR(255) NOT NULL REFERENCES UserList(userid),
-    login_at TIMESTAMP(0) WITH TIME ZONE NOT NULL
+    user_id VARCHAR(255) NOT NULL,
+    login_at TIMESTAMP(0) WITH TIME ZONE NOT NULL,
+    FOREIGN KEY (user_id) REFERENCES UserList(userid) ON DELETE CASCADE
 );
 
 CREATE TABLE IF NOT EXISTS FileLocation (
@@ -52,25 +53,26 @@ CREATE TABLE IF NOT EXISTS Lecture (
     id SERIAL PRIMARY KEY,
     title VARCHAR(255) NOT NULL,
     start_date TIMESTAMP(0) WITH TIME ZONE NOT NULL,
-    end_date TIMESTAMP(0) WITH TIME ZONE NOT NULL,
     deadline TIMESTAMP(0) WITH TIME ZONE NOT NULL
 );
 
 CREATE TABLE IF NOT EXISTS Problem (
-    lecture_id INTEGER NOT NULL REFERENCES Lecture(id),
+    lecture_id INTEGER NOT NULL,
     problem_id INTEGER NOT NULL,
     title VARCHAR(255) NOT NULL,
     resource_location_id INTEGER NOT NULL REFERENCES FileLocation(id),
     detail JSONB NOT NULL,
-    PRIMARY KEY (lecture_id, problem_id)
+    PRIMARY KEY (lecture_id, problem_id),
+    FOREIGN KEY (lecture_id) REFERENCES Lecture(id) ON DELETE CASCADE
 );
 
 CREATE TABLE IF NOT EXISTS FileReference (
     id SERIAL PRIMARY KEY,
     lecture_id INTEGER NOT NULL,
     problem_id INTEGER NOT NULL,
-    location_id INTEGER NOT NULL REFERENCES FileLocation(id),
-    FOREIGN KEY (lecture_id, problem_id) REFERENCES Problem(lecture_id, problem_id)
+    location_id INTEGER NOT NULL,
+    FOREIGN KEY (lecture_id, problem_id) REFERENCES Problem(lecture_id, problem_id) ON DELETE CASCADE,
+    FOREIGN KEY (location_id) REFERENCES FileLocation(id) ON DELETE CASCADE
 );
 
 CREATE TABLE IF NOT EXISTS ResultValues (
@@ -83,9 +85,9 @@ INSERT INTO ResultValues (value, name) VALUES (0, 'AC'), (1, 'WA'), (2, 'TLE'), 
 CREATE TABLE IF NOT EXISTS Request (
     id SERIAL PRIMARY KEY,
     ts TIMESTAMP(0) WITH TIME ZONE NOT NULL,
-    user_id INTEGER NOT NULL REFERENCES UserList(id),
+    user_id INTEGER NOT NULL,
     submission_ts TIMESTAMP(0) WITH TIME ZONE NOT NULL,
-    request_user_id INTEGER NOT NULL REFERENCES UserList(id),
+    request_user_id INTEGER NOT NULL,
     eval BOOLEAN NOT NULL,
     lecture_id INTEGER NOT NULL,
     problem_id INTEGER NOT NULL,
@@ -94,7 +96,9 @@ CREATE TABLE IF NOT EXISTS Request (
     log JSONB NOT NULL,
     timeMS INTEGER NOT NULL,
     memoryKB INTEGER NOT NULL,
-    FOREIGN KEY (lecture_id, problem_id) REFERENCES Problem(lecture_id, problem_id)
+    FOREIGN KEY (user_id) REFERENCES UserList(id) ON DELETE CASCADE,
+    FOREIGN KEY (request_user_id) REFERENCES UserList(id) ON DELETE CASCADE,
+    FOREIGN KEY (lecture_id, problem_id) REFERENCES Problem(lecture_id, problem_id) ON DELETE CASCADE
 );
 
 -- setting of grant

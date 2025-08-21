@@ -1,10 +1,48 @@
 basePath: /api
 definitions:
+  handler.ErrorResponse:
+    properties:
+      errors:
+        properties:
+          body:
+            type: string
+        type: object
+    type: object
+  handler.LectureEntryRequest:
+    properties:
+      deadline:
+        default: "2025-12-01T10:00:00+09:00"
+        type: string
+      id:
+        default: 0
+        type: integer
+      start_date:
+        default: "2025-10-01T10:00:00+09:00"
+        type: string
+      title:
+        type: string
+    required:
+    - deadline
+    - id
+    - start_date
+    - title
+    type: object
+  handler.RequestSuccess:
+    properties:
+      message:
+        type: string
+    type: object
   handler.userLoginResponse:
     properties:
       access_token:
+        description: DO NOT modify json name, 'access_token' is required in Swagger
+          UI
         type: string
+      exp:
+        type: integer
       token_type:
+        description: DO NOT modify json name, 'token_type' is required in Swagger
+          UI
         type: string
       user:
         $ref: '#/definitions/handler.userResponse'
@@ -18,12 +56,6 @@ definitions:
       name:
         type: string
     type: object
-  utils.Error:
-    properties:
-      errors:
-        additionalProperties: true
-        type: object
-    type: object
 host: localhost:8000
 info:
   contact: {}
@@ -31,28 +63,6 @@ info:
   title: DSA Backend API
   version: 0.0.1
 paths:
-  /currentUser/me:
-    get:
-      description: Get current user information from JWT token
-      responses:
-        "200":
-          description: Current user information
-          schema:
-            $ref: '#/definitions/handler.userResponse'
-        "401":
-          description: Unauthorized
-          schema:
-            $ref: '#/definitions/utils.Error'
-        "500":
-          description: Internal server error
-          schema:
-            type: string
-      security:
-      - OAuth2Password:
-        - me
-      summary: Get current user information
-      tags:
-      - user
   /login:
     post:
       consumes:
@@ -78,13 +88,138 @@ paths:
           description: Bad request. This error occurs if the user ID or password is
             missing or incorrect.
           schema:
-            $ref: '#/definitions/utils.Error'
+            $ref: '#/definitions/handler.ErrorResponse'
         "500":
           description: Internal server error. This error occurs if there is an issue
             with the database or password hashing.
           schema:
             type: string
       summary: User Login
+      tags:
+      - user
+  /problem/create:
+    put:
+      consumes:
+      - application/json
+      description: Create a new lecture entry, accessible by manager and admin.
+      parameters:
+      - description: Lecture entry details
+        in: body
+        name: lectureEntry
+        required: true
+        schema:
+          $ref: '#/definitions/handler.LectureEntryRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Lecture entry created successfully
+          schema:
+            $ref: '#/definitions/handler.RequestSuccess'
+        "400":
+          description: Invalid request
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+      security:
+      - OAuth2Password:
+        - grading
+      summary: Create a new lecture entry
+      tags:
+      - problem
+  /problem/delete/{lectureid}:
+    delete:
+      consumes:
+      - application/json
+      description: Delete an existing lecture entry, accessible by manager and admin.
+      parameters:
+      - description: Lecture ID
+        in: path
+        name: lectureid
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Lecture entry deleted successfully
+          schema:
+            $ref: '#/definitions/handler.RequestSuccess'
+        "400":
+          description: Invalid request
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+      security:
+      - OAuth2Password:
+        - grading
+      summary: Delete an existing lecture entry
+      tags:
+      - problem
+  /problem/update/{lectureid}:
+    patch:
+      consumes:
+      - application/json
+      description: Update an existing lecture entry, accessible by manager and admin.
+      parameters:
+      - description: Lecture ID
+        in: path
+        name: lectureid
+        required: true
+        type: integer
+      - description: Lecture entry details
+        in: body
+        name: lectureEntry
+        required: true
+        schema:
+          $ref: '#/definitions/handler.LectureEntryRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Lecture entry updated successfully
+          schema:
+            $ref: '#/definitions/handler.RequestSuccess'
+        "400":
+          description: Invalid request
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+      security:
+      - OAuth2Password:
+        - grading
+      summary: Update an existing lecture entry
+      tags:
+      - problem
+  /user/me:
+    get:
+      description: Get current user information from JWT token
+      responses:
+        "200":
+          description: Current user information
+          schema:
+            $ref: '#/definitions/handler.userResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+        "500":
+          description: Internal server error
+          schema:
+            type: string
+      security:
+      - OAuth2Password:
+        - me
+      summary: Get current user information
       tags:
       - user
 securityDefinitions:

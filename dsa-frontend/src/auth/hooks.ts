@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient, type UseMutationOptions, type UseQueryOptions } from "@tanstack/react-query";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback } from "react";
 import { type AxiosRequestConfig } from "axios";
 import { axiosClient } from "../api/axiosClient";
 
@@ -227,7 +227,7 @@ export const useCurrentUser = () => {
 
   return useAuthQuery<User>(
     ['currentUser'],
-    'currentUser/me',
+    '/user/me',
     {
       queryOptions: {
         enabled: isValid,

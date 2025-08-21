@@ -1,5 +1,5 @@
-import React, { useEffect, useState, type ChangeEvent, type FormEvent } from "react";
-import { Navigate, useNavigate } from "react-router";
+import React, { useState, type ChangeEvent, type FormEvent } from "react";
+import { Navigate } from "react-router";
 import { useAuth, type LoginCredentials } from "../auth/hooks";
 
 const LoginPage: React.FC = () => {

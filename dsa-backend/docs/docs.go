@@ -15,42 +15,6 @@ const docTemplate = `{
     "host": "{{.Host}}",
     "basePath": "{{.BasePath}}",
     "paths": {
-        "/currentUser/me": {
-            "get": {
-                "security": [
-                    {
-                        "OAuth2Password": [
-                            "me"
-                        ]
-                    }
-                ],
-                "description": "Get current user information from JWT token",
-                "tags": [
-                    "user"
-                ],
-                "summary": "Get current user information",
-                "responses": {
-                    "200": {
-                        "description": "Current user information",
-                        "schema": {
-                            "$ref": "#/definitions/handler.userResponse"
-                        }
-                    },
-                    "401": {
-                        "description": "Unauthorized",
-                        "schema": {
-                            "$ref": "#/definitions/utils.Error"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal server error",
-                        "schema": {
-                            "type": "string"
-                        }
-                    }
-                }
-            }
-        },
         "/login": {
             "post": {
                 "description": "User login with user ID and password. Returns a JWT token if successful.",
@@ -87,7 +51,7 @@ const docTemplate = `{
                     "400": {
                         "description": "Bad request. This error occurs if the user ID or password is missing or incorrect.",
                         "schema": {
-                            "$ref": "#/definitions/utils.Error"
+                            "$ref": "#/definitions/handler.ErrorResponse"
                         }
                     },
                     "500": {
@@ -98,16 +62,268 @@ const docTemplate = `{
                     }
                 }
             }
+        },
+        "/problem/create": {
+            "put": {
+                "security": [
+                    {
+                        "OAuth2Password": [
+                            "grading"
+                        ]
+                    }
+                ],
+                "description": "Create a new lecture entry, accessible by manager and admin.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "problem"
+                ],
+                "summary": "Create a new lecture entry",
+                "parameters": [
+                    {
+                        "description": "Lecture entry details",
+                        "name": "lectureEntry",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/handler.LectureEntryRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Lecture entry created successfully",
+                        "schema": {
+                            "$ref": "#/definitions/handler.RequestSuccess"
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid request",
+                        "schema": {
+                            "$ref": "#/definitions/handler.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "$ref": "#/definitions/handler.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/problem/delete/{lectureid}": {
+            "delete": {
+                "security": [
+                    {
+                        "OAuth2Password": [
+                            "grading"
+                        ]
+                    }
+                ],
+                "description": "Delete an existing lecture entry, accessible by manager and admin.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "problem"
+                ],
+                "summary": "Delete an existing lecture entry",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Lecture ID",
+                        "name": "lectureid",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Lecture entry deleted successfully",
+                        "schema": {
+                            "$ref": "#/definitions/handler.RequestSuccess"
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid request",
+                        "schema": {
+                            "$ref": "#/definitions/handler.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "$ref": "#/definitions/handler.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/problem/update/{lectureid}": {
+            "patch": {
+                "security": [
+                    {
+                        "OAuth2Password": [
+                            "grading"
+                        ]
+                    }
+                ],
+                "description": "Update an existing lecture entry, accessible by manager and admin.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "problem"
+                ],
+                "summary": "Update an existing lecture entry",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Lecture ID",
+                        "name": "lectureid",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Lecture entry details",
+                        "name": "lectureEntry",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/handler.LectureEntryRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Lecture entry updated successfully",
+                        "schema": {
+                            "$ref": "#/definitions/handler.RequestSuccess"
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid request",
+                        "schema": {
+                            "$ref": "#/definitions/handler.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "$ref": "#/definitions/handler.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/user/me": {
+            "get": {
+                "security": [
+                    {
+                        "OAuth2Password": [
+                            "me"
+                        ]
+                    }
+                ],
+                "description": "Get current user information from JWT token",
+                "tags": [
+                    "user"
+                ],
+                "summary": "Get current user information",
+                "responses": {
+                    "200": {
+                        "description": "Current user information",
+                        "schema": {
+                            "$ref": "#/definitions/handler.userResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/handler.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
         }
     },
     "definitions": {
+        "handler.ErrorResponse": {
+            "type": "object",
+            "properties": {
+                "errors": {
+                    "type": "object",
+                    "properties": {
+                        "body": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "handler.LectureEntryRequest": {
+            "type": "object",
+            "required": [
+                "deadline",
+                "id",
+                "start_date",
+                "title"
+            ],
+            "properties": {
+                "deadline": {
+                    "type": "string",
+                    "default": "2025-12-01T10:00:00+09:00"
+                },
+                "id": {
+                    "type": "integer",
+                    "default": 0
+                },
+                "start_date": {
+                    "type": "string",
+                    "default": "2025-10-01T10:00:00+09:00"
+                },
+                "title": {
+                    "type": "string"
+                }
+            }
+        },
+        "handler.RequestSuccess": {
+            "type": "object",
+            "properties": {
+                "message": {
+                    "type": "string"
+                }
+            }
+        },
         "handler.userLoginResponse": {
             "type": "object",
             "properties": {
                 "access_token": {
+                    "description": "DO NOT modify json name, 'access_token' is required in Swagger UI",
                     "type": "string"
                 },
+                "exp": {
+                    "type": "integer"
+                },
                 "token_type": {
+                    "description": "DO NOT modify json name, 'token_type' is required in Swagger UI",
                     "type": "string"
                 },
                 "user": {
@@ -126,15 +342,6 @@ const docTemplate = `{
                 },
                 "name": {
                     "type": "string"
-                }
-            }
-        },
-        "utils.Error": {
-            "type": "object",
-            "properties": {
-                "errors": {
-                    "type": "object",
-                    "additionalProperties": true
                 }
             }
         }

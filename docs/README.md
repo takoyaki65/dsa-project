@@ -112,7 +112,6 @@
   - **id**: 授業 (整数)
   - **title**: 授業タイトル (文字列)
   - **start_date**: 公開開始日時 (datetime, 1s精度)
-  - **end_date**: 公開終了日時 (datetime, 1s精度)
   - **deadline**: 課題提出締め切り日時 (datetime, 1s精度)
 - **Problem**: 課題情報管理
   - **lecture_id**: 授業ID (整数)

@@ -21,8 +21,8 @@ import (
 //	@param			username	formData	string				true	"User ID"
 //	@param			password	formData	string				true	"Password"
 //	@Success		200			{object}	userLoginResponse	"Login successful. Returns a JWT token."
-//	@Failure		400			{object}	utils.Error			"Bad request. This error occurs if the user ID or password is missing or incorrect."
-//	@Failure		500			{string}	utils.Error			"Internal server error. This error occurs if there is an issue with the database or password hashing."
+//	@Failure		400			{object}	ErrorResponse		"Bad request. This error occurs if the user ID or password is missing or incorrect."
+//	@Failure		500			{string}	ErrorResponse		"Internal server error. This error occurs if there is an issue with the database or password hashing."
 //	@Router			/login [post]
 func (h *Handler) Login(c echo.Context) error {
 	ctx := context.Background()
@@ -30,7 +30,7 @@ func (h *Handler) Login(c echo.Context) error {
 	var loginRequest userLoginRequest
 	err := loginRequest.bind(c)
 	if err != nil {
-		return c.JSON(http.StatusBadRequest, utils.NewErrorWithMessage("failed to bind request: "+err.Error()))
+		return c.JSON(http.StatusBadRequest, newErrorResponse("failed to bind request: "+err.Error()))
 	}
 
 	plain_password := loginRequest.Password
@@ -38,11 +38,11 @@ func (h *Handler) Login(c echo.Context) error {
 	userRecord, err := h.userStore.GetUserByUserID(&ctx, loginRequest.UserId)
 
 	if err != nil {
-		return c.JSON(http.StatusInternalServerError, utils.NewErrorWithMessage("failed to get user: "+err.Error()))
+		return c.JSON(http.StatusInternalServerError, newErrorResponse("failed to get user: "+err.Error()))
 	}
 
 	if userRecord == nil {
-		return c.JSON(http.StatusBadRequest, utils.NewErrorWithMessage("user not found"))
+		return c.JSON(http.StatusBadRequest, newErrorResponse("user not found"))
 	}
 
 	hashed_password := userRecord.HashedPassword
@@ -51,7 +51,7 @@ func (h *Handler) Login(c echo.Context) error {
 	err = bcrypt.CompareHashAndPassword([]byte(hashed_password), []byte(plain_password))
 
 	if err != nil {
-		return c.JSON(http.StatusBadRequest, utils.NewErrorWithMessage("wrong userid or password"))
+		return c.JSON(http.StatusBadRequest, newErrorResponse("wrong userid or password"))
 	}
 
 	// get user role
@@ -74,7 +74,7 @@ func (h *Handler) Login(c echo.Context) error {
 		})
 
 		if err != nil {
-			return c.JSON(http.StatusInternalServerError, utils.NewErrorWithMessage("failed to register login history: "+err.Error()))
+			return c.JSON(http.StatusInternalServerError, newErrorResponse("failed to register login history: "+err.Error()))
 		}
 	}
 
@@ -104,10 +104,10 @@ func (h *Handler) Login(c echo.Context) error {
 //	@Tags			user
 //	@Product		json
 //	@Success		200	{object}	userResponse	"Current user information"
-//	@Failure		401	{object}	utils.Error		"Unauthorized"
-//	@Failure		500	{string}	utils.Error		"Internal server error"
+//	@Failure		401	{object}	ErrorResponse	"Unauthorized"
+//	@Failure		500	{string}	ErrorResponse	"Internal server error"
 //	@Security		OAuth2Password[me]
-//	@Router			/currentUser/me [get]
+//	@Router			/user/me [get]
 func (h *Handler) GetCurrentUser(c echo.Context) error {
 	ctx := context.Background()
 	// Get userID from jwt token
@@ -119,11 +119,11 @@ func (h *Handler) GetCurrentUser(c echo.Context) error {
 	// Get User data from db
 	userRecord, err := h.userStore.GetUserByUserID(&ctx, claim.UserID)
 	if err != nil {
-		return c.JSON(http.StatusInternalServerError, utils.NewErrorWithMessage("failed to get user: "+err.Error()))
+		return c.JSON(http.StatusInternalServerError, newErrorResponse("failed to get user: "+err.Error()))
 	}
 
 	if userRecord == nil {
-		return c.JSON(http.StatusUnauthorized, utils.NewErrorWithMessage("user not found"))
+		return c.JSON(http.StatusUnauthorized, newErrorResponse("user not found"))
 	}
 
 	return c.JSON(http.StatusOK, userResponse{

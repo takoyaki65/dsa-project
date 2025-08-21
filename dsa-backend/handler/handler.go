@@ -11,36 +11,43 @@ import (
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
-	echojwt "github.com/labstack/echo-jwt/v4"
 	"github.com/labstack/echo/v4"
 	"github.com/uptrace/bun"
 )
 
 type Handler struct {
-	userStore storage.UserStore
-	jwtSecret string
+	userStore    storage.UserStore
+	problemStore storage.ProblemStore
+	jwtSecret    string
 }
 
 func NewHandler(db *bun.DB) *Handler {
 	return &Handler{
-		userStore: *storage.NewUserStore(db),
-		jwtSecret: generateSecretKey(),
+		userStore:    *storage.NewUserStore(db),
+		problemStore: *storage.NewProblemStore(db),
+		jwtSecret:    generateSecretKey(),
 	}
 }
 
 func (h *Handler) RegisterRoutes(r *echo.Group) {
 	r.POST("/login", h.Login)
 
-	currentUserGroup := r.Group("/currentUser")
-	currentUserGroup.Use(echojwt.WithConfig(echojwt.Config{
-		NewClaimsFunc: func(c echo.Context) jwt.Claims {
-			return new(utils.JwtCustomClaims)
-		},
-		SigningKey: []byte(h.jwtSecret),
-	}))
-	currentUserGroup.Use(h.CheckValidityOfJWTMiddleware())
-	currentUserGroup.Use(RequiredScopesMiddleware("me"))
-	currentUserGroup.GET("/me", h.GetCurrentUser)
+	userRouter := r.Group("/user", JWTMiddleware(h.jwtSecret), h.CheckValidityOfJWTMiddleware())
+	userRouter.GET("/me", h.GetCurrentUser, RequiredScopesMiddleware("me"))
+
+	problemRouter := r.Group("/problem", JWTMiddleware(h.jwtSecret), h.CheckValidityOfJWTMiddleware())
+	// fetch problem info
+	problemRouter.GET("/list", h.ListProblems)
+	problemRouter.GET("/detail/:lectureid/:problemid", h.GetProblemInfo)
+	// submit validation / judge request
+	problemRouter.POST("/submit/validate/:lectureid/:problemid", h.ValidateSubmission)
+	problemRouter.POST("/submit/judge/:lectureid/:problemid", h.JudgeSubmission, RequiredScopesMiddleware("grading"))
+
+	problemRouter.PUT("/create", h.CreateLectureEntry, RequiredScopesMiddleware("grading"))
+	problemRouter.PATCH("/update/:lectureid", h.UpdateLectureEntry, RequiredScopesMiddleware("grading"))
+	problemRouter.DELETE("/delete/:lectureid", h.DeleteLectureEntry, RequiredScopesMiddleware("grading"))
+	problemRouter.GET("/create/:lectureid", h.RegisterProblem, RequiredScopesMiddleware("grading"))
+	problemRouter.DELETE("/delete/:lectureid/:problemid", h.DeleteProblem, RequiredScopesMiddleware("grading"))
 
 }
 

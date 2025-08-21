@@ -13,20 +13,41 @@ type Lecture struct {
 	ID        int64     `bun:"id,pk,autoincrement" json:"id"`
 	Title     string    `bun:"title,notnull" json:"title"`
 	StartDate time.Time `bun:"start_date,notnull" json:"start_date"`
-	EndDate   time.Time `bun:"end_date,notnull" json:"end_date"`
 	Deadline  time.Time `bun:"deadline,notnull" json:"deadline"`
+
+	Problems []*Problem `bun:"rel:has-many,join:id=lecture_id" json:"problems,omitempty"`
 }
 
 type Problem struct {
 	bun.BaseModel `bun:"table:problem"`
 
-	LectureID          int64                  `bun:"lecture_id,pk,notnull" json:"lecture_id"`
-	ProblemID          int64                  `bun:"problem_id,pk,notnull" json:"problem_id"`
-	Title              string                 `bun:"title,notnull" json:"title"`
-	ResourceLocationID int64                  `bun:"resource_location_id,notnull" json:"resource_location_id"`
-	Detail             map[string]interface{} `bun:"detail,notnull,type:jsonb" json:"detail"`
+	LectureID          int64   `bun:"lecture_id,pk,notnull" json:"lecture_id"`
+	ProblemID          int64   `bun:"problem_id,pk,notnull" json:"problem_id"`
+	Title              string  `bun:"title,notnull" json:"title"`
+	ResourceLocationID int64   `bun:"resource_location_id,notnull" json:"resource_location_id"`
+	Detail             *Detail `bun:"detail,notnull,type:jsonb" json:"detail"`
 
 	Lecture *Lecture `bun:"rel:belongs-to,join:lecture_id=id"`
+}
+
+type Detail struct {
+	DescriptionPath string     `json:"description_path"`
+	TimeMS          int64      `json:"time_ms"`
+	MemoryMB        int64      `json:"memory_mb"`
+	TestFiles       []string   `json:"test_files"`
+	RequiredFiles   []string   `json:"required_files"`
+	BuildTasks      []TestCase `json:"build"`
+	JudgeTasks      []TestCase `json:"judge"`
+}
+
+type TestCase struct {
+	Title      string  `json:"title"`
+	Command    string  `json:"command"`
+	Evaluation bool    `json:"eval_only"`
+	StdinPath  *string `json:"stdin,omitempty"`
+	StdoutPath *string `json:"stdout,omitempty"`
+	StderrPath *string `json:"stderr,omitempty"`
+	ExitCode   int     `json:"exit,omitempty"`
 }
 
 var _ bun.BeforeAppendModelHook = (*Lecture)(nil)
@@ -36,7 +57,6 @@ func (l *Lecture) BeforeAppendModel(ctx context.Context, query bun.Query) error 
 	case *bun.InsertQuery, *bun.UpdateQuery:
 		// remove fraction less than seconds (milliseconds, microseconds, ...)
 		l.StartDate = l.StartDate.Truncate(time.Second)
-		l.EndDate = l.EndDate.Truncate(time.Second)
 		l.Deadline = l.Deadline.Truncate(time.Second)
 	}
 	return nil
