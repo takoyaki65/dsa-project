@@ -170,6 +170,47 @@ paths:
       summary: Delete an existing lecture entry
       tags:
       - problem
+  /problem/crud/delete/{lectureid}/{problemid}:
+    delete:
+      consumes:
+      - application/json
+      description: delete a problem entry by lecture ID and problem ID
+      parameters:
+      - description: Lecture ID
+        in: path
+        name: lectureid
+        required: true
+        type: integer
+      - description: Problem ID
+        in: path
+        name: problemid
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Problem deleted successfully
+          schema:
+            $ref: '#/definitions/response.Success'
+        "400":
+          description: Invalid request
+          schema:
+            $ref: '#/definitions/response.Error'
+        "404":
+          description: Problem not found
+          schema:
+            $ref: '#/definitions/response.Error'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/response.Error'
+      security:
+      - OAuth2Password:
+        - grading
+      summary: delete problem entry
+      tags:
+      - problem
   /problem/crud/update/{lectureid}:
     patch:
       consumes:

@@ -57,3 +57,32 @@ func (ps *ProblemStore) RegisterProblem(ctx *context.Context, problem *model.Pro
 	}
 	return nil
 }
+
+func (ps *ProblemStore) GetProblem(ctx *context.Context, lectureID, problemID int64) (*model.Problem, error) {
+	var problem model.Problem
+	err := ps.db.NewSelect().Model(&problem).
+		Where("lecture_id = ? AND problem_id = ?", lectureID, problemID).
+		Scan(*ctx)
+	if err != nil {
+		return nil, err
+	}
+	return &problem, nil
+}
+
+func (ps *ProblemStore) CheckProblemExists(ctx *context.Context, lectureID, problemID int64) (bool, error) {
+	count, err := ps.db.NewSelect().Model(&model.Problem{}).
+		Where("lecture_id = ? AND problem_id = ?", lectureID, problemID).
+		Count(*ctx)
+	if err != nil {
+		return false, err
+	}
+	return count > 0, nil
+}
+
+func (ps *ProblemStore) DeleteProblem(ctx *context.Context, lectureID, problemID int64) error {
+	_, err := ps.db.NewDelete().Model(&model.Problem{}).Where("lecture_id = ? AND problem_id = ?", lectureID, problemID).Exec(*ctx)
+	if err != nil {
+		return err
+	}
+	return nil
+}

@@ -195,6 +195,17 @@ func (h *Handler) RegisterProblem(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusBadRequest, response.NewError("invalid request: "+err.Error()))
 	}
 
+	context := context.Background()
+
+	// Check the existence of problem entry
+	exists, err := h.problemStore.CheckProblemExists(&context, req.LectureID, req.ProblemID)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError, response.NewError("failed to check problem existence: "+err.Error()))
+	}
+	if exists {
+		return echo.NewHTTPError(http.StatusNotFound, response.NewError("problem already exists"))
+	}
+
 	// Read zip file
 	file, err := c.FormFile("file")
 	if err != nil {
@@ -290,8 +301,6 @@ func (h *Handler) RegisterProblem(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusInternalServerError, response.NewError("failed to move directory: "+err.Error()))
 	}
 
-	context := context.Background()
-
 	// Register file location
 	fileLocation := model.FileLocation{
 		Path: destDir,
@@ -361,8 +370,44 @@ func (h *Handler) RegisterProblem(c echo.Context) error {
 	return c.JSON(http.StatusOK, response.NewSuccess("Problem registered successfully"))
 }
 
+// DeleteProblem godoc
+//
+//	@Summary		delete problem entry
+//	@Description	delete a problem entry by lecture ID and problem ID
+//	@Tags			problem
+//	@Accept			json
+//	@Produce		json
+//	@Param			lectureid	path		int					true	"Lecture ID"
+//	@Param			problemid	path		int					true	"Problem ID"
+//	@Success		200			{object}	response.Success	"Problem deleted successfully"
+//	@Failure		400			{object}	response.Error		"Invalid request"
+//	@Failure		404			{object}	response.Error		"Problem not found"
+//	@Failure		500			{object}	response.Error		"Internal server error"
+//	@Security		OAuth2Password[grading]
+//	@Router			/problem/crud/delete/{lectureid}/{problemid} [delete]
 func (h *Handler) DeleteProblem(c echo.Context) error {
-	panic("DeleteProblem handler not implemented yet")
+	var req LectureIDProblemID
+	if err := c.Bind(&req); err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, response.NewError("invalid request: "+err.Error()))
+	}
+
+	ctx := context.Background()
+
+	// Check if corresponding problem data exists
+	exists, err := h.problemStore.CheckProblemExists(&ctx, req.LectureID, req.ProblemID)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError, response.NewError("failed to check problem existence: "+err.Error()))
+	}
+	if !exists {
+		return echo.NewHTTPError(http.StatusNotFound, response.NewError("problem not found"))
+	}
+
+	err = h.problemStore.DeleteProblem(&ctx, req.LectureID, req.ProblemID)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError, response.NewError("failed to delete problem: "+err.Error()))
+	}
+
+	return c.JSON(http.StatusOK, response.NewSuccess("Problem deleted successfully"))
 }
 
 // Helper function to unzip a file
