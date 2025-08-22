@@ -15,55 +15,7 @@ const docTemplate = `{
     "host": "{{.Host}}",
     "basePath": "{{.BasePath}}",
     "paths": {
-        "/login": {
-            "post": {
-                "description": "User login with user ID and password. Returns a JWT token if successful.",
-                "consumes": [
-                    "application/x-www-form-urlencoded"
-                ],
-                "tags": [
-                    "user"
-                ],
-                "summary": "User Login",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "User ID",
-                        "name": "username",
-                        "in": "formData",
-                        "required": true
-                    },
-                    {
-                        "type": "string",
-                        "description": "Password",
-                        "name": "password",
-                        "in": "formData",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "Login successful. Returns a JWT token.",
-                        "schema": {
-                            "$ref": "#/definitions/handler.userLoginResponse"
-                        }
-                    },
-                    "400": {
-                        "description": "Bad request. This error occurs if the user ID or password is missing or incorrect.",
-                        "schema": {
-                            "$ref": "#/definitions/handler.ErrorResponse"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal server error. This error occurs if there is an issue with the database or password hashing.",
-                        "schema": {
-                            "type": "string"
-                        }
-                    }
-                }
-            }
-        },
-        "/problem/create": {
+        "/problem/crud/create": {
             "put": {
                 "security": [
                     {
@@ -90,7 +42,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/handler.LectureEntryRequest"
+                            "$ref": "#/definitions/problem.LectureEntryRequest"
                         }
                     }
                 ],
@@ -98,25 +50,90 @@ const docTemplate = `{
                     "200": {
                         "description": "Lecture entry created successfully",
                         "schema": {
-                            "$ref": "#/definitions/handler.RequestSuccess"
+                            "$ref": "#/definitions/response.Success"
                         }
                     },
                     "400": {
                         "description": "Invalid request",
                         "schema": {
-                            "$ref": "#/definitions/handler.ErrorResponse"
+                            "$ref": "#/definitions/response.Error"
                         }
                     },
                     "500": {
                         "description": "Internal server error",
                         "schema": {
-                            "$ref": "#/definitions/handler.ErrorResponse"
+                            "$ref": "#/definitions/response.Error"
                         }
                     }
                 }
             }
         },
-        "/problem/delete/{lectureid}": {
+        "/problem/crud/create/{lectureid}/{problemid}": {
+            "post": {
+                "security": [
+                    {
+                        "OAuth2Password": [
+                            "grading"
+                        ]
+                    }
+                ],
+                "description": "Register a new problem associated with a lecture",
+                "consumes": [
+                    "multipart/form-data"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "problem"
+                ],
+                "summary": "Register a new problem",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Lecture ID",
+                        "name": "lectureid",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Problem ID",
+                        "name": "problemid",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "file",
+                        "description": "Zip file contains problem resources",
+                        "name": "file",
+                        "in": "formData",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Problem registered successfully",
+                        "schema": {
+                            "$ref": "#/definitions/response.Success"
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid request",
+                        "schema": {
+                            "$ref": "#/definitions/response.Error"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "$ref": "#/definitions/response.Error"
+                        }
+                    }
+                }
+            }
+        },
+        "/problem/crud/delete/{lectureid}": {
             "delete": {
                 "security": [
                     {
@@ -149,25 +166,25 @@ const docTemplate = `{
                     "200": {
                         "description": "Lecture entry deleted successfully",
                         "schema": {
-                            "$ref": "#/definitions/handler.RequestSuccess"
+                            "$ref": "#/definitions/response.Success"
                         }
                     },
                     "400": {
                         "description": "Invalid request",
                         "schema": {
-                            "$ref": "#/definitions/handler.ErrorResponse"
+                            "$ref": "#/definitions/response.Error"
                         }
                     },
                     "500": {
                         "description": "Internal server error",
                         "schema": {
-                            "$ref": "#/definitions/handler.ErrorResponse"
+                            "$ref": "#/definitions/response.Error"
                         }
                     }
                 }
             }
         },
-        "/problem/update/{lectureid}": {
+        "/problem/crud/update/{lectureid}": {
             "patch": {
                 "security": [
                     {
@@ -201,7 +218,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/handler.LectureEntryRequest"
+                            "$ref": "#/definitions/problem.LectureEntryRequest"
                         }
                     }
                 ],
@@ -209,19 +226,67 @@ const docTemplate = `{
                     "200": {
                         "description": "Lecture entry updated successfully",
                         "schema": {
-                            "$ref": "#/definitions/handler.RequestSuccess"
+                            "$ref": "#/definitions/response.Success"
                         }
                     },
                     "400": {
                         "description": "Invalid request",
                         "schema": {
-                            "$ref": "#/definitions/handler.ErrorResponse"
+                            "$ref": "#/definitions/response.Error"
                         }
                     },
                     "500": {
                         "description": "Internal server error",
                         "schema": {
-                            "$ref": "#/definitions/handler.ErrorResponse"
+                            "$ref": "#/definitions/response.Error"
+                        }
+                    }
+                }
+            }
+        },
+        "/user/login": {
+            "post": {
+                "description": "User login with user ID and password. Returns a JWT token if successful.",
+                "consumes": [
+                    "application/x-www-form-urlencoded"
+                ],
+                "tags": [
+                    "user"
+                ],
+                "summary": "User Login",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "User ID",
+                        "name": "username",
+                        "in": "formData",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Password",
+                        "name": "password",
+                        "in": "formData",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Login successful. Returns a JWT token.",
+                        "schema": {
+                            "$ref": "#/definitions/user.userLoginResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad request. This error occurs if the user ID or password is missing or incorrect.",
+                        "schema": {
+                            "$ref": "#/definitions/response.Error"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error. This error occurs if there is an issue with the database or password hashing.",
+                        "schema": {
+                            "type": "string"
                         }
                     }
                 }
@@ -245,13 +310,13 @@ const docTemplate = `{
                     "200": {
                         "description": "Current user information",
                         "schema": {
-                            "$ref": "#/definitions/handler.userResponse"
+                            "$ref": "#/definitions/user.userResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/handler.ErrorResponse"
+                            "$ref": "#/definitions/response.Error"
                         }
                     },
                     "500": {
@@ -265,20 +330,7 @@ const docTemplate = `{
         }
     },
     "definitions": {
-        "handler.ErrorResponse": {
-            "type": "object",
-            "properties": {
-                "errors": {
-                    "type": "object",
-                    "properties": {
-                        "body": {
-                            "type": "string"
-                        }
-                    }
-                }
-            }
-        },
-        "handler.LectureEntryRequest": {
+        "problem.LectureEntryRequest": {
             "type": "object",
             "required": [
                 "deadline",
@@ -304,7 +356,20 @@ const docTemplate = `{
                 }
             }
         },
-        "handler.RequestSuccess": {
+        "response.Error": {
+            "type": "object",
+            "properties": {
+                "errors": {
+                    "type": "object",
+                    "properties": {
+                        "body": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "response.Success": {
             "type": "object",
             "properties": {
                 "message": {
@@ -312,7 +377,7 @@ const docTemplate = `{
                 }
             }
         },
-        "handler.userLoginResponse": {
+        "user.userLoginResponse": {
             "type": "object",
             "properties": {
                 "access_token": {
@@ -327,11 +392,11 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "user": {
-                    "$ref": "#/definitions/handler.userResponse"
+                    "$ref": "#/definitions/user.userResponse"
                 }
             }
         },
-        "handler.userResponse": {
+        "user.userResponse": {
             "type": "object",
             "properties": {
                 "email": {
@@ -350,7 +415,7 @@ const docTemplate = `{
         "OAuth2Password": {
             "type": "oauth2",
             "flow": "password",
-            "tokenUrl": "/api/login",
+            "tokenUrl": "/api/user/login",
             "scopes": {
                 "admin": "Grants any rights related to admin user",
                 "manager": "Grants any rights related to manager user",

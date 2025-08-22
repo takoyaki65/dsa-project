@@ -20,8 +20,6 @@ services:
       - "127.0.0.1:8000:8000"
     volumes:
       - ./dsa-backend:/app
-      # ホストの./dsa-back/.venvをコンテナ内の/app/.venvに反映させないために、
-      # コンテナ内の/app/.venvをAnonymous Volumeとしてマウント
       - ./upload:/upload
       - ./resource:/resource
     environment:

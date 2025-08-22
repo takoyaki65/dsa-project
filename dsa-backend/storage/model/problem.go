@@ -41,13 +41,14 @@ type Detail struct {
 }
 
 type TestCase struct {
-	Title      string  `json:"title"`
-	Command    string  `json:"command"`
-	Evaluation bool    `json:"eval_only"`
-	StdinPath  *string `json:"stdin,omitempty"`
-	StdoutPath *string `json:"stdout,omitempty"`
-	StderrPath *string `json:"stderr,omitempty"`
-	ExitCode   int     `json:"exit,omitempty"`
+	Title       string `json:"title"`
+	Description string `json:"description"`
+	Command     string `json:"command"`
+	Evaluation  bool   `json:"eval_only"`
+	StdinPath   string `json:"stdin,omitempty"`
+	StdoutPath  string `json:"stdout,omitempty"`
+	StderrPath  string `json:"stderr,omitempty"`
+	ExitCode    int64  `json:"exit,omitempty"`
 }
 
 var _ bun.BeforeAppendModelHook = (*Lecture)(nil)

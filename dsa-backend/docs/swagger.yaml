@@ -1,14 +1,6 @@
 basePath: /api
 definitions:
-  handler.ErrorResponse:
-    properties:
-      errors:
-        properties:
-          body:
-            type: string
-        type: object
-    type: object
-  handler.LectureEntryRequest:
+  problem.LectureEntryRequest:
     properties:
       deadline:
         default: "2025-12-01T10:00:00+09:00"
@@ -27,12 +19,20 @@ definitions:
     - start_date
     - title
     type: object
-  handler.RequestSuccess:
+  response.Error:
+    properties:
+      errors:
+        properties:
+          body:
+            type: string
+        type: object
+    type: object
+  response.Success:
     properties:
       message:
         type: string
     type: object
-  handler.userLoginResponse:
+  user.userLoginResponse:
     properties:
       access_token:
         description: DO NOT modify json name, 'access_token' is required in Swagger
@@ -45,9 +45,9 @@ definitions:
           UI
         type: string
       user:
-        $ref: '#/definitions/handler.userResponse'
+        $ref: '#/definitions/user.userResponse'
     type: object
-  handler.userResponse:
+  user.userResponse:
     properties:
       email:
         type: string
@@ -63,7 +63,152 @@ info:
   title: DSA Backend API
   version: 0.0.1
 paths:
-  /login:
+  /problem/crud/create:
+    put:
+      consumes:
+      - application/json
+      description: Create a new lecture entry, accessible by manager and admin.
+      parameters:
+      - description: Lecture entry details
+        in: body
+        name: lectureEntry
+        required: true
+        schema:
+          $ref: '#/definitions/problem.LectureEntryRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Lecture entry created successfully
+          schema:
+            $ref: '#/definitions/response.Success'
+        "400":
+          description: Invalid request
+          schema:
+            $ref: '#/definitions/response.Error'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/response.Error'
+      security:
+      - OAuth2Password:
+        - grading
+      summary: Create a new lecture entry
+      tags:
+      - problem
+  /problem/crud/create/{lectureid}/{problemid}:
+    post:
+      consumes:
+      - multipart/form-data
+      description: Register a new problem associated with a lecture
+      parameters:
+      - description: Lecture ID
+        in: path
+        name: lectureid
+        required: true
+        type: integer
+      - description: Problem ID
+        in: path
+        name: problemid
+        required: true
+        type: integer
+      - description: Zip file contains problem resources
+        in: formData
+        name: file
+        required: true
+        type: file
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Problem registered successfully
+          schema:
+            $ref: '#/definitions/response.Success'
+        "400":
+          description: Invalid request
+          schema:
+            $ref: '#/definitions/response.Error'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/response.Error'
+      security:
+      - OAuth2Password:
+        - grading
+      summary: Register a new problem
+      tags:
+      - problem
+  /problem/crud/delete/{lectureid}:
+    delete:
+      consumes:
+      - application/json
+      description: Delete an existing lecture entry, accessible by manager and admin.
+      parameters:
+      - description: Lecture ID
+        in: path
+        name: lectureid
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Lecture entry deleted successfully
+          schema:
+            $ref: '#/definitions/response.Success'
+        "400":
+          description: Invalid request
+          schema:
+            $ref: '#/definitions/response.Error'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/response.Error'
+      security:
+      - OAuth2Password:
+        - grading
+      summary: Delete an existing lecture entry
+      tags:
+      - problem
+  /problem/crud/update/{lectureid}:
+    patch:
+      consumes:
+      - application/json
+      description: Update an existing lecture entry, accessible by manager and admin.
+      parameters:
+      - description: Lecture ID
+        in: path
+        name: lectureid
+        required: true
+        type: integer
+      - description: Lecture entry details
+        in: body
+        name: lectureEntry
+        required: true
+        schema:
+          $ref: '#/definitions/problem.LectureEntryRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Lecture entry updated successfully
+          schema:
+            $ref: '#/definitions/response.Success'
+        "400":
+          description: Invalid request
+          schema:
+            $ref: '#/definitions/response.Error'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/response.Error'
+      security:
+      - OAuth2Password:
+        - grading
+      summary: Update an existing lecture entry
+      tags:
+      - problem
+  /user/login:
     post:
       consumes:
       - application/x-www-form-urlencoded
@@ -83,12 +228,12 @@ paths:
         "200":
           description: Login successful. Returns a JWT token.
           schema:
-            $ref: '#/definitions/handler.userLoginResponse'
+            $ref: '#/definitions/user.userLoginResponse'
         "400":
           description: Bad request. This error occurs if the user ID or password is
             missing or incorrect.
           schema:
-            $ref: '#/definitions/handler.ErrorResponse'
+            $ref: '#/definitions/response.Error'
         "500":
           description: Internal server error. This error occurs if there is an issue
             with the database or password hashing.
@@ -97,109 +242,6 @@ paths:
       summary: User Login
       tags:
       - user
-  /problem/create:
-    put:
-      consumes:
-      - application/json
-      description: Create a new lecture entry, accessible by manager and admin.
-      parameters:
-      - description: Lecture entry details
-        in: body
-        name: lectureEntry
-        required: true
-        schema:
-          $ref: '#/definitions/handler.LectureEntryRequest'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: Lecture entry created successfully
-          schema:
-            $ref: '#/definitions/handler.RequestSuccess'
-        "400":
-          description: Invalid request
-          schema:
-            $ref: '#/definitions/handler.ErrorResponse'
-        "500":
-          description: Internal server error
-          schema:
-            $ref: '#/definitions/handler.ErrorResponse'
-      security:
-      - OAuth2Password:
-        - grading
-      summary: Create a new lecture entry
-      tags:
-      - problem
-  /problem/delete/{lectureid}:
-    delete:
-      consumes:
-      - application/json
-      description: Delete an existing lecture entry, accessible by manager and admin.
-      parameters:
-      - description: Lecture ID
-        in: path
-        name: lectureid
-        required: true
-        type: integer
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: Lecture entry deleted successfully
-          schema:
-            $ref: '#/definitions/handler.RequestSuccess'
-        "400":
-          description: Invalid request
-          schema:
-            $ref: '#/definitions/handler.ErrorResponse'
-        "500":
-          description: Internal server error
-          schema:
-            $ref: '#/definitions/handler.ErrorResponse'
-      security:
-      - OAuth2Password:
-        - grading
-      summary: Delete an existing lecture entry
-      tags:
-      - problem
-  /problem/update/{lectureid}:
-    patch:
-      consumes:
-      - application/json
-      description: Update an existing lecture entry, accessible by manager and admin.
-      parameters:
-      - description: Lecture ID
-        in: path
-        name: lectureid
-        required: true
-        type: integer
-      - description: Lecture entry details
-        in: body
-        name: lectureEntry
-        required: true
-        schema:
-          $ref: '#/definitions/handler.LectureEntryRequest'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: Lecture entry updated successfully
-          schema:
-            $ref: '#/definitions/handler.RequestSuccess'
-        "400":
-          description: Invalid request
-          schema:
-            $ref: '#/definitions/handler.ErrorResponse'
-        "500":
-          description: Internal server error
-          schema:
-            $ref: '#/definitions/handler.ErrorResponse'
-      security:
-      - OAuth2Password:
-        - grading
-      summary: Update an existing lecture entry
-      tags:
-      - problem
   /user/me:
     get:
       description: Get current user information from JWT token
@@ -207,11 +249,11 @@ paths:
         "200":
           description: Current user information
           schema:
-            $ref: '#/definitions/handler.userResponse'
+            $ref: '#/definitions/user.userResponse'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/handler.ErrorResponse'
+            $ref: '#/definitions/response.Error'
         "500":
           description: Internal server error
           schema:
@@ -229,6 +271,6 @@ securityDefinitions:
       admin: Grants any rights related to admin user
       manager: Grants any rights related to manager user
       me: Grants any rights related to the current user
-    tokenUrl: /api/login
+    tokenUrl: /api/user/login
     type: oauth2
 swagger: "2.0"

@@ -35,7 +35,7 @@ import (
 //	@BasePath	/api
 
 // @securitydefinitions.oauth2.password	OAuth2Password
-// @tokenUrl								/api/login
+// @tokenUrl								/api/user/login
 // @scope.me								Grants any rights related to the current user
 // @scope.manager							Grants any rights related to manager user
 // @scope.admin							Grants any rights related to admin user

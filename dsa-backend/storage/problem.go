@@ -49,3 +49,11 @@ func (ps *ProblemStore) CreateLectureEntry(ctx *context.Context, lec *model.Lect
 	}
 	return nil
 }
+
+func (ps *ProblemStore) RegisterProblem(ctx *context.Context, problem *model.Problem) error {
+	_, err := ps.db.NewInsert().Model(problem).Exec(*ctx)
+	if err != nil {
+		return err
+	}
+	return nil
+}

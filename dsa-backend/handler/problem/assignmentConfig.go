@@ -4,8 +4,8 @@ type AssignmentConfig struct {
 	SubID         int        `json:"sub_id"`
 	Title         string     `json:"title"`
 	MDfile        string     `json:"md_file"`
-	TimeMS        *int       `json:"time_ms,omitempty"`
-	MemoryMB      *int       `json:"memory_mb,omitempty"`
+	TimeMS        *int64     `json:"time_ms,omitempty"`
+	MemoryMB      *int64     `json:"memory_mb,omitempty"`
 	TestFiles     []string   `json:"test_files"`
 	RequiredFiles []string   `json:"required_files"`
 	Build         []TestCase `json:"build"`
@@ -21,16 +21,16 @@ type TestCase struct {
 	Stdin         string `json:"stdin,omitempty"`
 	Stdout        string `json:"stdout,omitempty"`
 	Stderr        string `json:"stderr,omitempty"`
-	ExitCode      *int   `json:"exit,omitempty"`
+	ExitCode      *int64 `json:"exit,omitempty"`
 }
 
 func (conf *AssignmentConfig) SetDefaults() {
 	if conf.TimeMS == nil {
-		defaultTime := 1000 // Default time in milliseconds
+		defaultTime := int64(1000) // Default time in milliseconds
 		conf.TimeMS = &defaultTime
 	}
 	if conf.MemoryMB == nil {
-		defaultMemory := 256 // Default memory in MB
+		defaultMemory := int64(256) // Default memory in MB
 		conf.MemoryMB = &defaultMemory
 	}
 
@@ -49,7 +49,7 @@ func (t *TestCase) SetDefaults() {
 		t.EvalOnly = &defaultEvalOnly
 	}
 	if t.ExitCode == nil {
-		defaultExitCode := 0
+		defaultExitCode := int64(0)
 		t.ExitCode = &defaultExitCode
 	}
 	if t.MessageOnFail == "" {

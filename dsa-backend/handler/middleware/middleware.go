@@ -26,13 +26,8 @@ func JWTMiddleware(secret string) echo.MiddlewareFunc {
 func RequiredScopesMiddleware(requiredScopes ...string) echo.MiddlewareFunc {
 	return func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(c echo.Context) error {
-			token, ok := c.Get("user").(*jwt.Token)
-			if !ok {
-				return echo.NewHTTPError(http.StatusUnauthorized, "invalid token")
-			}
-
-			claims, ok := token.Claims.(*auth.JwtCustomClaims)
-			if !ok {
+			claims, err := auth.GetJWTClaims(&c)
+			if err != nil {
 				return echo.NewHTTPError(http.StatusUnauthorized, "invalid token claims")
 			}
 
