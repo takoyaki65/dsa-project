@@ -1,28 +1,39 @@
-package handler
+package auth
 
 import "fmt"
 
+const (
+	ScopeGrading = "grading"
+	ScopeAdmin   = "admin"
+)
+
+const (
+	RoleAdmin   = "admin"
+	RoleManager = "manager"
+	RoleStudent = "student"
+)
+
 func UserScopes() map[string][]string {
 	return map[string][]string{
-		"admin":   {"me", "grading", "admin"},
-		"manager": {"me", "grading"},
-		"student": {"me"},
+		RoleAdmin:   {ScopeGrading, ScopeAdmin},
+		RoleManager: {ScopeGrading},
+		RoleStudent: {},
 	}
 }
 
 func UserRolesToID() map[string]int {
 	return map[string]int{
-		"admin":   1,
-		"manager": 2,
-		"student": 3,
+		RoleAdmin:   1,
+		RoleManager: 2,
+		RoleStudent: 3,
 	}
 }
 
 func RoleIDToUserRole() map[int]string {
 	return map[int]string{
-		1: "admin",
-		2: "manager",
-		3: "student",
+		1: RoleAdmin,
+		2: RoleManager,
+		3: RoleStudent,
 	}
 }
 

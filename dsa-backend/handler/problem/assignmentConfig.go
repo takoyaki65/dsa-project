@@ -1,4 +1,4 @@
-package handler
+package problem
 
 type AssignmentConfig struct {
 	SubID         int        `json:"sub_id"`
