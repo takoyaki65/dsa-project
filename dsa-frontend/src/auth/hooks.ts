@@ -176,7 +176,7 @@ export const useLoginMutation = () => {
   return useMutation<LoginResponse, Error, LoginCredentials>({
     mutationFn: async (credentials) => {
       const response = await axiosClient.post<LoginResponse>(
-        `/login`,
+        `/user/login`,
         credentials,
         {
           headers: {
