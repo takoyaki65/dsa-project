@@ -58,7 +58,7 @@ func main() {
 	// create db instance
 	db := bun.NewDB(sqldb, pgdialect.New())
 	// For debugging purpose, print all queries to stdout.
-	db.AddQueryHook(bundebug.NewQueryHook())
+	db.AddQueryHook(bundebug.NewQueryHook(bundebug.WithVerbose(true)))
 
 	// Check and create admin user if necessary
 	if err := ensureAdminUser(db, r); err != nil {
