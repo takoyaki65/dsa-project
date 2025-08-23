@@ -107,7 +107,6 @@
   - **id**: ログイン履歴ID (auto increment)
   - **user_id**: ユーザーID (**UserList.id**)
   - **login_at**: ログイン時刻 (datetime, 1s精度)
-  - **logout_at**: ログアウト予定時刻 (datetime, 1s精度)
 - **Lecture**: 授業情報管理
   - **id**: 授業 (整数)
   - **title**: 授業タイトル (文字列)

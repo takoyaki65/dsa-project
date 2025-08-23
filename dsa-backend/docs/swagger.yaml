@@ -19,6 +19,47 @@ definitions:
     - start_date
     - title
     type: object
+  problem.LectureEntryResponse:
+    properties:
+      deadline:
+        type: string
+      id:
+        type: integer
+      problems:
+        items:
+          $ref: '#/definitions/problem.ProblemEntryResponse'
+        type: array
+      start_date:
+        type: string
+      title:
+        type: string
+    type: object
+  problem.ProblemDetailResponse:
+    properties:
+      description:
+        type: string
+      lecture_id:
+        type: integer
+      memory_mb:
+        type: integer
+      problem_id:
+        type: integer
+      required_files:
+        items:
+          type: string
+        type: array
+      time_ms:
+        type: integer
+    type: object
+  problem.ProblemEntryResponse:
+    properties:
+      lecture_id:
+        type: integer
+      problem_id:
+        type: integer
+      title:
+        type: string
+    type: object
   response.Error:
     properties:
       errors:
@@ -247,6 +288,71 @@ paths:
       - OAuth2Password:
         - grading
       summary: Update an existing lecture entry
+      tags:
+      - problem
+  /problem/fetch/detail/{lectureid}/{problemid}:
+    get:
+      description: Get detailed information about a specific problem within a lecture.
+      parameters:
+      - description: Lecture ID
+        format: int64
+        in: path
+        name: lectureid
+        required: true
+        type: integer
+      - description: Problem ID
+        format: int64
+        in: path
+        name: problemid
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/problem.ProblemDetailResponse'
+        "400":
+          description: invalid request
+          schema:
+            $ref: '#/definitions/response.Error'
+        "404":
+          description: problem not found
+          schema:
+            $ref: '#/definitions/response.Error'
+        "500":
+          description: failed to get problem
+          schema:
+            $ref: '#/definitions/response.Error'
+      security:
+      - OAuth2Password:
+        - me
+      summary: Get problem detail
+      tags:
+      - problem
+  /problem/fetch/list:
+    get:
+      description: get all lecture entries, each containing its problem entries. When
+        you don't have scopes "grading" or "admin", you will only see lecture entries
+        that are published.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/problem.LectureEntryResponse'
+            type: array
+        "500":
+          description: failed to get lecture entries
+          schema:
+            $ref: '#/definitions/response.Error'
+      security:
+      - OAuth2Password:
+        - me
+      summary: list all problem entry, nested in lecture entry.
       tags:
       - problem
   /user/login:

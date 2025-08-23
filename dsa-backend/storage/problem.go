@@ -11,6 +11,28 @@ type ProblemStore struct {
 	db *bun.DB
 }
 
+func (ps ProblemStore) GetProblemByID(context *context.Context, lectureID int64, problemID int64) (*model.Problem, error) {
+	var problem model.Problem
+	err := ps.db.NewSelect().Model(&problem).
+		Where("lecture_id = ? AND problem_id = ?", lectureID, problemID).
+		Scan(*context)
+	if err != nil {
+		return nil, err
+	}
+	return &problem, nil
+}
+
+func (ps ProblemStore) GetAllLectureAndProblems(ctx context.Context) (*[]model.Lecture, error) {
+	var lectures []model.Lecture
+	err := ps.db.NewSelect().Model(&lectures).Relation("Problems", func(q *bun.SelectQuery) *bun.SelectQuery {
+		return q.Order("problem.problem_id")
+	}).Order("id").Scan(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return &lectures, nil
+}
+
 func (ps ProblemStore) DeleteLectureEntry(context *context.Context, i int64) error {
 	_, err := ps.db.NewDelete().Model(&model.Lecture{}).Where("id = ?", i).Exec(*context)
 	if err != nil {

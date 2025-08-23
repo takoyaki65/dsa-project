@@ -295,6 +295,13 @@ func (h *Handler) RegisterProblem(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusConflict, response.NewError("destination directory already exists"))
 	}
 
+	// Make parent directory
+	parentDir := filepath.Dir(destDir)
+	err = os.MkdirAll(parentDir, os.ModePerm)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError, response.NewError("failed to create parent directory: "+err.Error()))
+	}
+
 	// Move to the extracted directory to the destination
 	err = os.Rename(extractedDir, destDir)
 	if err != nil {

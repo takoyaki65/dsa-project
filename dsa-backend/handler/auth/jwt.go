@@ -54,3 +54,16 @@ func GetJWTClaims(c *echo.Context) (*JwtCustomClaims, error) {
 
 	return claims, nil
 }
+
+func (c *JwtCustomClaims) HasAllScopes(scopes ...string) bool {
+	mapScopes := make(map[string]bool)
+	for _, s := range c.Scopes {
+		mapScopes[s] = true
+	}
+	for _, scope := range scopes {
+		if !mapScopes[scope] {
+			return false
+		}
+	}
+	return true
+}

@@ -6,6 +6,7 @@ require (
 	github.com/KyleBanks/depth v1.2.1 // indirect
 	github.com/PuerkitoBio/purell v1.2.1 // indirect
 	github.com/PuerkitoBio/urlesc v0.0.0-20170810143723-de5bf2ad4578 // indirect
+	github.com/fatih/color v1.18.0 // indirect
 	github.com/gabriel-vasile/mimetype v1.4.8 // indirect
 	github.com/ghodss/yaml v1.0.0 // indirect
 	github.com/go-openapi/jsonpointer v0.21.2 // indirect
@@ -33,6 +34,7 @@ require (
 	github.com/uptrace/bun v1.2.15 // indirect
 	github.com/uptrace/bun/dialect/pgdialect v1.2.15 // indirect
 	github.com/uptrace/bun/driver/pgdriver v1.2.15 // indirect
+	github.com/uptrace/bun/extra/bundebug v1.2.15 // indirect
 	github.com/valyala/bytebufferpool v1.0.0 // indirect
 	github.com/valyala/fasttemplate v1.2.2 // indirect
 	github.com/vmihailenco/msgpack/v5 v5.4.1 // indirect

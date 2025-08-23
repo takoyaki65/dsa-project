@@ -308,6 +308,105 @@ const docTemplate = `{
                 }
             }
         },
+        "/problem/fetch/detail/{lectureid}/{problemid}": {
+            "get": {
+                "security": [
+                    {
+                        "OAuth2Password": [
+                            "me"
+                        ]
+                    }
+                ],
+                "description": "Get detailed information about a specific problem within a lecture.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "problem"
+                ],
+                "summary": "Get problem detail",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "format": "int64",
+                        "description": "Lecture ID",
+                        "name": "lectureid",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "format": "int64",
+                        "description": "Problem ID",
+                        "name": "problemid",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/problem.ProblemDetailResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "invalid request",
+                        "schema": {
+                            "$ref": "#/definitions/response.Error"
+                        }
+                    },
+                    "404": {
+                        "description": "problem not found",
+                        "schema": {
+                            "$ref": "#/definitions/response.Error"
+                        }
+                    },
+                    "500": {
+                        "description": "failed to get problem",
+                        "schema": {
+                            "$ref": "#/definitions/response.Error"
+                        }
+                    }
+                }
+            }
+        },
+        "/problem/fetch/list": {
+            "get": {
+                "security": [
+                    {
+                        "OAuth2Password": [
+                            "me"
+                        ]
+                    }
+                ],
+                "description": "get all lecture entries, each containing its problem entries. When you don't have scopes \"grading\" or \"admin\", you will only see lecture entries that are published.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "problem"
+                ],
+                "summary": "list all problem entry, nested in lecture entry.",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/problem.LectureEntryResponse"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "failed to get lecture entries",
+                        "schema": {
+                            "$ref": "#/definitions/response.Error"
+                        }
+                    }
+                }
+            }
+        },
         "/user/login": {
             "post": {
                 "description": "User login with user ID and password. Returns a JWT token if successful.",
@@ -414,6 +513,69 @@ const docTemplate = `{
                 "start_date": {
                     "type": "string",
                     "default": "2025-10-01T10:00:00+09:00"
+                },
+                "title": {
+                    "type": "string"
+                }
+            }
+        },
+        "problem.LectureEntryResponse": {
+            "type": "object",
+            "properties": {
+                "deadline": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "problems": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/problem.ProblemEntryResponse"
+                    }
+                },
+                "start_date": {
+                    "type": "string"
+                },
+                "title": {
+                    "type": "string"
+                }
+            }
+        },
+        "problem.ProblemDetailResponse": {
+            "type": "object",
+            "properties": {
+                "description": {
+                    "type": "string"
+                },
+                "lecture_id": {
+                    "type": "integer"
+                },
+                "memory_mb": {
+                    "type": "integer"
+                },
+                "problem_id": {
+                    "type": "integer"
+                },
+                "required_files": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "time_ms": {
+                    "type": "integer"
+                }
+            }
+        },
+        "problem.ProblemEntryResponse": {
+            "type": "object",
+            "properties": {
+                "lecture_id": {
+                    "type": "integer"
+                },
+                "problem_id": {
+                    "type": "integer"
                 },
                 "title": {
                     "type": "string"
