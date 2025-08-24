@@ -82,6 +82,10 @@ func CheckValidityOfJWTMiddleware(db *bun.DB) echo.MiddlewareFunc {
 				return echo.NewHTTPError(http.StatusUnauthorized, "login history not found")
 			}
 
+			if loginHistory.LogoutAt.Before(time.Now()) {
+				return echo.NewHTTPError(http.StatusUnauthorized, "your token has expired.")
+			}
+
 			return next(c)
 		}
 	}

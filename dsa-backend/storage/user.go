@@ -13,6 +13,14 @@ type UserStore struct {
 	db *bun.DB
 }
 
+func (us UserStore) UpdateLogoutTime(context *context.Context, userid string, login_at time.Time, logout_at time.Time) error {
+	_, err := us.db.NewUpdate().Model(&model.LoginHistory{}).
+		Set("logout_at = ?", logout_at).
+		Where("user_id = ? AND login_at = ?", userid, login_at).
+		Exec(*context)
+	return err
+}
+
 func NewUserStore(db *bun.DB) *UserStore {
 	return &UserStore{
 		db: db,

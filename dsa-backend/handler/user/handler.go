@@ -61,6 +61,7 @@ func (h *Handler) RegisterRoutes(r *echo.Group) {
 	r.POST("/login", h.Login)
 
 	r.GET("/me", h.GetCurrentUser, middleware.JWTMiddleware(h.jwtSecret), middleware.CheckValidityOfJWTMiddleware(h.db))
+	r.POST("/logout", h.Logout, middleware.JWTMiddleware(h.jwtSecret), middleware.CheckValidityOfJWTMiddleware(h.db))
 }
 
 // Login godoc
@@ -121,8 +122,9 @@ func (h *Handler) Login(c echo.Context) error {
 	// register LoginHistory
 	{
 		err := h.userStore.RegisterLoginHistory(&ctx, &model.LoginHistory{
-			UserID:  userRecord.UserID,
-			LoginAt: issuedAt,
+			UserID:   userRecord.UserID,
+			LoginAt:  issuedAt,
+			LogoutAt: expiredAt,
 		})
 
 		if err != nil {
@@ -183,4 +185,22 @@ func (h *Handler) GetCurrentUser(c echo.Context) error {
 		Name:  userRecord.Name,
 		Email: userRecord.Email,
 	})
+}
+
+func (h *Handler) Logout(c echo.Context) error {
+	ctx := context.Background()
+
+	// Get userID from jwt token
+	claim, err := auth.GetJWTClaims(&c)
+	if err != nil {
+		return err
+	}
+
+	// Update logout time in login history
+	err = h.userStore.UpdateLogoutTime(&ctx, claim.UserID, claim.IssuedAt.Time, time.Now())
+	if err != nil {
+		return c.JSON(http.StatusInternalServerError, response.NewError("failed to update logout time: "+err.Error()))
+	}
+
+	return c.JSON(http.StatusOK, response.NewSuccess("logout successful"))
 }

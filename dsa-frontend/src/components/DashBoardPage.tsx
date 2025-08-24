@@ -1,4 +1,6 @@
 import { useState } from "react";
+import { useAuthQuery, useLogout } from "../auth/hooks";
+import { Navigate, useNavigate } from "react-router";
 
 interface Problem {
   lecture_id: number;
@@ -15,131 +17,67 @@ interface Lecture {
 }
 
 const DashBoardPage: React.FC = () => {
-  // Static data
-  const lectureData: Lecture[] = [
-    {
-      id: 1,
-      title: "課題1",
-      start_date: "2025-10-01T10:00:00+09:00",
-      deadline: "2025-12-01T10:00:00+09:00",
-      problems: [
-        {
-          lecture_id: 1,
-          problem_id: 1,
-          title: "基本課題 1"
-        },
-        {
-          lecture_id: 1,
-          problem_id: 2,
-          title: "基本課題 2"
-        },
-        {
-          lecture_id: 1,
-          problem_id: 3,
-          title: "応用課題"
-        }
-      ]
-    },
-    {
-      id: 2,
-      title: "課題2",
-      start_date: "2025-10-01T10:00:00+09:00",
-      deadline: "2025-12-01T10:00:00+09:00",
-      problems: [
-        {
-          lecture_id: 2,
-          problem_id: 1,
-          title: "基本課題・連結リスト"
-        },
-        {
-          lecture_id: 2,
-          problem_id: 2,
-          title: "発展課題・双連結リスト"
-        }
-      ]
-    },
-    {
-      id: 3,
-      title: "課題3",
-      start_date: "2025-10-01T10:00:00+09:00",
-      deadline: "2025-12-01T10:00:00+09:00",
-      problems: []
-    },
-    {
-      id: 4,
-      title: "課題4",
-      start_date: "2025-10-01T10:00:00+09:00",
-      deadline: "2025-12-01T10:00:00+09:00",
-      problems: []
-    },
-    {
-      id: 5,
-      title: "課題5",
-      start_date: "2025-10-01T10:00:00+09:00",
-      deadline: "2025-12-01T10:00:00+09:00",
-      problems: []
-    },
-    {
-      id: 6,
-      title: "課題6",
-      start_date: "2025-10-01T10:00:00+09:00",
-      deadline: "2025-12-01T10:00:00+09:00",
-      problems: []
-    },
-    {
-      id: 7,
-      title: "課題7",
-      start_date: "2025-10-01T10:00:00+09:00",
-      deadline: "2025-12-01T10:00:00+09:00",
-      problems: []
-    },
-    {
-      id: 8,
-      title: "課題8",
-      start_date: "2025-10-01T10:00:00+09:00",
-      deadline: "2025-12-01T10:00:00+09:00",
-      problems: []
-    }
-  ];
-
   const [selectedLecture, setSelectedLecture] = useState<number | null>(null);
 
-  // Filter lectures based on selection
-  const displayedLectures = selectedLecture === null
-    ? lectureData
-    : lectureData.filter(lecture => lecture.id === selectedLecture);
+  const lectureDataQuery = useAuthQuery<Lecture[]>({
+    queryKey: ['lectures'],
+    endpoint: '/problem/fetch/list',
+    options: {
+      queryOptions: {
+        retry: 2,
+      }
+    }
+  });
+
+  const { logout } = useLogout();
+
+  const navigate = useNavigate();
+
+  const isPending = lectureDataQuery.isPending;
+  const lectureData = lectureDataQuery.data;
+  const error = lectureDataQuery.error;
 
   const handleDSAClick = () => {
     // Navigate to main page (implementation to be added)
-    console.log("Navigate to main page");
+    navigate("/dashboard");
   };
 
   const handleLogout = () => {
     // Logout process (implementation to be added)
-    console.log("Logout");
+    logout();
+    navigate("/login");
   };
 
-  return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Top Navigation Bar */}
-      <div className="bg-blue-500 text-white px-6 py-4 flex justify-between items-center">
-        <button
-          key="dsa-button"
-          onClick={handleDSAClick}
-          className="text-2xl font-bold hover:opacity-80 transition-opacity"
-        >
-          DSA
-        </button>
-        <button
-          key="logout-button"
-          onClick={handleLogout}
-          className="hover:bg-blue-600 px-4 py-2  rounded transition-colors"
-        >
-          Logout
-        </button>
-      </div>
+  const mainContent = () => {
+    if (isPending) {
+      return (
+        <div className="min-h-screen flex items-center justify-center">
+          <div className="text-gray-500">Loading...</div>
+        </div>
+      );
+    }
+    if (error) {
+      return (
+        <div className="min-h-screen flex items-center justify-center">
+          <div className="text-red-500">Error loading lectures: {error.message}</div>
+        </div>
+      );
+    }
 
-      {/* Main Content */}
+    if (!lectureData) {
+      return (
+        <div className="min-h-screen flex items-center justify-center">
+          <div className="text-gray-500">No lectures available</div>
+        </div>
+      );
+    }
+
+    // Filter lectures based on selection
+    const displayedLectures = selectedLecture === null
+      ? lectureData
+      : lectureData.filter(lecture => lecture.id === selectedLecture);
+
+    return (
       <div className="container mx-auto px-6 py-8">
         {/* Title */}
         <h1 className="text-2xl font-bold mb-6">Problem List</h1>
@@ -199,6 +137,31 @@ const DashBoardPage: React.FC = () => {
           ))}
         </div>
       </div>
+    )
+
+  }
+
+  return (
+    <div className="min-h-screen bg-gray-50">
+      {/* Top Navigation Bar */}
+      <div className="bg-blue-500 text-white px-6 py-4 flex justify-between items-center">
+        <button
+          key="dsa-button"
+          onClick={handleDSAClick}
+          className="text-2xl font-bold hover:opacity-80 transition-opacity"
+        >
+          DSA
+        </button>
+        <button
+          key="logout-button"
+          onClick={handleLogout}
+          className="hover:bg-blue-600 px-4 py-2  rounded transition-colors"
+        >
+          Logout
+        </button>
+      </div>
+
+      {mainContent()}
     </div>
   )
 }

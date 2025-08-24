@@ -107,6 +107,9 @@
   - **id**: ログイン履歴ID (auto increment)
   - **user_id**: ユーザーID (**UserList.id**)
   - **login_at**: ログイン時刻 (datetime, 1s精度)
+  - **logout_at**: ログアウト時刻 (datetime, 1s精度)
+    - JWTの有効期限と同じ時刻を設定する
+    - ユーザーが能動的にログアウトした場合、ログアウト時刻を現在時刻に更新する
 - **Lecture**: 授業情報管理
   - **id**: 授業 (整数)
   - **title**: 授業タイトル (文字列)

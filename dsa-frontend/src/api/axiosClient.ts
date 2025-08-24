@@ -15,6 +15,7 @@ export const axiosClient: AxiosInstance = axios.create({
   baseURL: API_BASE_URL,
 });
 
+// Settings of middleware for client requests.
 axiosClient.interceptors.request.use(
   (config: InternalAxiosRequestConfig) => {
     // At now, it does not add Authorization header automatically
@@ -25,6 +26,7 @@ axiosClient.interceptors.request.use(
   }
 )
 
+// Settings of middleware for client response.
 axiosClient.interceptors.response.use(
   (response: AxiosResponse) => {
     return response;

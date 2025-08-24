@@ -43,9 +43,13 @@ export const clearStoredToken = (): void => {
   localStorage.removeItem(TOKEN_EXPIRY_KEY);
 };
 
+const currentTimeInSecondsFromEpoch = (): number => {
+  return Math.floor(Date.now() / 1000);
+};
+
 export const isTokenValid = (): boolean => {
   const { token, expiry } = getStoredToken();
-  const elapsedSecondsFromEpoch = Math.floor(Date.now() / 1000);
+  const elapsedSecondsFromEpoch = currentTimeInSecondsFromEpoch();
   return !!token && !!expiry && expiry > elapsedSecondsFromEpoch + 10;
 }
 
@@ -72,7 +76,7 @@ const addAuthorizationHeader = (config: AxiosRequestConfig | undefined): AxiosRe
     throw new Error('No token found');
   }
 
-  if (!expiry || expiry < Date.now()) {
+  if (!expiry || expiry < currentTimeInSecondsFromEpoch()) {
     clearStoredToken();
     throw new Error('Token expired');
   }
@@ -86,6 +90,15 @@ const addAuthorizationHeader = (config: AxiosRequestConfig | undefined): AxiosRe
   };
 };
 
+interface AuthQueryArgs {
+  queryKey: string[];
+  endpoint: string;
+  options?: {
+    queryOptions?: Omit<UseQueryOptions<any, Error>, 'queryKey' | 'queryFn'>;
+    axiosConfig?: AxiosRequestConfig;
+  };
+}
+
 /**
  * GET request hook with authorization
  * @param queryKey 
@@ -93,14 +106,8 @@ const addAuthorizationHeader = (config: AxiosRequestConfig | undefined): AxiosRe
  * @param options 
  * @returns 
  */
-export const useAuthQuery = <TData = any>(
-  queryKey: string[],
-  endpoint: string,
-  options?: {
-    queryOptions?: Omit<UseQueryOptions<TData, Error>, 'queryKey' | 'queryFn'>;
-    axiosConfig?: AxiosRequestConfig;
-  }
-) => {
+export const useAuthQuery = <TData = any>(args: AuthQueryArgs) => {
+  const { queryKey, endpoint, options } = args;
 
   return useQuery<TData, Error>({
     queryKey,
@@ -113,6 +120,15 @@ export const useAuthQuery = <TData = any>(
   });
 };
 
+interface AuthMutationArgs<TVariables> {
+  endpoint: string | ((variables: TVariables) => string);
+  options?: {
+    method?: 'POST' | 'PUT' | 'PATCH' | 'DELETE';
+    mutationOptions?: Omit<UseMutationOptions<any, Error, TVariables>, 'mutationFn'>;
+    axiosConfig?: AxiosRequestConfig;
+  };
+}
+
 /**
  * POST | PUT | PATCH | DELETE request hook with authorization
  * @param endpoint 
@@ -120,13 +136,9 @@ export const useAuthQuery = <TData = any>(
  * @returns 
  */
 export const useAuthMutation = <TData = any, TVariables = any>(
-  endpoint: string | ((variables: TVariables) => string),
-  options?: {
-    method?: 'POST' | 'PUT' | 'PATCH' | 'DELETE';
-    mutationOptions?: Omit<UseMutationOptions<TData, Error, TVariables>, 'mutationFn'>;
-    axiosConfig?: AxiosRequestConfig;
-  }
+  args: AuthMutationArgs<TVariables>
 ) => {
+  const { endpoint, options } = args;
   const method = options?.method || 'POST';
 
   return useMutation<TData, Error, TVariables>({
@@ -201,9 +213,9 @@ export const useLoginMutation = () => {
 export const useLogout = () => {
   const queryClient = useQueryClient();
 
-  const logoutMutation = useAuthMutation<void, void>(
-    '/logout',
-    {
+  const logoutMutation = useAuthMutation<void, void>({
+    endpoint: '/user/logout',
+    options: {
       method: 'POST',
       mutationOptions: {
         onSettled: () => {
@@ -214,7 +226,7 @@ export const useLogout = () => {
         },
       }
     }
-  );
+  });
 
   return {
     logout: () => logoutMutation.mutate(),
@@ -225,17 +237,17 @@ export const useLogout = () => {
 export const useCurrentUser = () => {
   const isValid = isTokenValid();
 
-  return useAuthQuery<User>(
-    ['currentUser'],
-    '/user/me',
-    {
+  return useAuthQuery<User>({
+    queryKey: ['currentUser'],
+    endpoint: '/user/me',
+    options: {
       queryOptions: {
         enabled: isValid,
         staleTime: 5 * 60 * 1000, // 5 minutes
         retry: false, // when error encounters, we don't retry
       },
     }
-  );
+  });
 };
 
 export const useAuth = () => {
