@@ -187,6 +187,16 @@ func (h *Handler) GetCurrentUser(c echo.Context) error {
 	})
 }
 
+// Logout godoc
+//
+//	@Summary		Logout user
+//	@Description	Logout user and invalidate JWT token
+//	@Tags			user
+//	@Product		json
+//	@Success		200	{object}	response.Success	"Logout successful"
+//	@Failure		401	{object}	response.Error		"Unauthorized"
+//	@Failure		500	{string}	response.Error		"Internal server error"
+//	@Router			/user/logout [post]
 func (h *Handler) Logout(c echo.Context) error {
 	ctx := context.Background()
 

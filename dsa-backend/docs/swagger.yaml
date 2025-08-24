@@ -389,6 +389,25 @@ paths:
       summary: User Login
       tags:
       - user
+  /user/logout:
+    post:
+      description: Logout user and invalidate JWT token
+      responses:
+        "200":
+          description: Logout successful
+          schema:
+            $ref: '#/definitions/response.Success'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/response.Error'
+        "500":
+          description: Internal server error
+          schema:
+            type: string
+      summary: Logout user
+      tags:
+      - user
   /user/me:
     get:
       description: Get current user information from JWT token
