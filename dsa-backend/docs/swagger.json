@@ -451,6 +451,13 @@
         },
         "/user/logout": {
             "post": {
+                "security": [
+                    {
+                        "OAuth2Password": [
+                            "me"
+                        ]
+                    }
+                ],
                 "description": "Logout user and invalidate JWT token",
                 "tags": [
                     "user"
@@ -588,6 +595,9 @@
                 },
                 "time_ms": {
                     "type": "integer"
+                },
+                "title": {
+                    "type": "string"
                 }
             }
         },

@@ -457,6 +457,13 @@ const docTemplate = `{
         },
         "/user/logout": {
             "post": {
+                "security": [
+                    {
+                        "OAuth2Password": [
+                            "me"
+                        ]
+                    }
+                ],
                 "description": "Logout user and invalidate JWT token",
                 "tags": [
                     "user"
@@ -594,6 +601,9 @@ const docTemplate = `{
                 },
                 "time_ms": {
                     "type": "integer"
+                },
+                "title": {
+                    "type": "string"
                 }
             }
         },

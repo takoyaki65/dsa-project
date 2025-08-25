@@ -196,6 +196,7 @@ func (h *Handler) GetCurrentUser(c echo.Context) error {
 //	@Success		200	{object}	response.Success	"Logout successful"
 //	@Failure		401	{object}	response.Error		"Unauthorized"
 //	@Failure		500	{string}	response.Error		"Internal server error"
+//	@Security		OAuth2Password[me]
 //	@Router			/user/logout [post]
 func (h *Handler) Logout(c echo.Context) error {
 	ctx := context.Background()

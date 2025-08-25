@@ -2,6 +2,7 @@ import React, { useState, type ChangeEvent, type FormEvent } from "react";
 import { Navigate } from "react-router";
 import { useAuth, type LoginCredentials } from "../auth/hooks";
 
+// url: /login
 const LoginPage: React.FC = () => {
   const [credentials, setCredentials] = useState<LoginCredentials>({ username: '', password: '' });
 

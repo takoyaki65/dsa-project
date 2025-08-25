@@ -1,6 +1,6 @@
 import { useState } from "react";
-import { useAuthQuery, useLogout } from "../auth/hooks";
-import { Navigate, useNavigate } from "react-router";
+import { useAuthQuery } from "../auth/hooks";
+import NavigationBar from "../components/NavigationBar";
 
 interface Problem {
   lecture_id: number;
@@ -16,6 +16,7 @@ interface Lecture {
   problems: Problem[];
 }
 
+// url: /dashboard
 const DashBoardPage: React.FC = () => {
   const [selectedLecture, setSelectedLecture] = useState<number | null>(null);
 
@@ -29,24 +30,9 @@ const DashBoardPage: React.FC = () => {
     }
   });
 
-  const { logout } = useLogout();
-
-  const navigate = useNavigate();
-
   const isPending = lectureDataQuery.isPending;
   const lectureData = lectureDataQuery.data;
   const error = lectureDataQuery.error;
-
-  const handleDSAClick = () => {
-    // Navigate to main page (implementation to be added)
-    navigate("/dashboard");
-  };
-
-  const handleLogout = () => {
-    // Logout process (implementation to be added)
-    logout();
-    navigate("/login");
-  };
 
   const mainContent = () => {
     if (isPending) {
@@ -143,24 +129,7 @@ const DashBoardPage: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Top Navigation Bar */}
-      <div className="bg-blue-500 text-white px-6 py-4 flex justify-between items-center">
-        <button
-          key="dsa-button"
-          onClick={handleDSAClick}
-          className="text-2xl font-bold hover:opacity-80 transition-opacity"
-        >
-          DSA
-        </button>
-        <button
-          key="logout-button"
-          onClick={handleLogout}
-          className="hover:bg-blue-600 px-4 py-2  rounded transition-colors"
-        >
-          Logout
-        </button>
-      </div>
-
+      <NavigationBar />
       {mainContent()}
     </div>
   )

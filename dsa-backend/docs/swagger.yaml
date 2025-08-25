@@ -50,6 +50,8 @@ definitions:
         type: array
       time_ms:
         type: integer
+      title:
+        type: string
     type: object
   problem.ProblemEntryResponse:
     properties:
@@ -405,6 +407,9 @@ paths:
           description: Internal server error
           schema:
             type: string
+      security:
+      - OAuth2Password:
+        - me
       summary: Logout user
       tags:
       - user

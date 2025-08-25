@@ -1,8 +1,9 @@
-import { BrowserRouter, Route, Routes } from 'react-router'
-import LoginPage from './components/LoginPage'
+import { BrowserRouter, Navigate, Route, Routes } from 'react-router'
+import LoginPage from './pages/LoginPage'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import ProtectedRoute from './ProtectedRoute';
-import DashBoardPage from './components/DashBoardPage';
+import DashBoardPage from './pages/DashBoardPage';
+import ProblemStatementPage from './pages/ProblemStatementPage';
 
 const queryClient = new QueryClient();
 
@@ -17,6 +18,12 @@ function App() {
               <DashBoardPage />
             </ProtectedRoute>
           } />
+          <Route path="/problem/:lectureid/:problemid" element={
+            <ProtectedRoute>
+              <ProblemStatementPage />
+            </ProtectedRoute>
+          } />
+          <Route path="*" element={<Navigate to="/login" replace />} />
         </Routes>
       </BrowserRouter>
     </QueryClientProvider>

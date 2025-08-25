@@ -85,6 +85,7 @@ type ProblemDetailRequest struct {
 type ProblemDetailResponse struct {
 	LectureID     int64    `json:"lecture_id"`
 	ProblemID     int64    `json:"problem_id"`
+	Title         string   `json:"title"`
 	Description   string   `json:"description"`
 	TimeMS        int64    `json:"time_ms"`
 	MemoryMB      int64    `json:"memory_mb"`
@@ -153,6 +154,7 @@ func (h *Handler) GetProblemInfo(c echo.Context) error {
 	response := ProblemDetailResponse{
 		LectureID:     problem.LectureID,
 		ProblemID:     problem.ProblemID,
+		Title:         problem.Title,
 		Description:   string(mdContent),
 		TimeMS:        problem.Detail.TimeMS,
 		MemoryMB:      problem.Detail.MemoryMB,
