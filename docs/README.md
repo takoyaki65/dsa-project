@@ -129,8 +129,8 @@
   - **user_id**: リクエストしたユーザーのID (**UserList.id**)
     - ユーザのroleがmanager, adminの場合、全てのタスクが実行される (デバッグ用)。
     - ユーザがstudentの場合、バリデーション用のタスクのみが実行される。
-  - **problem_id**: 課題ID (**Problem.problem_id**)
   - **lecture_id**: 授業ID (**Lecture.id**)
+  - **problem_id**: 課題ID (**Problem.problem_id**)
   - **upload_dir_id**: 提出ファイルが格納されたディレクトリのID (**FileLocation.id**)
   - **result**: バリデーション結果 (**ResultValues.value**)
     - 種類: **ResultValues.name**を参照
@@ -145,11 +145,11 @@
 - **GradingRequest**: 採点リクエスト
   - **lecture_id**: 授業ID (**Lecture.id**)
   - **problem_id**: 課題ID (**Problem.problem_id**)
+  - **user_id**: 採点対象のユーザーID (**UserList.id**)
   - **submission_ts**: 提出時刻 (datetime, 1s精度)
     - 提出時刻は、実際に課題がManaba等の媒体で提出された際の時刻
     - 採点リクエスト時に提出時刻が指定される
-  - **user_id**: 採点対象のユーザーID (**UserList.id**)
-    - (**lecture_id**, **problem_id**, **submission_ts**, **user_id**) の組み合わせで一意
+    - (**lecture_id**, **problem_id**,  **user_id**, **submission_ts**) の組み合わせで一意
   - **ts**: リクエスト時刻 (datetime, 1s精度)
     - 採点リクエストが行われた時刻
   - **request_user_id**: リクエストしたユーザーのID (**UserList.id**)
@@ -196,8 +196,15 @@
 ### 9.1 用語集
 - Task: 課題に対して実行されるタスク。以下の種類がある。
   - Build Task: ソースコードをコンパイルするタスク
-  - Run Task: コンパイルされたプログラムを実行し、与えられた入力に対して想定された出力をするか確認するタスク
-- Judge: 提出されたソースコードのに対して全てのタスクを実行し、結果を表示すること。
-- Validation: 提出されたソースコードがコンパイルが通るか、実行ができるか確認すること。全てのタスクは実行しない。
+  - Judge Task: コンパイルされたプログラムを実行し、与えられた入力に対して想定された出力をするか確認するタスク
+- Request: 提出されたソースコードに対してタスクを実行するリクエスト。以下の種類がある。
+  - Validation Request
+    - 提出されたソースコードがコンパイルが通るか、実行ができるか確認すること。全てのタスクは実行しない。
+    - ユーザが試行錯誤で何回も頻繁にリクエストされることを想定している。
+    - 古いリクエスト結果は重要ではない。
+  - Grading Request
+    - 提出されたソースコードに対して全てのタスクを実行し、結果を表示すること。
+    - 別の提出プラットフォーム(Manaba等)で提出されたソースコードをジャッジすることを想定している。
+    - 古いリクエスト結果も重要である。
 - Lecture (授業): 複数の課題を含む、授業の単位。具体例としては、「ハッシュ」「木構造」「グラフ」「動的計画法」等がある。
 - Problem (課題): 授業内の課題。具体例としては、「必須課題1」「必須課題2」「応用課題」等がある。

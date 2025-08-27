@@ -1,5 +1,10 @@
 package problem
 
+import (
+	"encoding/json"
+	"errors"
+)
+
 type AssignmentConfig struct {
 	SubID         int        `json:"sub_id"`
 	Title         string     `json:"title"`
@@ -24,7 +29,17 @@ type TestCase struct {
 	ExitCode      *int64 `json:"exit,omitempty"`
 }
 
-func (conf *AssignmentConfig) SetDefaults() {
+func (ac *AssignmentConfig) Decode(data []byte) error {
+	if err := json.Unmarshal(data, ac); err != nil {
+		return errors.New("Failed to parse assignment config: " + err.Error())
+	}
+
+	ac.setDefaults()
+
+	return nil
+}
+
+func (conf *AssignmentConfig) setDefaults() {
 	if conf.TimeMS == nil {
 		defaultTime := int64(1000) // Default time in milliseconds
 		conf.TimeMS = &defaultTime
@@ -35,15 +50,15 @@ func (conf *AssignmentConfig) SetDefaults() {
 	}
 
 	for i := range conf.Build {
-		conf.Build[i].SetDefaults()
+		conf.Build[i].setDefaults()
 	}
 
 	for i := range conf.Judge {
-		conf.Judge[i].SetDefaults()
+		conf.Judge[i].setDefaults()
 	}
 }
 
-func (t *TestCase) SetDefaults() {
+func (t *TestCase) setDefaults() {
 	if t.EvalOnly == nil {
 		defaultEvalOnly := false
 		t.EvalOnly = &defaultEvalOnly

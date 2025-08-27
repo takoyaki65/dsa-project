@@ -5,7 +5,6 @@ import (
 	"context"
 	"dsa-backend/handler/response"
 	"dsa-backend/storage/model"
-	"encoding/json"
 	"errors"
 	"io"
 	"net/http"
@@ -262,20 +261,21 @@ func (h *Handler) RegisterProblem(c echo.Context) error {
 	}
 
 	// Parse init.json into AssignmentConfig
-	var config AssignmentConfig
 	initFile, err := os.Open(initPath)
 	if err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, response.NewError("failed to open init.json: "+err.Error()))
 	}
 	defer initFile.Close()
 
-	err = json.NewDecoder(initFile).Decode(&config)
+	initData, err := io.ReadAll(initFile)
 	if err != nil {
-		return echo.NewHTTPError(http.StatusInternalServerError, response.NewError("failed to parse init.json: "+err.Error()))
+		return echo.NewHTTPError(http.StatusInternalServerError, response.NewError("failed to read init.json: "+err.Error()))
 	}
 
-	// Set default value in config
-	config.SetDefaults()
+	var config AssignmentConfig = AssignmentConfig{}
+	if err := config.Decode(initData); err != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError, response.NewError("failed to parse init.json: "+err.Error()))
+	}
 
 	// TODO: parse readme, and capture every link referencing image file in this zip file.
 	// e.g., [image1.png](image1.png)
@@ -322,8 +322,9 @@ func (h *Handler) RegisterProblem(c echo.Context) error {
 	var buildtasks []model.TestCase
 	var judgeTasks []model.TestCase
 
-	for _, t := range config.Build {
+	for i, t := range config.Build {
 		testcase := model.TestCase{
+			ID:          int64(i + 1),
 			Title:       t.Title,
 			Description: t.Description,
 			Command:     t.Command,
@@ -336,8 +337,9 @@ func (h *Handler) RegisterProblem(c echo.Context) error {
 		buildtasks = append(buildtasks, testcase)
 	}
 
-	for _, t := range config.Judge {
+	for i, t := range config.Judge {
 		testcase := model.TestCase{
+			ID:          int64(i + 1),
 			Title:       t.Title,
 			Description: t.Description,
 			Command:     t.Command,

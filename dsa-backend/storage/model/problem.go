@@ -41,6 +41,7 @@ type Detail struct {
 }
 
 type TestCase struct {
+	ID          int64  `json:"id"`
 	Title       string `json:"title"`
 	Description string `json:"description"`
 	Command     string `json:"command"`
