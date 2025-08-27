@@ -123,20 +123,38 @@
   - **title**: 課題タイトル (文字列)
   - **resource_location_id**: 課題リソースファイルへのパス (FileLocation.id)
   - **detail**: 課題の詳細 (JSON)
-- **Request**: リクエスト情報管理
+- **ValidationRequest**: 提出されたコードのバリデーションリクエスト
   - **id**: リクエストID (auto increment)
   - **ts**: リクエスト時刻 (datetime, 1s精度)
-  - **user_id**: 採点対象のユーザーID (**UserList.id**)
+  - **user_id**: リクエストしたユーザーのID (**UserList.id**)
+    - ユーザのroleがmanager, adminの場合、全てのタスクが実行される (デバッグ用)。
+    - ユーザがstudentの場合、バリデーション用のタスクのみが実行される。
+  - **problem_id**: 課題ID (**Problem.problem_id**)
+  - **lecture_id**: 授業ID (**Lecture.id**)
+  - **upload_dir_id**: 提出ファイルが格納されたディレクトリのID (**FileLocation.id**)
+  - **result**: バリデーション結果 (**ResultValues.value**)
+    - 種類: **ResultValues.name**を参照
+    - デフォルトは10 (WJ)
+    - 各タスクの実行結果の内、最大値がストアされる
+  - **log**: バリデーションログ (JSON)
+    - 各タスクの実行結果が記録される
+      - 実行結果 (AC～IE)、実行時間、消費メモリ、実行コマンド、標準入力、標準出力、標準エラー出力
+    - その他、メッセージログ等も記録される。
+  - **timeMS**: 全タスクの最大実行時間[ms]
+  - **memoryKB**: 全タスクの最大消費メモリ[KB]
+- **GradingRequest**: 採点リクエスト
+  - **lecture_id**: 授業ID (**Lecture.id**)
+  - **problem_id**: 課題ID (**Problem.problem_id**)
   - **submission_ts**: 提出時刻 (datetime, 1s精度)
     - 提出時刻は、実際に課題がManaba等の媒体で提出された際の時刻
     - 採点リクエスト時に提出時刻が指定される
-    - 採点リクエストでも無い場合は、提出時刻はジャッジリクエスト時刻と同一となる
+  - **user_id**: 採点対象のユーザーID (**UserList.id**)
+    - (**lecture_id**, **problem_id**, **submission_ts**, **user_id**) の組み合わせで一意
+  - **ts**: リクエスト時刻 (datetime, 1s精度)
+    - 採点リクエストが行われた時刻
   - **request_user_id**: リクエストしたユーザーのID (**UserList.id**)
-    - 管理者が学生の提出ファイルをジャッジする場合、提出者と採点対象が一致しない場合がある
-  - **eval**: 課題採点リクエストかどうか, True/False
-  - **lecture_id**: 授業ID (**Lecture.id**)
-  - **problem_id**: 課題ID (**Problem.problem_id**)
-  - **upload_dir_id**: 提出ファイルが格納されたディレクトリのID (FileLocation.id)
+    - 管理者が学生の提出ファイルをジャッジする場合、提出者と採点対象が一致しないことがある
+  - **upload_dir_id**: 提出ファイルが格納されたディレクトリのID (**FileLocation.id**)
   - **result**: 採点結果 (**ResultValues.value**)
     - 種類: **ResultValues.name**を参照
     - デフォルトは10 (WJ)
