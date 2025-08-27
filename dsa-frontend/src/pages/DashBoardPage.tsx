@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useAuthQuery } from "../auth/hooks";
 import NavigationBar from "../components/NavigationBar";
+import { useNavigate } from "react-router";
 
 interface Problem {
   lecture_id: number;
@@ -18,6 +19,8 @@ interface Lecture {
 
 // url: /dashboard
 const DashBoardPage: React.FC = () => {
+  const navigate = useNavigate();
+
   const [selectedLecture, setSelectedLecture] = useState<number | null>(null);
 
   const lectureDataQuery = useAuthQuery<Lecture[]>({
@@ -108,6 +111,7 @@ const DashBoardPage: React.FC = () => {
                       <div
                         key={`${problem.lecture_id}-${problem.problem_id}`}
                         className="p-4 border border-gray-200 rounded hover:bg-gray-50 transition-colors cursor-pointer"
+                        onClick={() => navigate(`/problem/${problem.lecture_id}/${problem.problem_id}`)}
                       >
                         <span className="text-gray-700">{problem.title}</span>
                       </div>

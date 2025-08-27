@@ -4,6 +4,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import ProtectedRoute from './ProtectedRoute';
 import DashBoardPage from './pages/DashBoardPage';
 import ProblemStatementPage from './pages/ProblemStatementPage';
+import NotFoundPage from './pages/NotFound';
 
 const queryClient = new QueryClient();
 
@@ -13,17 +14,10 @@ function App() {
       <BrowserRouter>
         <Routes>
           <Route path="/login" element={<LoginPage />} />
-          <Route path="/dashboard" element={
-            <ProtectedRoute>
-              <DashBoardPage />
-            </ProtectedRoute>
-          } />
-          <Route path="/problem/:lectureid/:problemid" element={
-            <ProtectedRoute>
-              <ProblemStatementPage />
-            </ProtectedRoute>
-          } />
-          <Route path="*" element={<Navigate to="/login" replace />} />
+          <Route path="/dashboard" element={<ProtectedRoute><DashBoardPage /></ProtectedRoute>} />
+          <Route path="/problem/:lectureid/:problemid" element={<ProtectedRoute><ProblemStatementPage /></ProtectedRoute>} />
+          <Route path="/" element={<Navigate to="/dashboard" replace />} />
+          <Route path="*" element={<NotFoundPage />} />
         </Routes>
       </BrowserRouter>
     </QueryClientProvider>
