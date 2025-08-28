@@ -19,38 +19,42 @@ type ValidationRequest struct {
 
 	ID          int64      `bun:"id,pk,autoincrement" json:"id"`
 	TS          time.Time  `bun:"ts,notnull" json:"ts"`
-	UserID      int64      `bun:"user_id,notnull" json:"user_id"`
+	UserCode    int64      `bun:"usercode,notnull" json:"usercode"`
 	LectureID   int64      `bun:"lecture_id,notnull" json:"lecture_id"`
 	ProblemID   int64      `bun:"problem_id,notnull" json:"problem"`
 	UploadDirID int64      `bun:"upload_dir_id,notnull" json:"upload_dir_id"`
 	ResultID    int64      `bun:"result,notnull" json:"result_id"`
 	Log         RequestLog `bun:"log,notnull,type:jsonb" json:"log"`
-	TimeMS      int64      `bun:"time_ms,notnull" json:"time_ms"`
-	MemoryKB    int64      `bun:"memory_kb,notnull" json:"memory_kb"`
+	TimeMS      int64      `bun:"timems,notnull" json:"time_ms"`
+	MemoryKB    int64      `bun:"memorykb,notnull" json:"memory_kb"`
 
-	Problem      *Problem      `bun:"rel:belongs-to,join:(lecture_id,problem_id)=(lecture_id,problem_id)"`
-	Result       *ResultValues `bun:"rel:has-one,join:result=id"`
+	Problem      *Problem      `bun:"rel:belongs-to,join:lecture_id=lecture_id,join:problem_id=problem_id"`
+	Result       *ResultValues `bun:"rel:has-one,join:result=value"`
 	FileLocation *FileLocation `bun:"rel:has-one,join:upload_dir_id=id"`
+	User         *UserList     `bun:"rel:belongs-to,join:usercode=id"`
 }
 
 type GradingRequest struct {
 	bun.BaseModel `bun:"table:gradingrequest"`
 
-	LectureID     int64      `bun:"lecture_id,notnull" json:"lecture_id"`
-	ProblemID     int64      `bun:"problem_id,notnull" json:"problem"`
-	UserID        int64      `bun:"user_id,notnull" json:"user_id"`
-	SubmissionTS  time.Time  `bun:"submission_ts,notnull" json:"submission_ts"`
-	TS            time.Time  `bun:"ts,notnull" json:"ts"`
-	RequestUserID int64      `bun:"request_user_id,notnull" json:"request_user_id"`
-	UploadDirID   int64      `bun:"upload_dir_id,notnull" json:"upload_dir_id"`
-	ResultID      int64      `bun:"result,notnull" json:"result_id"`
-	Log           RequestLog `bun:"log,notnull,type:jsonb" json:"log"`
-	TimeMS        int64      `bun:"time_ms,notnull" json:"time_ms"`
-	MemoryKB      int64      `bun:"memory_kb,notnull" json:"memory_kb"`
+	LectureID       int64      `bun:"lecture_id,notnull" json:"lecture_id"`
+	ProblemID       int64      `bun:"problem_id,notnull" json:"problem"`
+	UserCode        int64      `bun:"usercode,notnull" json:"usercode"`
+	SubmissionTS    time.Time  `bun:"submission_ts,notnull" json:"submission_ts"`
+	TS              time.Time  `bun:"ts,notnull" json:"ts"`
+	RequestUserCode int64      `bun:"request_usercode,notnull" json:"request_usercode"`
+	UploadDirID     int64      `bun:"upload_dir_id,notnull" json:"upload_dir_id"`
+	ResultID        int64      `bun:"result,notnull" json:"result_id"`
+	Log             RequestLog `bun:"log,notnull,type:jsonb" json:"log"`
+	TimeMS          int64      `bun:"timems,notnull" json:"time_ms"`
+	MemoryKB        int64      `bun:"memorykb,notnull" json:"memory_kb"`
 
-	Problem      *Problem      `bun:"rel:belongs-to,join:(lecture_id,problem_id)=(lecture_id,problem_id)"`
-	Result       *ResultValues `bun:"rel:has-one,join:result=id"`
+	Problem      *Problem      `bun:"rel:belongs-to,join:lecture_id=lecture_id,join:problem_id=problem_id"`
+	Result       *ResultValues `bun:"rel:has-one,join:result=value"`
 	FileLocation *FileLocation `bun:"rel:has-one,join:upload_dir_id=id"`
+
+	SubjectUser *UserList `bun:"rel:belongs-to,join:usercode=id"`
+	RequestUser *UserList `bun:"rel:belongs-to,join:request_usercode=id"`
 }
 
 type RequestLog struct {

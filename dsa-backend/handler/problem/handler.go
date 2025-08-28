@@ -12,6 +12,7 @@ import (
 type Handler struct {
 	db           *bun.DB
 	problemStore storage.ProblemStore
+	requestStore storage.RequestStore
 	fileStore    storage.FileStore
 	jwtSecret    string
 }
@@ -20,6 +21,7 @@ func NewProblemHandler(jwtSecret string, db *bun.DB) *Handler {
 	return &Handler{
 		db:           db,
 		problemStore: *storage.NewProblemStore(db),
+		requestStore: *storage.NewRequestStore(db),
 		fileStore:    *storage.NewFileStore(db),
 		jwtSecret:    jwtSecret,
 	}
@@ -35,10 +37,12 @@ func (h *Handler) RegisterRoutes(r *echo.Group) {
 	fetchRouter.GET("/detail/:lectureid/:problemid", h.GetProblemInfo)
 
 	validateRouter := r.Group("/validate")
-	validateRouter.POST("/:lectureid/:problemid", h.ValidateSubmission)
+	validateRouter.POST("/:lectureid/:problemid", h.RequestValidation)
+	validateRouter.POST("/batch/:lectureid", h.BatchValidation)
 
 	judgeRouter := r.Group("/judge", middleware.RequiredScopesMiddleware(auth.ScopeGrading))
-	judgeRouter.POST("/:lectureid/:problemid", h.JudgeSubmission)
+	judgeRouter.POST("/:lectureid/:problemid", h.RequestGrading)
+	judgeRouter.POST("/batch/:lectureid", h.BatchGrading)
 
 	crudRouter := r.Group("/crud", middleware.RequiredScopesMiddleware(auth.ScopeGrading))
 	crudRouter.PUT("/create", h.CreateLectureEntry)

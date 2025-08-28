@@ -357,6 +357,52 @@ paths:
       summary: list all problem entry, nested in lecture entry.
       tags:
       - problem
+  /problem/validate/{lectureid}/{problemid}:
+    post:
+      consumes:
+      - multipart/form-data
+      description: request a validation request, which is just compiling program codes,
+        and executes some simple test cases.
+      parameters:
+      - description: Lecture ID
+        in: path
+        name: lectureid
+        required: true
+        type: integer
+      - description: Problem ID
+        in: path
+        name: problemid
+        required: true
+        type: integer
+      - collectionFormat: csv
+        description: Files to validate
+        in: formData
+        items:
+          type: file
+        name: files
+        required: true
+        type: array
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Validation request registered successfully
+          schema:
+            $ref: '#/definitions/response.Success'
+        "400":
+          description: Invalid request
+          schema:
+            $ref: '#/definitions/response.Error'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/response.Error'
+      security:
+      - OAuth2Password:
+        - me
+      summary: Request validation
+      tags:
+      - problem
   /user/login:
     post:
       consumes:

@@ -36,6 +36,8 @@ CREATE TABLE IF NOT EXISTS UserList (
     email VARCHAR(255)
 );
 
+CREATE INDEX idx_userid ON UserList(userid);
+
 CREATE TABLE IF NOT EXISTS LoginHistory (
     id SERIAL PRIMARY KEY,
     user_id VARCHAR(255) NOT NULL,
@@ -86,7 +88,7 @@ INSERT INTO ResultValues (value, name) VALUES (0, 'AC'), (1, 'WA'), (2, 'TLE'), 
 CREATE TABLE IF NOT EXISTS ValidationRequest (
     id SERIAL PRIMARY KEY,
     ts TIMESTAMP(0) WITH TIME ZONE NOT NULL,
-    user_id INTEGER NOT NULL,
+    usercode INTEGER NOT NULL,
     lecture_id INTEGER NOT NULL,
     problem_id INTEGER NOT NULL,
     upload_dir_id INTEGER NOT NULL REFERENCES FileLocation(id),
@@ -94,26 +96,26 @@ CREATE TABLE IF NOT EXISTS ValidationRequest (
     log JSONB NOT NULL,
     timeMS INTEGER NOT NULL,
     memoryKB INTEGER NOT NULL,
-    FOREIGN KEY (user_id) REFERENCES UserList(id) ON DELETE CASCADE,
+    FOREIGN KEY (usercode) REFERENCES UserList(id) ON DELETE CASCADE,
     FOREIGN KEY (lecture_id, problem_id) REFERENCES Problem(lecture_id, problem_id) ON DELETE CASCADE
 );
 
 CREATE TABLE IF NOT EXISTS GradingRequest (
     lecture_id INTEGER NOT NULL,
     problem_id INTEGER NOT NULL,
-    user_id INTEGER NOT NULL,
+    usercode INTEGER NOT NULL,
     submission_ts TIMESTAMP(0) WITH TIME ZONE NOT NULL,
     ts TIMESTAMP(0) WITH TIME ZONE NOT NULL,
-    request_user_id INTEGER NOT NULL,
+    request_usercode INTEGER NOT NULL,
     upload_dir_id INTEGER NOT NULL REFERENCES FileLocation(id),
     result INTEGER NOT NULL REFERENCES ResultValues(value),
     log JSONB NOT NULL,
-    timeMS INTEGER NOT NULL,
-    memoryKB INTEGER NOT NULL,
+    timems INTEGER NOT NULL,
+    memorykb INTEGER NOT NULL,
     FOREIGN KEY (lecture_id, problem_id) REFERENCES Problem(lecture_id, problem_id) ON DELETE CASCADE,
-    FOREIGN KEY (user_id) REFERENCES UserList(id) ON DELETE CASCADE,
-    FOREIGN KEY (request_user_id) REFERENCES UserList(id) ON DELETE CASCADE,
-    PRIMARY KEY (lecture_id, problem_id, user_id, submission_ts)
+    FOREIGN KEY (usercode) REFERENCES UserList(id) ON DELETE CASCADE,
+    FOREIGN KEY (request_usercode) REFERENCES UserList(id) ON DELETE CASCADE,
+    PRIMARY KEY (lecture_id, problem_id, usercode, submission_ts)
 );
 
 -- setting of grant

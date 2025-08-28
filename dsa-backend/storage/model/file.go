@@ -24,7 +24,7 @@ type FileReference struct {
 	LocationID int64 `bun:"location_id,notnull" json:"location_id"`
 
 	FileLocation *FileLocation `bun:"rel:belongs-to,join:location_id=id"`
-	Problem      *Problem      `bun:"rel:belongs-to,join:(lecture_id,problem_id)=(lecture_id,problem_id)"`
+	Problem      *Problem      `bun:"rel:belongs-to,join:lecture_id=lecture_id,join:problem_id=problem_id"`
 }
 
 var _ bun.BeforeAppendModelHook = (*FileLocation)(nil)

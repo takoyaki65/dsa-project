@@ -126,7 +126,7 @@
 - **ValidationRequest**: 提出されたコードのバリデーションリクエスト
   - **id**: リクエストID (auto increment)
   - **ts**: リクエスト時刻 (datetime, 1s精度)
-  - **user_id**: リクエストしたユーザーのID (**UserList.id**)
+  - **usercode**: リクエストしたユーザーのコードID (**UserList.id**)
     - ユーザのroleがmanager, adminの場合、全てのタスクが実行される (デバッグ用)。
     - ユーザがstudentの場合、バリデーション用のタスクのみが実行される。
   - **lecture_id**: 授業ID (**Lecture.id**)
@@ -140,19 +140,19 @@
     - 各タスクの実行結果が記録される
       - 実行結果 (AC～IE)、実行時間、消費メモリ、実行コマンド、標準入力、標準出力、標準エラー出力
     - その他、メッセージログ等も記録される。
-  - **timeMS**: 全タスクの最大実行時間[ms]
-  - **memoryKB**: 全タスクの最大消費メモリ[KB]
+  - **timems**: 全タスクの最大実行時間[ms]
+  - **memorykb**: 全タスクの最大消費メモリ[KB]
 - **GradingRequest**: 採点リクエスト
   - **lecture_id**: 授業ID (**Lecture.id**)
   - **problem_id**: 課題ID (**Problem.problem_id**)
-  - **user_id**: 採点対象のユーザーID (**UserList.id**)
+  - **usercode**: 採点対象のユーザーのコードID (**UserList.id**)
   - **submission_ts**: 提出時刻 (datetime, 1s精度)
     - 提出時刻は、実際に課題がManaba等の媒体で提出された際の時刻
     - 採点リクエスト時に提出時刻が指定される
-    - (**lecture_id**, **problem_id**,  **user_id**, **submission_ts**) の組み合わせで一意
+    - (**lecture_id**, **problem_id**,  **usercode**, **submission_ts**) の組み合わせで一意
   - **ts**: リクエスト時刻 (datetime, 1s精度)
     - 採点リクエストが行われた時刻
-  - **request_user_id**: リクエストしたユーザーのID (**UserList.id**)
+  - **request_usercode**: リクエストしたユーザーのコードID (**UserList.id**)
     - 管理者が学生の提出ファイルをジャッジする場合、提出者と採点対象が一致しないことがある
   - **upload_dir_id**: 提出ファイルが格納されたディレクトリのID (**FileLocation.id**)
   - **result**: 採点結果 (**ResultValues.value**)
@@ -163,8 +163,8 @@
     - 各テストケースの実行結果が記録される
       - 実行結果 (AC～IE)、実行時間、消費メモリ、実行コマンド、標準入力、標準出力、標準エラー出力
     - その他、メッセージログ等も記録される。
-  - **timeMS**: 全タスクの最大実行時間[ms]
-  - **memoryKB**: 全タスクの最大消費メモリ[KB]
+  - **timems**: 全タスクの最大実行時間[ms]
+  - **memorykb**: 全タスクの最大消費メモリ[KB]
 - **FileLocation**: アップロードされたファイルの管理
   - **id**: アップロードファイルID (auto increment)
   - **path**: アップロードファイルへのパス (文字列)
@@ -208,3 +208,8 @@
     - 古いリクエスト結果も重要である。
 - Lecture (授業): 複数の課題を含む、授業の単位。具体例としては、「ハッシュ」「木構造」「グラフ」「動的計画法」等がある。
 - Problem (課題): 授業内の課題。具体例としては、「必須課題1」「必須課題2」「応用課題」等がある。
+- ユーザー: 二種類のIDを持つ
+  - コードID: 登録順に自動で割り振られる整数ID。データベースの主キーとして使用される。
+    - "登録順"を保持するために用いられている。
+  - ユーザーID: 学籍番号などの一意な識別子
+    - ログインする際に使用される。

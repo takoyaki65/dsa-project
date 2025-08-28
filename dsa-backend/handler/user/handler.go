@@ -133,7 +133,7 @@ func (h *Handler) Login(c echo.Context) error {
 	}
 
 	// create JWT token
-	token, err := auth.IssueNewToken(userRecord.UserID, scopes, h.jwtSecret, issuedAt, expiredAt)
+	token, err := auth.IssueNewToken(userRecord.ID, userRecord.UserID, scopes, h.jwtSecret, issuedAt, expiredAt)
 
 	if err != nil {
 		return c.String(http.StatusInternalServerError, "failed to issue token")
