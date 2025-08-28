@@ -179,8 +179,8 @@ const ProblemStatementPage: React.FC = () => {
   const { lectureid, problemid } = useParams<{ lectureid: string; problemid: string }>();
 
   // TODO: Should we check the validity of params before querying?
-  const isValidLectureId = lectureid && !isNaN(parseInt(lectureid, 10));
-  const isValidProblemId = problemid && !isNaN(parseInt(problemid, 10));
+  const isValidLectureId = !!lectureid && !isNaN(parseInt(lectureid, 10));
+  const isValidProblemId = !!problemid && !isNaN(parseInt(problemid, 10));
 
   const problemDetailQuery = useAuthQuery<ProblemDetail>({
     queryKey: [`problemDetail-${lectureid}-${problemid}`],
