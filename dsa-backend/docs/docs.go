@@ -407,6 +407,70 @@ const docTemplate = `{
                 }
             }
         },
+        "/problem/validate/batch/{lectureid}": {
+            "post": {
+                "security": [
+                    {
+                        "OAuth2Password": [
+                            "me"
+                        ]
+                    }
+                ],
+                "description": "This endpoint allows users to request validation for all problems within a specific lecture.",
+                "consumes": [
+                    "multipart/form-data"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "problem"
+                ],
+                "summary": "Request validation for all problems in a specific lecture entry.",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Lecture ID",
+                        "name": "lectureid",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "file",
+                        "description": "Zip file containing all program codes you're submitting",
+                        "name": "zipfile",
+                        "in": "formData",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Batch validation requests registered successfully",
+                        "schema": {
+                            "$ref": "#/definitions/response.Success"
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid request payload",
+                        "schema": {
+                            "$ref": "#/definitions/response.Error"
+                        }
+                    },
+                    "404": {
+                        "description": "No problems found for the given lecture ID",
+                        "schema": {
+                            "$ref": "#/definitions/response.Error"
+                        }
+                    },
+                    "500": {
+                        "description": "Failed to register batch validation requests",
+                        "schema": {
+                            "$ref": "#/definitions/response.Error"
+                        }
+                    }
+                }
+            }
+        },
         "/problem/validate/{lectureid}/{problemid}": {
             "post": {
                 "security": [

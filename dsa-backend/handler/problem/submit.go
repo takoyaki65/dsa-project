@@ -1,6 +1,7 @@
 package problem
 
 import (
+	"archive/zip"
 	"context"
 	"dsa-backend/handler/auth"
 	requeststatus "dsa-backend/handler/problem/requestStatus"
@@ -10,9 +11,24 @@ import (
 	"io"
 	"net/http"
 	"os"
+	"path/filepath"
+	"strings"
 	"time"
 
 	"github.com/labstack/echo/v4"
+)
+
+// TODO: Discuss file size limits
+// TODO: Make this configuration be configurable via env file, or admin API.
+const (
+	// Maximum uncompressed size for uploaded files (10MB)
+	maxUncompressedSize = 10 * 1024 * 1024
+	// Maximum size for a single uploaded file (5MB)
+	maxFileSize = 5 * 1024 * 1024
+	// Maximum number of uploaded files
+	maxFiles = 500
+	// Maximum size for an uploaded zip file (5MB)
+	maxZipSize = 5 * 1024 * 1024
 )
 
 // RequestValidation godoc
@@ -151,12 +167,129 @@ type ProblemIDPathParam struct {
 	LectureID int64 `param:"lectureid"`
 }
 
+// BatchValidation godoc
+//
+//	@Summary		Request validation for all problems in a specific lecture entry.
+//	@Description	This endpoint allows users to request validation for all problems within a specific lecture.
+//	@Tags			problem
+//	@Accept			multipart/form-data
+//	@Produce		json
+//	@Param			lectureid	path		int					true	"Lecture ID"
+//	@Param			zipfile		formData	file				true	"Zip file containing all program codes you're submitting"
+//	@Success		200			{object}	response.Success	"Batch validation requests registered successfully"
+//	@Failure		400			{object}	response.Error		"Invalid request payload"
+//	@Failure		404			{object}	response.Error		"No problems found for the given lecture ID"
+//	@Failure		500			{object}	response.Error		"Failed to register batch validation requests"
+//	@Security		OAuth2Password[me]
+//	@Router			/problem/validate/batch/{lectureid} [post]
 func (h *Handler) BatchValidation(c echo.Context) error {
 	var req ProblemIDPathParam
 	if err := c.Bind(&req); err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, response.NewError("Invalid request payload"))
 	}
-	panic("BatchValidateSubmissions handler not implemented yet")
+
+	ctx := context.Background()
+
+	// Check if the Lecture entry exists
+	lecture, err := h.problemStore.GetLectureAndAllProblems(&ctx, req.LectureID)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError, response.NewError("Failed to check lecture existence"+err.Error()))
+	}
+
+	problems := lecture.Problems
+	if len(problems) == 0 {
+		return echo.NewHTTPError(http.StatusNotFound, response.NewError("No problems found for the given lecture ID"))
+	}
+
+	// get user info from jwt
+	claim, err := auth.GetJWTClaims(&c)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusUnauthorized, response.NewError("Failed to get user info"))
+	}
+
+	userCode := claim.ID
+	userID := claim.UserID
+
+	requestTime := time.Now()
+
+	//----------------------------------------------------------------------------
+	// Read a zip file from formData, and then unzip it.
+	//
+	// Before unzipping it, we have to check the size of uncompressed files to prevent zip bomb attacks.
+	//
+	//
+	// store files at dir: upload/validation/{userID}/{lectureID}/{YYYY-MM-DD-HH-mm-ss}
+	// ---------------------------------------------------------------------------------------------
+	zipFile, err := c.FormFile("zipfile")
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, response.NewError("Invalid zip file"))
+	}
+
+	// check the size of zip file
+	if zipFile.Size > maxZipSize {
+		return echo.NewHTTPError(http.StatusBadRequest, response.NewError(fmt.Sprintf("Zip file size exceeds the limit of %d bytes", maxZipSize)))
+	}
+
+	uploadDir := fmt.Sprintf("upload/validation/%s/%d/%s", userID, req.LectureID, requestTime.Format("2006-01-02-15-04-05"))
+
+	// Open zip file
+	src, err := zipFile.Open()
+	if err != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError, response.NewError("Failed to open zip file"))
+	}
+	defer src.Close()
+
+	// move to temporary directory
+	tempFile, err := os.CreateTemp("", "upload-*.zip")
+	if err != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError, response.NewError("Failed to create temporary file"))
+	}
+	defer os.Remove(tempFile.Name())
+	defer tempFile.Close()
+
+	if _, err := io.Copy(tempFile, src); err != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError, response.NewError("Failed to copy zip file to temporary file"))
+	}
+
+	// Extract zip file **safely**
+	if err := safeExtractZip(tempFile.Name(), uploadDir); err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, response.NewError("Failed to extract zip file: "+err.Error()))
+	}
+
+	// Register file location
+	fileLocation := model.FileLocation{
+		Path: uploadDir,
+		Ts:   requestTime,
+	}
+	err = h.fileStore.RegisterFileLocation(&ctx, &fileLocation)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError, response.NewError("Failed to register file location"))
+	}
+
+	// Make request body for each problem entries in the specified lecture.
+	var requests []model.ValidationRequest
+	for _, problem := range problems {
+		requests = append(requests, model.ValidationRequest{
+			TS:          requestTime,
+			UserCode:    userCode,
+			LectureID:   req.LectureID,
+			ProblemID:   problem.ProblemID,
+			UploadDirID: fileLocation.ID,
+			ResultID:    int64(requeststatus.WJ),
+			TimeMS:      0,
+			MemoryKB:    0,
+		})
+	}
+
+	// Register requests
+	for _, req := range requests {
+		err = h.requestStore.RegisterValidationRequest(&ctx, &req)
+		if err != nil {
+			return echo.NewHTTPError(http.StatusInternalServerError, response.NewError("Failed to register validation request"))
+		}
+	}
+
+	return c.JSON(http.StatusOK, response.NewSuccess("Batch validation requests registered successfully"))
 }
 
 func (h *Handler) RequestGrading(c echo.Context) error {
@@ -174,4 +307,117 @@ func (h *Handler) BatchGrading(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusBadRequest, response.NewError("Invalid request payload"))
 	}
 	panic("BatchGrading handler not implemented yet")
+}
+
+// Extracts zip file with validation of size constraints.
+// We check those constraints before/during extracting.
+//
+//  1. Check the number of files is above `maxFiles`.
+//  2. Check the total size of all uncompressed files is below `maxUncompressedSize`.
+//  3. Check the individual file sizes are below `maxFileSize`.
+//
+// Also, this function takes care of path-traversal attacks by sanitizing file paths.
+//
+// When all checks pass, extract the zip file to the specified destination directory.
+// Otherwise, remove the destination directory and return an error.
+func safeExtractZip(zipPath, destDir string) error {
+	reader, err := zip.OpenReader(zipPath)
+	if err != nil {
+		return fmt.Errorf("failed to open zip file: %w", err)
+	}
+	defer reader.Close()
+
+	// Check the number of files in the zip file.
+	if len(reader.File) > maxFiles {
+		return fmt.Errorf("zip file contains too many files (max: %d)", maxFiles)
+	}
+
+	// Check the total expected size of uncompressed files, before extracting.
+	var totalUncompressed uint64
+	for _, file := range reader.File {
+		totalUncompressed += file.UncompressedSize64
+		if totalUncompressed > maxUncompressedSize {
+			return fmt.Errorf("uncompressed size too large (max: %d MB)", maxUncompressedSize/(1024*1024))
+		}
+	}
+
+	// Make destination directory.
+	if err := os.MkdirAll(destDir, 0755); err != nil {
+		return fmt.Errorf("failed to create destination directory: %w", err)
+	}
+
+	// Extract files.
+	for _, file := range reader.File {
+		if err := extractFile(file, destDir); err != nil {
+			// When error occurs, remove destination directory
+			os.RemoveAll(destDir)
+			return err
+		}
+	}
+
+	return nil
+}
+
+func extractFile(file *zip.File, destDir string) error {
+	// Sanitize file name to prevent path traversal attacks.
+	cleanPath := filepath.Clean(file.Name)
+	if strings.Contains(cleanPath, "..") {
+		return fmt.Errorf("invalid file path: %s", file.Name)
+	}
+
+	targetPath := filepath.Join(destDir, cleanPath)
+
+	// Check if the target path is within the destination directory.
+	if !strings.HasPrefix(filepath.Clean(targetPath), filepath.Clean(destDir)) {
+		return fmt.Errorf("file path outside of destination directory: &s", file.Name)
+	}
+
+	// Check if this individual file exceeds the size limit.
+	if file.UncompressedSize64 > maxFileSize {
+		return fmt.Errorf("file %s too large (max %d MB)", file.Name, maxFileSize/(1024*1024))
+	}
+
+	// In the case of "file" is a directory
+	if file.FileInfo().IsDir() {
+		// make directory
+		return os.MkdirAll(targetPath, file.Mode())
+	}
+
+	// In the case of "file" is a regular file
+	// Make parent directory
+	if err := os.MkdirAll(filepath.Dir(targetPath), 0755); err != nil {
+		return fmt.Errorf("failed to create directory for %s: %w", targetPath, err)
+	}
+
+	// Open file
+	rc, err := file.Open()
+	if err != nil {
+		return fmt.Errorf("failed to open file %s in zip: %w", file.Name, err)
+	}
+	defer rc.Close()
+
+	// Create output file
+	outFile, err := os.OpenFile(targetPath, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, file.Mode())
+	if err != nil {
+		return fmt.Errorf("failed to create output file %s: %w", targetPath, err)
+	}
+	defer outFile.Close()
+
+	// Copy it with size limit
+	limitedReader := &io.LimitedReader{
+		R: rc,
+		N: int64(maxFileSize),
+	}
+
+	written, err := io.Copy(outFile, limitedReader)
+	if err != nil {
+		return fmt.Errorf("failed to extract file: %w", err)
+	}
+
+	// Check if the entire file was copied
+	if uint64(written) != file.UncompressedSize64 {
+		return fmt.Errorf("file size mismatch for %s", file.Name)
+	}
+
+	return nil
 }

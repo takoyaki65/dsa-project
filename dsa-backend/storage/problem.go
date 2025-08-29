@@ -11,6 +11,15 @@ type ProblemStore struct {
 	db *bun.DB
 }
 
+func (ps ProblemStore) GetLectureAndAllProblems(context *context.Context, d int64) (model.Lecture, error) {
+	var lecture model.Lecture
+	err := ps.db.NewSelect().Model(&lecture).Relation("Problems").Where("id = ?", d).Scan(*context)
+	if err != nil {
+		return model.Lecture{}, err
+	}
+	return lecture, nil
+}
+
 func (ps ProblemStore) GetProblemByID(context *context.Context, lectureID int64, problemID int64) (*model.Problem, error) {
 	var problem model.Problem
 	err := ps.db.NewSelect().Model(&problem).

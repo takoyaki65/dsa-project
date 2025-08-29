@@ -403,6 +403,48 @@ paths:
       summary: Request validation
       tags:
       - problem
+  /problem/validate/batch/{lectureid}:
+    post:
+      consumes:
+      - multipart/form-data
+      description: This endpoint allows users to request validation for all problems
+        within a specific lecture.
+      parameters:
+      - description: Lecture ID
+        in: path
+        name: lectureid
+        required: true
+        type: integer
+      - description: Zip file containing all program codes you're submitting
+        in: formData
+        name: zipfile
+        required: true
+        type: file
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Batch validation requests registered successfully
+          schema:
+            $ref: '#/definitions/response.Success'
+        "400":
+          description: Invalid request payload
+          schema:
+            $ref: '#/definitions/response.Error'
+        "404":
+          description: No problems found for the given lecture ID
+          schema:
+            $ref: '#/definitions/response.Error'
+        "500":
+          description: Failed to register batch validation requests
+          schema:
+            $ref: '#/definitions/response.Error'
+      security:
+      - OAuth2Password:
+        - me
+      summary: Request validation for all problems in a specific lecture entry.
+      tags:
+      - problem
   /user/login:
     post:
       consumes:
