@@ -37,10 +37,10 @@ type ValidationRequest struct {
 type GradingRequest struct {
 	bun.BaseModel `bun:"table:gradingrequest"`
 
-	LectureID       int64      `bun:"lecture_id,notnull" json:"lecture_id"`
-	ProblemID       int64      `bun:"problem_id,notnull" json:"problem"`
-	UserCode        int64      `bun:"usercode,notnull" json:"usercode"`
-	SubmissionTS    time.Time  `bun:"submission_ts,notnull" json:"submission_ts"`
+	LectureID       int64      `bun:"lecture_id,pk,notnull" json:"lecture_id"`
+	ProblemID       int64      `bun:"problem_id,pk,notnull" json:"problem"`
+	UserCode        int64      `bun:"usercode,pk,notnull" json:"usercode"`
+	SubmissionTS    time.Time  `bun:"submission_ts,pk,notnull" json:"submission_ts"`
 	TS              time.Time  `bun:"ts,notnull" json:"ts"`
 	RequestUserCode int64      `bun:"request_usercode,notnull" json:"request_usercode"`
 	UploadDirID     int64      `bun:"upload_dir_id,notnull" json:"upload_dir_id"`

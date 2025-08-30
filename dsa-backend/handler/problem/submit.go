@@ -77,6 +77,15 @@ func (h *Handler) RequestValidation(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusBadRequest, response.NewError("No files uploaded"))
 	}
 
+	// File size validation
+	var totalFileSize int64
+	for _, file := range files {
+		totalFileSize += file.Size
+	}
+	if totalFileSize > maxUncompressedSize {
+		return echo.NewHTTPError(http.StatusBadRequest, response.NewError(fmt.Sprintf("Total file size exceeds the maximum limit (%d MB)", maxUncompressedSize/(1024*1024))))
+	}
+
 	// get user info from jwt
 	claim, err := auth.GetJWTClaims(&c)
 	if err != nil {
@@ -112,6 +121,12 @@ func (h *Handler) RequestValidation(c echo.Context) error {
 
 	// Store files
 	for _, file := range files {
+		if file.Size > maxFileSize {
+			// delete directory
+			_ = os.RemoveAll(uploadDir)
+			return echo.NewHTTPError(http.StatusBadRequest, response.NewError(fmt.Sprintf("File size exceeds the maximum limit (%d MB)", maxFileSize/(1024*1024))))
+		}
+
 		// Source
 		src, err := file.Open()
 		if err != nil {
@@ -120,7 +135,8 @@ func (h *Handler) RequestValidation(c echo.Context) error {
 		defer src.Close()
 
 		// Destination
-		dst, err := os.Create(fmt.Sprintf("%s/%s", uploadDir, file.Filename))
+		// TODO: Check if this operation is safe and there are no risks like path-traversal attacks
+		dst, err := os.Create(fmt.Sprintf("%s/%s", uploadDir, filepath.Clean(file.Filename)))
 		if err != nil {
 			return echo.NewHTTPError(http.StatusInternalServerError, response.NewError("Failed to create destination file"))
 		}
@@ -292,13 +308,188 @@ func (h *Handler) BatchValidation(c echo.Context) error {
 	return c.JSON(http.StatusOK, response.NewSuccess("Batch validation requests registered successfully"))
 }
 
+type GradingRequestParam struct {
+	LectureID    int64  `param:"lectureid" validate:"required"`
+	ProblemID    int64  `param:"problemid" validate:"required"`
+	TargetUserID string `form:"userid" validate:"required"`
+	SubmissionTS int64  `form:"ts" default:"1764464361" validate:"required"`
+}
+
+func (grp *GradingRequestParam) bind(c echo.Context) error {
+	if err := c.Bind(grp); err != nil {
+		return err
+	}
+	if err := c.Validate(grp); err != nil {
+		return err
+	}
+	return nil
+}
+
+// RequestGrading godoc
+//
+//	@Summary		Request grading
+//	@Description	request a grading request, which is compiling program codes, and executes all test cases. note that the submission timestamp is specified by the user (manager or admin), and the target user ID (e.g., student) is also specified by the user.
+//	@Tags			problem
+//	@Accept			multipart/form-data
+//	@Produce		json
+//	@Param			lectureid	path		int					true	"Lecture ID"
+//	@Param			problemid	path		int					true	"Problem ID"
+//	@Param			userid		formData	string				true	"User ID targeted for grading"
+//	@Param			ts			formData	int					true	"Submission Timestamp, epoch timestamp in seconds (e.g., 1764464361)"
+//	@Param			files		formData	[]file				true	"Files to be graded"
+//	@Success		200			{object}	response.Success	"Grading request registered successfully"
+//	@Failure		400			{object}	response.Error		"Invalid request payload"
+//	@Failure		404			{object}	response.Error		"Problem not found"
+//	@Failure		500			{object}	response.Error		"Internal server error"
+//	@Security		OAuth2Password[grading]
+//	@Router			/problem/judge/{lectureid}/{problemid} [post]
 func (h *Handler) RequestGrading(c echo.Context) error {
-	var req LectureIDProblemID
-	if err := c.Bind(&req); err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest, response.NewError("Invalid request payload"))
+	req := &GradingRequestParam{}
+	if err := req.bind(c); err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, response.NewError("Invalid request payload"+err.Error()))
 	}
 
-	panic("JudgeSubmission handler not implemented yet")
+	// convert epoch seconds to time.Time
+	submissionTS := time.Unix(req.SubmissionTS, 0)
+
+	ctx := context.Background()
+
+	// Check the existence of problem entry
+	exists, err := h.problemStore.CheckProblemExists(&ctx, req.LectureID, req.ProblemID)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError, response.NewError("Failed to check problem existence"))
+	}
+	if !exists {
+		return echo.NewHTTPError(http.StatusNotFound, response.NewError("Problem not found"))
+	}
+
+	// Get user code of user subjected to grading
+	userCodeOfSubject, err := h.userStore.GetIDByUserID(&ctx, req.TargetUserID)
+	if err != nil || userCodeOfSubject == nil {
+		return echo.NewHTTPError(http.StatusBadRequest, response.NewError("Targeted user does not exist"))
+	}
+
+	//-------------
+	// Read files
+	//------------
+
+	// Multipart form
+	form, err := c.MultipartForm()
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, response.NewError("Invalid multipart form"))
+	}
+	files := form.File["files"]
+	if len(files) == 0 {
+		return echo.NewHTTPError(http.StatusBadRequest, response.NewError("No files uploaded"))
+	}
+
+	// File size validation
+	var totalFileSize int64
+	for _, file := range files {
+		totalFileSize += file.Size
+	}
+	if totalFileSize > maxUncompressedSize {
+		return echo.NewHTTPError(http.StatusBadRequest, response.NewError(fmt.Sprintf("Total file size exceeds the maximum limit (%d MB)", maxUncompressedSize/(1024*1024))))
+	}
+
+	// get user info from jwt
+	claim, err := auth.GetJWTClaims(&c)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusUnauthorized, response.NewError("Failed to get user info"))
+	}
+
+	userCodeOfRequester := claim.ID
+
+	requestTime := time.Now()
+
+	// ---------------------------------------------------------------------------------------------
+	// store files at dir: upload/grading/{userID}/{lectureID}/{problemID}/{YYYY-MM-DD-HH-mm-ss}/{YYYY-MM-DD-HH-mm-ss}
+	//
+	// Note:
+	// {userID} is the ID of the user subjected to grading.
+	// First {YYYY-MM-DD-HH-mm-ss} is the submission timestamp specified by the user, which is the actual timestamp submitted by the user
+	// subjected to grading.
+	// Second {YYYY-MM-DD-HH-mm-ss} is the request timestamp.
+	// ---------------------------------------------------------------------------------------------
+	uploadDir := fmt.Sprintf("upload/grading/%s/%d/%d/%s/%s", req.TargetUserID, req.LectureID, req.ProblemID, submissionTS.Format("2006-01-02-15-04-05"), requestTime.Format("2006-01-02-15-04-05"))
+
+	// Check the existence of directory
+	if info, err := os.Stat(uploadDir); err != nil {
+		if os.IsNotExist(err) {
+			// Directory does not exist
+		} else if info.IsDir() {
+			// Directory exists
+			return echo.NewHTTPError(http.StatusConflict, response.NewError("you must not request grading for the same problem twice at the same time, please try again later"))
+		} else {
+			return echo.NewHTTPError(http.StatusInternalServerError, response.NewError("Failed to check upload directory"))
+		}
+	}
+
+	// Make directory
+	if err := os.MkdirAll(uploadDir, os.ModePerm); err != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError, response.NewError("Failed to create upload directory"))
+	}
+
+	// Store files
+	for _, file := range files {
+		if file.Size > maxFileSize {
+			// delete directory
+			_ = os.RemoveAll(uploadDir)
+			return echo.NewHTTPError(http.StatusBadRequest, response.NewError(fmt.Sprintf("File size exceeds the maximum limit (%d MB)", maxFileSize/(1024*1024))))
+		}
+
+		// Source
+		src, err := file.Open()
+		if err != nil {
+			return echo.NewHTTPError(http.StatusInternalServerError, response.NewError("Failed to open uploaded file"))
+		}
+		defer src.Close()
+
+		// Destination
+		// TODO: Check if this operation is safe and there are no risks like path-traversal attacks
+		dst, err := os.Create(fmt.Sprintf("%s/%s", uploadDir, filepath.Clean(file.Filename)))
+		if err != nil {
+			return echo.NewHTTPError(http.StatusInternalServerError, response.NewError("Failed to create destination file"))
+		}
+		defer dst.Close()
+
+		// Copy
+		if _, err := io.Copy(dst, src); err != nil {
+			return echo.NewHTTPError(http.StatusInternalServerError, response.NewError("Failed to copy uploaded file"))
+		}
+	}
+
+	// register file location
+	fileLocation := model.FileLocation{
+		Path: uploadDir,
+		Ts:   requestTime,
+	}
+	err = h.fileStore.RegisterFileLocation(&ctx, &fileLocation)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError, response.NewError("Failed to register file location"))
+	}
+
+	// Make request entry
+	request := model.GradingRequest{
+		LectureID:       req.LectureID,
+		ProblemID:       req.ProblemID,
+		UserCode:        *userCodeOfSubject,
+		SubmissionTS:    submissionTS,
+		TS:              requestTime,
+		RequestUserCode: userCodeOfRequester,
+		UploadDirID:     fileLocation.ID,
+		ResultID:        int64(requeststatus.WJ),
+		TimeMS:          0,
+		MemoryKB:        0,
+	}
+
+	// Register request
+	err = h.requestStore.RegisterOrUpdateGradingRequest(&ctx, &request)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError, response.NewError("Failed to register grading request"))
+	}
+
+	return c.JSON(http.StatusOK, response.NewSuccess("Grading request registered successfully"))
 }
 
 func (h *Handler) BatchGrading(c echo.Context) error {
@@ -369,7 +560,7 @@ func extractFile(file *zip.File, destDir string) error {
 
 	// Check if the target path is within the destination directory.
 	if !strings.HasPrefix(filepath.Clean(targetPath), filepath.Clean(destDir)) {
-		return fmt.Errorf("file path outside of destination directory: &s", file.Name)
+		return fmt.Errorf("file path outside of destination directory: %s", file.Name)
 	}
 
 	// Check if this individual file exceeds the size limit.

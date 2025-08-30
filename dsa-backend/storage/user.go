@@ -27,6 +27,15 @@ func NewUserStore(db *bun.DB) *UserStore {
 	}
 }
 
+func (us *UserStore) GetIDByUserID(ctx *context.Context, user_id string) (*int64, error) {
+	var id int64
+	err := us.db.NewSelect().Model((*model.UserList)(nil)).Column("id").Where("userid = ?", user_id).Scan(*ctx, &id)
+	if err != nil {
+		return nil, err
+	}
+	return &id, nil
+}
+
 func (us *UserStore) GetUserByUserID(ctx *context.Context, user_id string) (*model.UserList, error) {
 	var users []model.UserList
 

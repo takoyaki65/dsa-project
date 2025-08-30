@@ -11,7 +11,7 @@ type ProblemStore struct {
 	db *bun.DB
 }
 
-func (ps ProblemStore) GetLectureAndAllProblems(context *context.Context, d int64) (model.Lecture, error) {
+func (ps *ProblemStore) GetLectureAndAllProblems(context *context.Context, d int64) (model.Lecture, error) {
 	var lecture model.Lecture
 	err := ps.db.NewSelect().Model(&lecture).Relation("Problems").Where("id = ?", d).Scan(*context)
 	if err != nil {
@@ -20,7 +20,7 @@ func (ps ProblemStore) GetLectureAndAllProblems(context *context.Context, d int6
 	return lecture, nil
 }
 
-func (ps ProblemStore) GetProblemByID(context *context.Context, lectureID int64, problemID int64) (*model.Problem, error) {
+func (ps *ProblemStore) GetProblemByID(context *context.Context, lectureID int64, problemID int64) (*model.Problem, error) {
 	var problem model.Problem
 	err := ps.db.NewSelect().Model(&problem).
 		Where("lecture_id = ? AND problem_id = ?", lectureID, problemID).
@@ -31,7 +31,7 @@ func (ps ProblemStore) GetProblemByID(context *context.Context, lectureID int64,
 	return &problem, nil
 }
 
-func (ps ProblemStore) GetAllLectureAndProblems(ctx context.Context) (*[]model.Lecture, error) {
+func (ps *ProblemStore) GetAllLectureAndProblems(ctx context.Context) (*[]model.Lecture, error) {
 	var lectures []model.Lecture
 	err := ps.db.NewSelect().Model(&lectures).Relation("Problems", func(q *bun.SelectQuery) *bun.SelectQuery {
 		return q.Order("problem.problem_id")
@@ -42,7 +42,7 @@ func (ps ProblemStore) GetAllLectureAndProblems(ctx context.Context) (*[]model.L
 	return &lectures, nil
 }
 
-func (ps ProblemStore) DeleteLectureEntry(context *context.Context, i int64) error {
+func (ps *ProblemStore) DeleteLectureEntry(context *context.Context, i int64) error {
 	_, err := ps.db.NewDelete().Model(&model.Lecture{}).Where("id = ?", i).Exec(*context)
 	if err != nil {
 		return err
@@ -50,7 +50,7 @@ func (ps ProblemStore) DeleteLectureEntry(context *context.Context, i int64) err
 	return nil
 }
 
-func (ps ProblemStore) UpdateLectureEntry(context *context.Context, lectureEntryInDB *model.Lecture) error {
+func (ps *ProblemStore) UpdateLectureEntry(context *context.Context, lectureEntryInDB *model.Lecture) error {
 	_, err := ps.db.NewUpdate().Model(lectureEntryInDB).Where("id = ?", lectureEntryInDB.ID).Exec(*context)
 	if err != nil {
 		return err

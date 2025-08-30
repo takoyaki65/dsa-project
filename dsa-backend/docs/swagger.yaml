@@ -357,6 +357,68 @@ paths:
       summary: list all problem entry, nested in lecture entry.
       tags:
       - problem
+  /problem/judge/{lectureid}/{problemid}:
+    post:
+      consumes:
+      - multipart/form-data
+      description: request a grading request, which is compiling program codes, and
+        executes all test cases. note that the submission timestamp is specified by
+        the user (manager or admin), and the target user ID (e.g., student) is also
+        specified by the user.
+      parameters:
+      - description: Lecture ID
+        in: path
+        name: lectureid
+        required: true
+        type: integer
+      - description: Problem ID
+        in: path
+        name: problemid
+        required: true
+        type: integer
+      - description: User ID targeted for grading
+        in: formData
+        name: userid
+        required: true
+        type: string
+      - description: Submission Timestamp, epoch timestamp in seconds (e.g., 1764464361)
+        in: formData
+        name: ts
+        required: true
+        type: integer
+      - collectionFormat: csv
+        description: Files to be graded
+        in: formData
+        items:
+          type: file
+        name: files
+        required: true
+        type: array
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Grading request registered successfully
+          schema:
+            $ref: '#/definitions/response.Success'
+        "400":
+          description: Invalid request payload
+          schema:
+            $ref: '#/definitions/response.Error'
+        "404":
+          description: Problem not found
+          schema:
+            $ref: '#/definitions/response.Error'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/response.Error'
+      security:
+      - OAuth2Password:
+        - grading
+      summary: Request grading
+      tags:
+      - problem
   /problem/validate/{lectureid}/{problemid}:
     post:
       consumes:

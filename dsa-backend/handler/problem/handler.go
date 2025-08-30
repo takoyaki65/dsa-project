@@ -14,6 +14,7 @@ type Handler struct {
 	problemStore storage.ProblemStore
 	requestStore storage.RequestStore
 	fileStore    storage.FileStore
+	userStore    storage.UserStore
 	jwtSecret    string
 }
 
@@ -23,6 +24,7 @@ func NewProblemHandler(jwtSecret string, db *bun.DB) *Handler {
 		problemStore: *storage.NewProblemStore(db),
 		requestStore: *storage.NewRequestStore(db),
 		fileStore:    *storage.NewFileStore(db),
+		userStore:    *storage.NewUserStore(db),
 		jwtSecret:    jwtSecret,
 	}
 }
