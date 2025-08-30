@@ -381,7 +381,7 @@ paths:
         name: userid
         required: true
         type: string
-      - description: Submission Timestamp, epoch timestamp in seconds (e.g., 1764464361)
+      - description: Submission Timestamp, epoch seconds (e.g., 1764464361)
         in: formData
         name: ts
         required: true
@@ -417,6 +417,60 @@ paths:
       - OAuth2Password:
         - grading
       summary: Request grading
+      tags:
+      - problem
+  /problem/judge/batch/{lectureid}:
+    post:
+      consumes:
+      - multipart/form-data
+      description: This endpoint allows instructors to request grading for all problems
+        in a specific lecture entry in a single request.
+      parameters:
+      - description: Lecture ID
+        in: path
+        name: lectureid
+        required: true
+        type: integer
+      - description: User ID
+        in: formData
+        name: userid
+        required: true
+        type: string
+      - description: Submission Timestamp, epoch seconds (e.g., 1764464361)
+        format: int64
+        in: formData
+        name: ts
+        required: true
+        type: integer
+      - description: Zip file containing all files user submitted
+        in: formData
+        name: zipfile
+        required: true
+        type: file
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Batched grading requests registered successfully
+          schema:
+            $ref: '#/definitions/response.Success'
+        "400":
+          description: Invalid request payload
+          schema:
+            $ref: '#/definitions/response.Error'
+        "404":
+          description: No problems found for the given lecture ID
+          schema:
+            $ref: '#/definitions/response.Error'
+        "500":
+          description: Failed to register grading request
+          schema:
+            $ref: '#/definitions/response.Error'
+      security:
+      - OAuth2Password:
+        - grading
+      summary: Request batched grading requests for all problems in a specific lecture
+        entry.
       tags:
       - problem
   /problem/validate/{lectureid}/{problemid}:

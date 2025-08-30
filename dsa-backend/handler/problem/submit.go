@@ -248,6 +248,18 @@ func (h *Handler) BatchValidation(c echo.Context) error {
 
 	uploadDir := fmt.Sprintf("upload/validation/%s/%d/%s", userID, req.LectureID, requestTime.Format("2006-01-02-15-04-05"))
 
+	// Check the existence of directory
+	if info, err := os.Stat(uploadDir); err != nil {
+		if os.IsNotExist(err) {
+			// Directory does not exist
+		} else if info.IsDir() {
+			// Directory exists
+			return echo.NewHTTPError(http.StatusConflict, response.NewError("you must not request grading for the same problem twice at the same time, please try again later"))
+		} else {
+			return echo.NewHTTPError(http.StatusInternalServerError, response.NewError("Failed to check upload directory"))
+		}
+	}
+
 	// Open zip file
 	src, err := zipFile.Open()
 	if err != nil {
@@ -335,7 +347,7 @@ func (grp *GradingRequestParam) bind(c echo.Context) error {
 //	@Param			lectureid	path		int					true	"Lecture ID"
 //	@Param			problemid	path		int					true	"Problem ID"
 //	@Param			userid		formData	string				true	"User ID targeted for grading"
-//	@Param			ts			formData	int					true	"Submission Timestamp, epoch timestamp in seconds (e.g., 1764464361)"
+//	@Param			ts			formData	int					true	"Submission Timestamp, epoch seconds (e.g., 1764464361)"
 //	@Param			files		formData	[]file				true	"Files to be graded"
 //	@Success		200			{object}	response.Success	"Grading request registered successfully"
 //	@Failure		400			{object}	response.Error		"Invalid request payload"
@@ -407,8 +419,8 @@ func (h *Handler) RequestGrading(c echo.Context) error {
 	//
 	// Note:
 	// {userID} is the ID of the user subjected to grading.
-	// First {YYYY-MM-DD-HH-mm-ss} is the submission timestamp specified by the user, which is the actual timestamp submitted by the user
-	// subjected to grading.
+	// First {YYYY-MM-DD-HH-mm-ss} is the submission timestamp specified by the user, which is the actual timestamp when target user submit
+	// program codes for grading.
 	// Second {YYYY-MM-DD-HH-mm-ss} is the request timestamp.
 	// ---------------------------------------------------------------------------------------------
 	uploadDir := fmt.Sprintf("upload/grading/%s/%d/%d/%s/%s", req.TargetUserID, req.LectureID, req.ProblemID, submissionTS.Format("2006-01-02-15-04-05"), requestTime.Format("2006-01-02-15-04-05"))
@@ -492,12 +504,173 @@ func (h *Handler) RequestGrading(c echo.Context) error {
 	return c.JSON(http.StatusOK, response.NewSuccess("Grading request registered successfully"))
 }
 
+type BatchGradingParam struct {
+	LectureID    int64  `param:"lectureid" validate:"required"`
+	TargetUserID string `form:"userid" validate:"required"`
+	SubmissionTS int64  `form:"ts" default:"1764464361" validate:"required"`
+}
+
+func (bgp *BatchGradingParam) bind(c echo.Context) error {
+	if err := c.Bind(bgp); err != nil {
+		return err
+	}
+	if err := c.Validate(bgp); err != nil {
+		return err
+	}
+	return nil
+}
+
+// BatchGrading godoc
+//
+//	@Summary		Request batched grading requests for all problems in a specific lecture entry.
+//	@Description	This endpoint allows instructors to request grading for all problems in a specific lecture entry in a single request.
+//	@Tags			problem
+//	@Accept			multipart/form-data
+//	@Produce		json
+//	@Param			lectureid	path		int					true	"Lecture ID"
+//	@Param			userid		formData	string				true	"User ID"
+//	@Param			ts			formData	int64				true	"Submission Timestamp, epoch seconds (e.g., 1764464361)"
+//	@Param			zipfile		formData	file				true	"Zip file containing all files user submitted"
+//	@Success		200			{object}	response.Success	"Batched grading requests registered successfully"
+//	@Failure		400			{object}	response.Error		"Invalid request payload"
+//	@Failure		404			{object}	response.Error		"No problems found for the given lecture ID"
+//	@Failure		500			{object}	response.Error		"Failed to register grading request"
+//	@Security		OAuth2Password[grading]
+//	@Router			/problem/judge/batch/{lectureid} [post]
 func (h *Handler) BatchGrading(c echo.Context) error {
-	var req ProblemIDPathParam
-	if err := c.Bind(&req); err != nil {
+	var req BatchGradingParam
+	if err := req.bind(c); err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, response.NewError("Invalid request payload"))
 	}
-	panic("BatchGrading handler not implemented yet")
+
+	// convert epoch seconds to time.Time
+	submissionTS := time.Unix(req.SubmissionTS, 0)
+
+	ctx := context.Background()
+
+	// Check if the Lecture entry exists
+	lecture, err := h.problemStore.GetLectureAndAllProblems(&ctx, req.LectureID)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError, response.NewError("Failed to check lecture existence"+err.Error()))
+	}
+
+	problems := lecture.Problems
+	if len(problems) == 0 {
+		return echo.NewHTTPError(http.StatusNotFound, response.NewError("No problems found for the given lecture ID"))
+	}
+
+	// Get user code of user subjected to grading
+	userCodeOfSubject, err := h.userStore.GetIDByUserID(&ctx, req.TargetUserID)
+	if err != nil || userCodeOfSubject == nil {
+		return echo.NewHTTPError(http.StatusBadRequest, response.NewError("Targeted user does not exist"))
+	}
+
+	// get user info from jwt
+	claim, err := auth.GetJWTClaims(&c)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusUnauthorized, response.NewError("Failed to get user info"))
+	}
+
+	userCodeOfRequester := claim.ID
+	requestTime := time.Now()
+
+	//----------------------------------------------------------------------------
+	// Read a zip file from formData, and then unzip it.
+	//
+	// Before unzipping it, we have to check the size of uncompressed files to prevent zip bomb attacks.
+	//
+	//
+	// store files at dir: upload/grading/{userID}/{lectureID}/{YYYY-MM-DD-HH-mm-ss}/{YYYY-MM-DD-HH-mm-ss}
+	// Note:
+	// {userID} is the ID of the user being graded.
+	// First {YYYY-MM-DD-HH-mm-ss} is the submission timestamp specified by the user, which is the
+	// actual timestamp when target user submitted program codes for grading.
+	// Second {YYYY-MM-DD-HH-mm-ss} is the timestamp when the grading request was created.
+	// ---------------------------------------------------------------------------------------------
+	zipFile, err := c.FormFile("zipfile")
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, response.NewError("Invalid zip file"))
+	}
+
+	// check the size of zip file
+	if zipFile.Size > maxZipSize {
+		return echo.NewHTTPError(http.StatusBadRequest, response.NewError(fmt.Sprintf("Zip file size exceeds the limit of %d bytes", maxZipSize)))
+	}
+
+	uploadDir := fmt.Sprintf("upload/grading/%s/%d/%s/%s", req.TargetUserID, req.LectureID, submissionTS.Format("2006-01-02-15-04-05"), requestTime.Format("2006-01-02-15-04-05"))
+
+	// Check the existence of directory
+	if info, err := os.Stat(uploadDir); err != nil {
+		if os.IsNotExist(err) {
+			// Directory does not exist
+		} else if info.IsDir() {
+			// Directory exists
+			return echo.NewHTTPError(http.StatusConflict, response.NewError("you must not request grading for the same problem twice at the same time, please try again later"))
+		} else {
+			return echo.NewHTTPError(http.StatusInternalServerError, response.NewError("Failed to check upload directory"))
+		}
+	}
+
+	// Open zip file
+	src, err := zipFile.Open()
+	if err != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError, response.NewError("Failed to open zip file"))
+	}
+	defer src.Close()
+
+	// move to temporary directory
+	tempFile, err := os.CreateTemp("", "upload-*.zip")
+	if err != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError, response.NewError("Failed to create temporary file"))
+	}
+	defer os.Remove(tempFile.Name())
+	defer tempFile.Close()
+
+	if _, err := io.Copy(tempFile, src); err != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError, response.NewError("Failed to copy zip file to temporary file"))
+	}
+
+	// Extract zip file **safely**
+	if err := safeExtractZip(tempFile.Name(), uploadDir); err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, response.NewError("Failed to extract zip file: "+err.Error()))
+	}
+
+	// Register file location
+	fileLocation := model.FileLocation{
+		Path: uploadDir,
+		Ts:   requestTime,
+	}
+	err = h.fileStore.RegisterFileLocation(&ctx, &fileLocation)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError, response.NewError("Failed to register file location"))
+	}
+
+	// Make request body for each problem entries
+	var requests []model.GradingRequest
+	for _, problem := range problems {
+		requests = append(requests, model.GradingRequest{
+			LectureID:       req.LectureID,
+			ProblemID:       problem.ProblemID,
+			UserCode:        *userCodeOfSubject,
+			SubmissionTS:    submissionTS,
+			TS:              requestTime,
+			RequestUserCode: userCodeOfRequester,
+			UploadDirID:     fileLocation.ID,
+			ResultID:        int64(requeststatus.WJ),
+			TimeMS:          0,
+			MemoryKB:        0,
+		})
+	}
+
+	// Register requests
+	for _, req := range requests {
+		err = h.requestStore.RegisterOrUpdateGradingRequest(&ctx, &req)
+		if err != nil {
+			return echo.NewHTTPError(http.StatusInternalServerError, response.NewError("Failed to register grading request"))
+		}
+	}
+
+	return c.JSON(http.StatusOK, response.NewSuccess("Batched grading requests registered successfully"))
 }
 
 // Extracts zip file with validation of size constraints.
