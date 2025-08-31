@@ -62,6 +62,7 @@ CREATE TABLE IF NOT EXISTS Lecture (
 CREATE TABLE IF NOT EXISTS Problem (
     lecture_id INTEGER NOT NULL,
     problem_id INTEGER NOT NULL,
+    registered_at TIMESTAMP(0) WITH TIME ZONE NOT NULL,
     title VARCHAR(255) NOT NULL,
     resource_location_id INTEGER NOT NULL REFERENCES FileLocation(id),
     detail JSONB NOT NULL,
@@ -105,6 +106,7 @@ CREATE TABLE IF NOT EXISTS GradingRequest (
     problem_id INTEGER NOT NULL,
     usercode INTEGER NOT NULL,
     submission_ts TIMESTAMP(0) WITH TIME ZONE NOT NULL,
+    id SERIAL NOT NULL UNIQUE,
     ts TIMESTAMP(0) WITH TIME ZONE NOT NULL,
     request_usercode INTEGER NOT NULL,
     upload_dir_id INTEGER NOT NULL REFERENCES FileLocation(id),
@@ -116,6 +118,17 @@ CREATE TABLE IF NOT EXISTS GradingRequest (
     FOREIGN KEY (usercode) REFERENCES UserList(id) ON DELETE CASCADE,
     FOREIGN KEY (request_usercode) REFERENCES UserList(id) ON DELETE CASCADE,
     PRIMARY KEY (lecture_id, problem_id, usercode, submission_ts)
+);
+
+CREATE INDEX idx_grading_request ON GradingRequest (id);
+
+CREATE TABLE IF NOT EXISTS JobQueue (
+    id SERIAL PRIMARY KEY,
+    request_type VARCHAR(255) NOT NULL,
+    request_id INTEGER NOT NULL,
+    status VARCHAR(255) NOT NULL,
+    created_at TIMESTAMP(0) WITH TIME ZONE NOT NULL,
+    fullmode BOOLEAN NOT NULL
 );
 
 -- setting of grant

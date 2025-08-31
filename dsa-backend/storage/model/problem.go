@@ -21,11 +21,12 @@ type Lecture struct {
 type Problem struct {
 	bun.BaseModel `bun:"table:problem"`
 
-	LectureID          int64   `bun:"lecture_id,pk,notnull" json:"lecture_id"`
-	ProblemID          int64   `bun:"problem_id,pk,notnull" json:"problem_id"`
-	Title              string  `bun:"title,notnull" json:"title"`
-	ResourceLocationID int64   `bun:"resource_location_id,notnull" json:"resource_location_id"`
-	Detail             *Detail `bun:"detail,notnull,type:jsonb" json:"detail"`
+	LectureID          int64     `bun:"lecture_id,pk,notnull" json:"lecture_id"`
+	ProblemID          int64     `bun:"problem_id,pk,notnull" json:"problem_id"`
+	RegisteredAt       time.Time `bun:"registered_at,notnull,default:current_timestamp" json:"registered_at"`
+	Title              string    `bun:"title,notnull" json:"title"`
+	ResourceLocationID int64     `bun:"resource_location_id,notnull" json:"resource_location_id"`
+	Detail             *Detail   `bun:"detail,notnull,type:jsonb" json:"detail"`
 
 	Lecture *Lecture `bun:"rel:belongs-to,join:lecture_id=id"`
 }
@@ -60,6 +61,17 @@ func (l *Lecture) BeforeAppendModel(ctx context.Context, query bun.Query) error 
 		// remove fraction less than seconds (milliseconds, microseconds, ...)
 		l.StartDate = l.StartDate.Truncate(time.Second)
 		l.Deadline = l.Deadline.Truncate(time.Second)
+	}
+	return nil
+}
+
+var _ bun.BeforeAppendModelHook = (*Problem)(nil)
+
+func (p *Problem) BeforeAppendModel(ctx context.Context, query bun.Query) error {
+	switch query.(type) {
+	case *bun.InsertQuery, *bun.UpdateQuery:
+		// remove fraction less than seconds (milliseconds, microseconds, ...)
+		p.RegisteredAt = p.RegisteredAt.Truncate(time.Second)
 	}
 	return nil
 }

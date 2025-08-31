@@ -365,6 +365,7 @@ func (h *Handler) RegisterProblem(c echo.Context) error {
 	problem := &model.Problem{
 		LectureID:          req.LectureID,
 		ProblemID:          req.ProblemID,
+		RegisteredAt:       time.Now(),
 		Title:              config.Title,
 		ResourceLocationID: fileLocation.ID,
 		Detail:             &detail,

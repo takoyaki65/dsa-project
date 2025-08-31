@@ -120,6 +120,7 @@
   - **problem_id**: 課題ID (整数)
     - 小課題の番号を表す、e.g., "課題3-1"の"1", "課題3-2"の"2"
     - 授業IDと課題IDの組み合わせで一意
+  - **registered_at**: 登録日時 (datetime, 1s精度)
   - **title**: 課題タイトル (文字列)
   - **resource_location_id**: 課題リソースファイルへのパス (FileLocation.id)
   - **detail**: 課題の詳細 (JSON)
@@ -150,6 +151,10 @@
     - 提出時刻は、実際に課題がManaba等の媒体で提出された際の時刻
     - 採点リクエスト時に提出時刻が指定される
     - (**lecture_id**, **problem_id**,  **usercode**, **submission_ts**) の組み合わせで一意
+  - **id**: リクエストID (auto increment, unique)
+    - 採点リクエストが一意に識別されるためのID
+    - PKではないが、ユニーク制約があり、インデックスが張られる
+    - ジョブキューに登録する際に使用される
   - **ts**: リクエスト時刻 (datetime, 1s精度)
     - 採点リクエストが行われた時刻
   - **request_usercode**: リクエストしたユーザーのコードID (**UserList.id**)
@@ -189,6 +194,18 @@
   - **lecture_id**: 授業ID (**Lecture.id**)
   - **problem_id**: 課題ID (**Problem.problem_id**)
   - **location_id**: ファイルへのパス (**FileLocation.id**)
+- **JobQueue**: ジョブキュー
+  - **id**: ジョブID (auto increment)
+  - **request_type**: リクエストの種類 (文字列)
+    - "validation" or "grading"
+  - **request_id**: リクエストID (整数)
+    - **ValidationRequest.id** or **GradingRequest.id**
+  - **status**: ジョブの状態 (文字列)
+    - "pending", "processing"
+  - **created_at**: ジョブ作成日時 (datetime, 1s精度)
+  - **fullmode**: 全てのテストケースを実行するかどうか (boolean)
+    - True: 全てのテストケースを実行
+    - False: バリデーション用のタスクのみを実行
 
 * 実装の簡潔さのために、課題情報が更新された場合、古い課題情報及びその課題に対するジャッジ結果・アップロードファイルは全て削除される。
 

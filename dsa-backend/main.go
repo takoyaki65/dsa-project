@@ -65,6 +65,9 @@ func main() {
 		r.Logger.Fatalf("Failed to ensure admin user: %v", err)
 	}
 
+	// TODO: Initialize JobQueue
+	// TODO: Cleaning up some things related to past launches
+
 	// create handler
 	h := handler.NewHandler(db)
 

@@ -41,6 +41,7 @@ type GradingRequest struct {
 	ProblemID       int64      `bun:"problem_id,pk,notnull" json:"problem"`
 	UserCode        int64      `bun:"usercode,pk,notnull" json:"usercode"`
 	SubmissionTS    time.Time  `bun:"submission_ts,pk,notnull" json:"submission_ts"`
+	ID              int64      `bun:"id,unique,autoincrement,notnull" json:"id"`
 	TS              time.Time  `bun:"ts,notnull" json:"ts"`
 	RequestUserCode int64      `bun:"request_usercode,notnull" json:"request_usercode"`
 	UploadDirID     int64      `bun:"upload_dir_id,notnull" json:"upload_dir_id"`
