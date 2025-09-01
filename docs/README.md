@@ -86,7 +86,8 @@
 ## 4. データベース設計
 
 ### 4.1 主要テーブル
-強調したカラムは必須項目。
+強調したカラムは必須項目。また、"ディレクトリ"や"パス"は絶対パスではなく相対パスを表す。
+
 - **UserList**: ユーザ情報管理
   - **id**: ID (整数, auto increment)
   - **userid**: ユーザーID (文字列, unique)
@@ -195,17 +196,24 @@
   - **problem_id**: 課題ID (**Problem.problem_id**)
   - **location_id**: ファイルへのパス (**FileLocation.id**)
 - **JobQueue**: ジョブキュー
-  - **id**: ジョブID (auto increment)
+  - **id**: ジョブID (PK, auto increment)
   - **request_type**: リクエストの種類 (文字列)
     - "validation" or "grading"
   - **request_id**: リクエストID (整数)
     - **ValidationRequest.id** or **GradingRequest.id**
   - **status**: ジョブの状態 (文字列)
-    - "pending", "processing"
+    - "pending", "processing", "done"
   - **created_at**: ジョブ作成日時 (datetime, 1s精度)
-  - **fullmode**: 全てのテストケースを実行するかどうか (boolean)
-    - True: 全てのテストケースを実行
-    - False: バリデーション用のタスクのみを実行
+  - **file_dir**: プログラムコードが格納されたディレクトリのパス (文字列)
+  - **result_dir**: ジョブの結果が格納されるディレクトリへのパス (文字列)
+  - **detail**: ジョブの詳細 (JSON)
+    - 実行するタスクの情報 (標準入力ファイル、想定される標準出力ファイル、実行時間制限、メモリ使用量制限等)
+- **ResultQueue**: ジョブの結果を格納するキュー
+  - **id**: リファレンスID (PK, auto increment)
+  - **job_id**: ジョブID (**JobQueue.id**)
+  - **created_at**: 結果作成日時 (datetime, 1s精度)
+  - **result**: ジョブの結果 (JSON)
+    - 戻り値、出力、実行時間、消費メモリ等の情報
 
 * 実装の簡潔さのために、課題情報が更新された場合、古い課題情報及びその課題に対するジャッジ結果・アップロードファイルは全て削除される。
 

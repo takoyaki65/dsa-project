@@ -98,9 +98,9 @@ func (h *Handler) RequestValidation(c echo.Context) error {
 	requestTime := time.Now()
 
 	// ---------------------------------------------------------------------------------------------
-	// store files at dir: upload/validation/{userID}/{lectureID}/{problemID}/{YYYY-MM-DD-HH-mm-ss}
+	// store files at dir: upload/validation/{userID}/{lectureID}/{problemID}/{YYYY-MM-DD-HH-mm-ss}/file
 	// ---------------------------------------------------------------------------------------------
-	uploadDir := fmt.Sprintf("upload/validation/%s/%d/%d/%s", userID, req.LectureID, req.ProblemID, requestTime.Format("2006-01-02-15-04-05"))
+	uploadDir := fmt.Sprintf("upload/validation/%s/%d/%d/%s/file", userID, req.LectureID, req.ProblemID, requestTime.Format("2006-01-02-15-04-05"))
 
 	// Check the existence of directory
 	if info, err := os.Stat(uploadDir); err != nil {
@@ -234,7 +234,7 @@ func (h *Handler) BatchValidation(c echo.Context) error {
 	// Before unzipping it, we have to check the size of uncompressed files to prevent zip bomb attacks.
 	//
 	//
-	// store files at dir: upload/validation/{userID}/{lectureID}/{YYYY-MM-DD-HH-mm-ss}
+	// store files at dir: upload/validation/{userID}/{lectureID}/{YYYY-MM-DD-HH-mm-ss}/file
 	// ---------------------------------------------------------------------------------------------
 	zipFile, err := c.FormFile("zipfile")
 	if err != nil {
@@ -246,7 +246,7 @@ func (h *Handler) BatchValidation(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusBadRequest, response.NewError(fmt.Sprintf("Zip file size exceeds the limit of %d bytes", maxZipSize)))
 	}
 
-	uploadDir := fmt.Sprintf("upload/validation/%s/%d/%s", userID, req.LectureID, requestTime.Format("2006-01-02-15-04-05"))
+	uploadDir := fmt.Sprintf("upload/validation/%s/%d/%s/file", userID, req.LectureID, requestTime.Format("2006-01-02-15-04-05"))
 
 	// Check the existence of directory
 	if info, err := os.Stat(uploadDir); err != nil {
@@ -415,7 +415,7 @@ func (h *Handler) RequestGrading(c echo.Context) error {
 	requestTime := time.Now()
 
 	// ---------------------------------------------------------------------------------------------
-	// store files at dir: upload/grading/{userID}/{lectureID}/{problemID}/{YYYY-MM-DD-HH-mm-ss}/{YYYY-MM-DD-HH-mm-ss}
+	// store files at dir: upload/grading/{userID}/{lectureID}/{problemID}/{YYYY-MM-DD-HH-mm-ss}/{YYYY-MM-DD-HH-mm-ss}/file
 	//
 	// Note:
 	// {userID} is the ID of the user subjected to grading.
@@ -423,7 +423,7 @@ func (h *Handler) RequestGrading(c echo.Context) error {
 	// program codes for grading.
 	// Second {YYYY-MM-DD-HH-mm-ss} is the request timestamp.
 	// ---------------------------------------------------------------------------------------------
-	uploadDir := fmt.Sprintf("upload/grading/%s/%d/%d/%s/%s", req.TargetUserID, req.LectureID, req.ProblemID, submissionTS.Format("2006-01-02-15-04-05"), requestTime.Format("2006-01-02-15-04-05"))
+	uploadDir := fmt.Sprintf("upload/grading/%s/%d/%d/%s/%s/file", req.TargetUserID, req.LectureID, req.ProblemID, submissionTS.Format("2006-01-02-15-04-05"), requestTime.Format("2006-01-02-15-04-05"))
 
 	// Check the existence of directory
 	if info, err := os.Stat(uploadDir); err != nil {
@@ -580,7 +580,7 @@ func (h *Handler) BatchGrading(c echo.Context) error {
 	// Before unzipping it, we have to check the size of uncompressed files to prevent zip bomb attacks.
 	//
 	//
-	// store files at dir: upload/grading/{userID}/{lectureID}/{YYYY-MM-DD-HH-mm-ss}/{YYYY-MM-DD-HH-mm-ss}
+	// store files at dir: upload/grading/{userID}/{lectureID}/{YYYY-MM-DD-HH-mm-ss}/{YYYY-MM-DD-HH-mm-ss}/file
 	// Note:
 	// {userID} is the ID of the user being graded.
 	// First {YYYY-MM-DD-HH-mm-ss} is the submission timestamp specified by the user, which is the
@@ -597,7 +597,7 @@ func (h *Handler) BatchGrading(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusBadRequest, response.NewError(fmt.Sprintf("Zip file size exceeds the limit of %d bytes", maxZipSize)))
 	}
 
-	uploadDir := fmt.Sprintf("upload/grading/%s/%d/%s/%s", req.TargetUserID, req.LectureID, submissionTS.Format("2006-01-02-15-04-05"), requestTime.Format("2006-01-02-15-04-05"))
+	uploadDir := fmt.Sprintf("upload/grading/%s/%d/%s/%s/file", req.TargetUserID, req.LectureID, submissionTS.Format("2006-01-02-15-04-05"), requestTime.Format("2006-01-02-15-04-05"))
 
 	// Check the existence of directory
 	if info, err := os.Stat(uploadDir); err != nil {
