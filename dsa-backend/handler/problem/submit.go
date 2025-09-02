@@ -4,6 +4,7 @@ import (
 	"archive/zip"
 	"context"
 	"dsa-backend/handler/auth"
+	"dsa-backend/handler/middleware"
 	requeststatus "dsa-backend/handler/problem/requestStatus"
 	"dsa-backend/handler/response"
 	"dsa-backend/storage/model"
@@ -100,7 +101,8 @@ func (h *Handler) RequestValidation(c echo.Context) error {
 	// ---------------------------------------------------------------------------------------------
 	// store files at dir: upload/validation/{userID}/{lectureID}/{problemID}/{YYYY-MM-DD-HH-mm-ss}/file
 	// ---------------------------------------------------------------------------------------------
-	uploadDir := fmt.Sprintf("upload/validation/%s/%d/%d/%s/file", userID, req.LectureID, req.ProblemID, requestTime.Format("2006-01-02-15-04-05"))
+	basePath := fmt.Sprintf("upload/validation/%s/%d/%d/%s", userID, req.LectureID, req.ProblemID, requestTime.Format("2006-01-02-15-04-05"))
+	uploadDir := fmt.Sprintf("%s/file", basePath)
 
 	// Check the existence of directory
 	if info, err := os.Stat(uploadDir); err != nil {
@@ -176,6 +178,70 @@ func (h *Handler) RequestValidation(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusInternalServerError, response.NewError("Failed to register validation request"))
 	}
 
+	// --------------------------------------
+	// Submit this request to job queue.
+	// --------------------------------------
+
+	// Get Problem info
+	problem, err := h.problemStore.GetProblem(&ctx, req.LectureID, req.ProblemID)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError, response.NewError("Failed to get problem info"))
+	}
+	resultDir := fmt.Sprintf("%s/result", basePath)
+
+	filteredBuildTasks := make([]model.TestCase, 0)
+	filteredJudgeTasks := make([]model.TestCase, 0)
+
+	// Filter tasks if the role of requested user is not manager or admin.
+	if middleware.HasAllScopes(claim.Scopes, []string{"manager"}) || middleware.HasAllScopes(claim.Scopes, []string{"admin"}) {
+		// Do nothing, keep all tasks
+		filteredBuildTasks = problem.Detail.BuildTasks
+		filteredJudgeTasks = problem.Detail.JudgeTasks
+	} else {
+		// Filter out tasks if "Evaluation" flat is true
+		for _, task := range problem.Detail.BuildTasks {
+			if !task.Evaluation {
+				filteredBuildTasks = append(filteredBuildTasks, task)
+			}
+		}
+		for _, task := range problem.Detail.JudgeTasks {
+			if !task.Evaluation {
+				filteredJudgeTasks = append(filteredJudgeTasks, task)
+			}
+		}
+	}
+
+	// Create JobQueue Entry
+	job := model.JobQueue{
+		RequestType: "validation",
+		RequestID:   request.ID,
+		Status:      "pending",
+		CreatedAt:   time.Now(),
+		Detail: model.JobDetail{
+			TimeMS:     problem.Detail.TimeMS,
+			MemoryMB:   problem.Detail.MemoryMB,
+			TestFiles:  problem.Detail.TestFiles,
+			FileDir:    uploadDir,
+			ResultDir:  resultDir,
+			BuildTasks: filteredBuildTasks,
+			JudgeTasks: filteredJudgeTasks,
+		},
+	}
+
+	// Register job
+	err = h.jobQueueStore.InsertJob(&ctx, &job)
+	if err != nil {
+
+		// update status of ValidationRequest to "IE (Internal Error)"
+		err = h.requestStore.UpdateValidationRequestStatus(&ctx, request.ID, requeststatus.IE)
+		if err != nil {
+			// TODO: log this with FATAL Level, because this should not happen.
+			return echo.NewHTTPError(http.StatusInternalServerError, response.NewError("Failed to update validation request status"))
+		}
+
+		return echo.NewHTTPError(http.StatusInternalServerError, response.NewError("Failed to register job"))
+	}
+
 	return c.JSON(http.StatusOK, response.NewSuccess("Validation request registered successfully"))
 }
 
@@ -246,7 +312,8 @@ func (h *Handler) BatchValidation(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusBadRequest, response.NewError(fmt.Sprintf("Zip file size exceeds the limit of %d bytes", maxZipSize)))
 	}
 
-	uploadDir := fmt.Sprintf("upload/validation/%s/%d/%s/file", userID, req.LectureID, requestTime.Format("2006-01-02-15-04-05"))
+	basePath := fmt.Sprintf("upload/validation/%s/%d/%s", userID, req.LectureID, requestTime.Format("2006-01-02-15-04-05"))
+	uploadDir := fmt.Sprintf("%s/file", basePath)
 
 	// Check the existence of directory
 	if info, err := os.Stat(uploadDir); err != nil {
@@ -294,10 +361,11 @@ func (h *Handler) BatchValidation(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusInternalServerError, response.NewError("Failed to register file location"))
 	}
 
-	// Make request body for each problem entries in the specified lecture.
-	var requests []model.ValidationRequest
+	RequiringFilter := !middleware.HasAllScopes(claim.Scopes, []string{"manager"}) && !middleware.HasAllScopes(claim.Scopes, []string{"admin"})
+
 	for _, problem := range problems {
-		requests = append(requests, model.ValidationRequest{
+		// Make request entry
+		request := model.ValidationRequest{
 			TS:          requestTime,
 			UserCode:    userCode,
 			LectureID:   req.LectureID,
@@ -306,14 +374,69 @@ func (h *Handler) BatchValidation(c echo.Context) error {
 			ResultID:    int64(requeststatus.WJ),
 			TimeMS:      0,
 			MemoryKB:    0,
-		})
-	}
+		}
 
-	// Register requests
-	for _, req := range requests {
-		err = h.requestStore.RegisterValidationRequest(&ctx, &req)
+		// -------------------------------------------------------------
+		// Register request
+		// -------------------------------------------------------------
+		err = h.requestStore.RegisterValidationRequest(&ctx, &request)
 		if err != nil {
 			return echo.NewHTTPError(http.StatusInternalServerError, response.NewError("Failed to register validation request"))
+		}
+
+		// -------------------------------------------------------------
+		// Submit this request to job queue.
+		// -------------------------------------------------------------
+		resultDir := fmt.Sprintf("%s/result/%d", basePath, problem.ProblemID)
+		filteredBuildTasks := make([]model.TestCase, 0)
+		filteredJudgeTasks := make([]model.TestCase, 0)
+
+		if RequiringFilter {
+			// Filter out tasks if "Evaluation" flat is true
+			for _, task := range problem.Detail.BuildTasks {
+				if !task.Evaluation {
+					filteredBuildTasks = append(filteredBuildTasks, task)
+				}
+			}
+			for _, task := range problem.Detail.JudgeTasks {
+				if !task.Evaluation {
+					filteredJudgeTasks = append(filteredJudgeTasks, task)
+				}
+			}
+		} else {
+			// Do nothing, keep all tasks.
+			filteredBuildTasks = problem.Detail.BuildTasks
+			filteredJudgeTasks = problem.Detail.JudgeTasks
+		}
+
+		// Make an entity pushing to job queue.
+		job := model.JobQueue{
+			RequestType: "validation",
+			RequestID:   request.ID,
+			Status:      "pending",
+			CreatedAt:   time.Now(),
+			Detail: model.JobDetail{
+				TimeMS:     problem.Detail.TimeMS,
+				MemoryMB:   problem.Detail.MemoryMB,
+				TestFiles:  problem.Detail.TestFiles,
+				FileDir:    uploadDir,
+				ResultDir:  resultDir,
+				BuildTasks: filteredBuildTasks,
+				JudgeTasks: filteredJudgeTasks,
+			},
+		}
+
+		// Register job
+		err = h.jobQueueStore.InsertJob(&ctx, &job)
+		if err != nil {
+			// update status of ValidationRequest to "IE (Internal Error)"
+			err = h.requestStore.UpdateValidationRequestStatus(&ctx, request.ID, requeststatus.IE)
+			if err != nil {
+				// TODO: log this with FATAL Level, because this should not happen.
+				return echo.NewHTTPError(http.StatusInternalServerError, response.NewError("Failed to update validation request status"))
+			}
+
+			return echo.NewHTTPError(http.StatusInternalServerError, response.NewError("Failed to register job"))
 		}
 	}
 
@@ -423,7 +546,8 @@ func (h *Handler) RequestGrading(c echo.Context) error {
 	// program codes for grading.
 	// Second {YYYY-MM-DD-HH-mm-ss} is the request timestamp.
 	// ---------------------------------------------------------------------------------------------
-	uploadDir := fmt.Sprintf("upload/grading/%s/%d/%d/%s/%s/file", req.TargetUserID, req.LectureID, req.ProblemID, submissionTS.Format("2006-01-02-15-04-05"), requestTime.Format("2006-01-02-15-04-05"))
+	basePath := fmt.Sprintf("upload/grading/%s/%d/%d/%s/%s", req.TargetUserID, req.LectureID, req.ProblemID, submissionTS.Format("2006-01-02-15-04-05"), requestTime.Format("2006-01-02-15-04-05"))
+	uploadDir := fmt.Sprintf("%s/file", basePath)
 
 	// Check the existence of directory
 	if info, err := os.Stat(uploadDir); err != nil {
@@ -499,6 +623,48 @@ func (h *Handler) RequestGrading(c echo.Context) error {
 	err = h.requestStore.RegisterOrUpdateGradingRequest(&ctx, &request)
 	if err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, response.NewError("Failed to register grading request"))
+	}
+
+	// --------------------------------------
+	// Submit this request to job queue.
+	// --------------------------------------
+
+	// Get Problem info
+	problem, err := h.problemStore.GetProblem(&ctx, req.LectureID, req.ProblemID)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError, response.NewError("Failed to get problem info"))
+	}
+	resultDir := fmt.Sprintf("%s/result", basePath)
+
+	// Create JobQueue Entry
+	job := model.JobQueue{
+		RequestType: "grading",
+		RequestID:   request.ID,
+		Status:      "pending",
+		CreatedAt:   time.Now(),
+		Detail: model.JobDetail{
+			TimeMS:     problem.Detail.TimeMS,
+			MemoryMB:   problem.Detail.MemoryMB,
+			TestFiles:  problem.Detail.TestFiles,
+			FileDir:    uploadDir,
+			ResultDir:  resultDir,
+			BuildTasks: problem.Detail.BuildTasks, // We do not any filtering here, because only manager or admin can access this endpoint.
+			JudgeTasks: problem.Detail.JudgeTasks,
+		},
+	}
+
+	// Register job
+	err = h.jobQueueStore.InsertJob(&ctx, &job)
+	if err != nil {
+
+		// update status of GradingRequest to "IE (Internal Error)"
+		err = h.requestStore.UpdateGradingRequestStatus(&ctx, request.ID, requeststatus.IE)
+		if err != nil {
+			// TODO: log this with FATAL Level, because this should not happen.
+			return echo.NewHTTPError(http.StatusInternalServerError, response.NewError("Failed to update grading request status"))
+		}
+
+		return echo.NewHTTPError(http.StatusInternalServerError, response.NewError("Failed to register job"))
 	}
 
 	return c.JSON(http.StatusOK, response.NewSuccess("Grading request registered successfully"))
@@ -597,7 +763,8 @@ func (h *Handler) BatchGrading(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusBadRequest, response.NewError(fmt.Sprintf("Zip file size exceeds the limit of %d bytes", maxZipSize)))
 	}
 
-	uploadDir := fmt.Sprintf("upload/grading/%s/%d/%s/%s/file", req.TargetUserID, req.LectureID, submissionTS.Format("2006-01-02-15-04-05"), requestTime.Format("2006-01-02-15-04-05"))
+	basePath := fmt.Sprintf("upload/grading/%s/%d/%s/%s", req.TargetUserID, req.LectureID, submissionTS.Format("2006-01-02-15-04-05"), requestTime.Format("2006-01-02-15-04-05"))
+	uploadDir := fmt.Sprintf("%s/file", basePath)
 
 	// Check the existence of directory
 	if info, err := os.Stat(uploadDir); err != nil {
@@ -646,9 +813,10 @@ func (h *Handler) BatchGrading(c echo.Context) error {
 	}
 
 	// Make request body for each problem entries
-	var requests []model.GradingRequest
+
 	for _, problem := range problems {
-		requests = append(requests, model.GradingRequest{
+		// Make request entry
+		request := model.GradingRequest{
 			LectureID:       req.LectureID,
 			ProblemID:       problem.ProblemID,
 			UserCode:        *userCodeOfSubject,
@@ -659,14 +827,49 @@ func (h *Handler) BatchGrading(c echo.Context) error {
 			ResultID:        int64(requeststatus.WJ),
 			TimeMS:          0,
 			MemoryKB:        0,
-		})
-	}
+		}
 
-	// Register requests
-	for _, req := range requests {
-		err = h.requestStore.RegisterOrUpdateGradingRequest(&ctx, &req)
+		// -------------------------------------------------------------
+		// Register request
+		// -------------------------------------------------------------
+		err := h.requestStore.RegisterOrUpdateGradingRequest(&ctx, &request)
 		if err != nil {
 			return echo.NewHTTPError(http.StatusInternalServerError, response.NewError("Failed to register grading request"))
+		}
+
+		// -------------------------------------------------------------
+		// Submit this request to job queue.
+		// -------------------------------------------------------------
+		resultDir := fmt.Sprintf("%s/result/%d", basePath, problem.ProblemID)
+
+		// Make an entity pushing to job queue.
+		job := model.JobQueue{
+			RequestType: "grading",
+			RequestID:   request.ID,
+			Status:      "pending",
+			CreatedAt:   time.Now(),
+			Detail: model.JobDetail{
+				TimeMS:     problem.Detail.TimeMS,
+				MemoryMB:   problem.Detail.MemoryMB,
+				TestFiles:  problem.Detail.TestFiles,
+				FileDir:    uploadDir,
+				ResultDir:  resultDir,
+				BuildTasks: problem.Detail.BuildTasks, // We do not any filtering here, because only manager or admin can access this endpoint.
+				JudgeTasks: problem.Detail.JudgeTasks,
+			},
+		}
+
+		// Register job
+		err = h.jobQueueStore.InsertJob(&ctx, &job)
+		if err != nil {
+			// update status of GradingRequest to "IE (Internal Error)"
+			err = h.requestStore.UpdateGradingRequestStatus(&ctx, request.ID, requeststatus.IE)
+			if err != nil {
+				// TODO: log this with FATAL Level, because this should not happen.
+				return echo.NewHTTPError(http.StatusInternalServerError, response.NewError("Failed to update grading request status"))
+			}
+
+			return echo.NewHTTPError(http.StatusInternalServerError, response.NewError("Failed to register job"))
 		}
 	}
 

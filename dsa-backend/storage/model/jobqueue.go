@@ -16,15 +16,15 @@ type JobQueue struct {
 	RequestID   int64     `bun:"request_id,notnull" json:"request_id"`
 	Status      string    `bun:"status,notnull" json:"status"` // "pending", "processing", "done"
 	CreatedAt   time.Time `bun:"created_at,notnull" json:"created_at"`
-	FileDir     string    `bun:"file_dir,notnull" json:"file_dir"`
-	ResultDir   string    `bun:"result_dir,notnull" json:"result_dir"`
 	Detail      JobDetail `bun:"detail,notnull,type:jsonb" json:"detail"`
 }
 
 type JobDetail struct {
 	TimeMS     int64      `json:"time_ms"`
 	MemoryMB   int64      `json:"memory_mb"`
-	TestFiles  int64      `json:"test_files"`
+	TestFiles  []string   `json:"test_files"`
+	FileDir    string     `json:"file_dir"`   // directory that contain submitted codes
+	ResultDir  string     `json:"result_dir"` // directory that outputs will be stored
 	BuildTasks []TestCase `json:"build"`
 	JudgeTasks []TestCase `json:"judge"`
 }

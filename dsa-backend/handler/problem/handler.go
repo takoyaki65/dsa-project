@@ -10,22 +10,24 @@ import (
 )
 
 type Handler struct {
-	db           *bun.DB
-	problemStore storage.ProblemStore
-	requestStore storage.RequestStore
-	fileStore    storage.FileStore
-	userStore    storage.UserStore
-	jwtSecret    string
+	db            *bun.DB
+	problemStore  storage.ProblemStore
+	requestStore  storage.RequestStore
+	fileStore     storage.FileStore
+	userStore     storage.UserStore
+	jobQueueStore storage.JobQueueStore
+	jwtSecret     string
 }
 
 func NewProblemHandler(jwtSecret string, db *bun.DB) *Handler {
 	return &Handler{
-		db:           db,
-		problemStore: *storage.NewProblemStore(db),
-		requestStore: *storage.NewRequestStore(db),
-		fileStore:    *storage.NewFileStore(db),
-		userStore:    *storage.NewUserStore(db),
-		jwtSecret:    jwtSecret,
+		db:            db,
+		problemStore:  *storage.NewProblemStore(db),
+		requestStore:  *storage.NewRequestStore(db),
+		fileStore:     *storage.NewFileStore(db),
+		userStore:     *storage.NewUserStore(db),
+		jobQueueStore: *storage.NewJobQueueStore(db),
+		jwtSecret:     jwtSecret,
 	}
 }
 

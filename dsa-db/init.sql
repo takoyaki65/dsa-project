@@ -128,8 +128,6 @@ CREATE TABLE IF NOT EXISTS JobQueue (
     request_id INTEGER NOT NULL,
     status VARCHAR(255) NOT NULL,
     created_at TIMESTAMP(0) WITH TIME ZONE NOT NULL,
-    file_dir VARCHAR(511) NOT NULL,
-    result_dir VARCHAR(511) NOT NULL,
     detail JSONB NOT NULL
 );
 

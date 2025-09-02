@@ -31,7 +31,7 @@ func RequiredScopesMiddleware(requiredScopes ...string) echo.MiddlewareFunc {
 				return echo.NewHTTPError(http.StatusUnauthorized, "invalid token claims")
 			}
 
-			if !hasAllScopes(claims.Scopes, requiredScopes) {
+			if !HasAllScopes(claims.Scopes, requiredScopes) {
 				return echo.NewHTTPError(http.StatusForbidden, "insufficient rights")
 			}
 
@@ -40,7 +40,7 @@ func RequiredScopesMiddleware(requiredScopes ...string) echo.MiddlewareFunc {
 	}
 }
 
-func hasAllScopes(userScopes []string, requiredScopes []string) bool {
+func HasAllScopes(userScopes []string, requiredScopes []string) bool {
 	scopeMap := make(map[string]bool)
 	for _, scope := range userScopes {
 		scopeMap[scope] = true

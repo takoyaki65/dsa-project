@@ -18,7 +18,8 @@ func NewFileStore(db *bun.DB) *FileStore {
 }
 
 func (fs *FileStore) RegisterFileLocation(ctx *context.Context, fileLocation *model.FileLocation) error {
-	_, err := fs.db.NewInsert().Model(fileLocation).Returning("*").Exec(*ctx)
+	_, err := fs.db.NewInsert().Model(fileLocation).Returning("id"). // Return auto-incremented ID
+										Exec(*ctx)
 	return err
 }
 
