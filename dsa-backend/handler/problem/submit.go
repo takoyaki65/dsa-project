@@ -351,6 +351,28 @@ func (h *Handler) BatchValidation(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusBadRequest, response.NewError("Failed to extract zip file: "+err.Error()))
 	}
 
+	// ---------------------------------------------------------------------------
+	// Check if the first level of extracted dir contains only one folder.
+	// In this case, unnest it.
+	//
+	// e.g.,
+	// class1.zip
+	//   |- class1/
+	//        |- main.c
+	//        |- Makefile
+	//        |- Report.pdf
+	// ---------------------------------------------------------------------------
+	files, err := os.ReadDir(uploadDir)
+	if err != nil {
+		defer os.RemoveAll(uploadDir)
+		return echo.NewHTTPError(http.StatusInternalServerError, response.NewError("Failed to read upload directory"))
+	}
+	if len(files) == 1 && files[0].IsDir() {
+		// Unnest the folder
+		unnestDir := fmt.Sprintf("%s/%s", uploadDir, files[0].Name())
+		uploadDir = unnestDir
+	}
+
 	// Register file location
 	fileLocation := model.FileLocation{
 		Path: uploadDir,
@@ -800,6 +822,28 @@ func (h *Handler) BatchGrading(c echo.Context) error {
 	// Extract zip file **safely**
 	if err := safeExtractZip(tempFile.Name(), uploadDir); err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, response.NewError("Failed to extract zip file: "+err.Error()))
+	}
+
+	// ---------------------------------------------------------------------------
+	// Check if the first level of extracted dir contains only one folder.
+	// In this case, unnest it.
+	//
+	// e.g.,
+	// class1.zip
+	//   |- class1/
+	//        |- main.c
+	//        |- Makefile
+	//        |- Report.pdf
+	// ---------------------------------------------------------------------------
+	files, err := os.ReadDir(uploadDir)
+	if err != nil {
+		defer os.RemoveAll(uploadDir)
+		return echo.NewHTTPError(http.StatusInternalServerError, response.NewError("Failed to read upload directory"))
+	}
+	if len(files) == 1 && files[0].IsDir() {
+		// Unnest the folder
+		unnestDir := fmt.Sprintf("%s/%s", uploadDir, files[0].Name())
+		uploadDir = unnestDir
 	}
 
 	// Register file location
