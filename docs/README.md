@@ -79,9 +79,14 @@
 
 ### 3.1 アーキテクチャ
 - フロントエンド: React (Vite) + TypeScript + TailwindCSS
-- バックエンド: Python (FastAPI)
+- バックエンド: Go
+  - バックエンドフレームワーク: [Echo](https://github.com/labstack/echo)
+  - ORM: [Bun](https://github.com/uptrace/bun)
+  - Validator: [GoPlayground/validator](https://github.com/go-playground/validator)
 - データベース: PostgreSQL
-- ジャッジサーバー: Python + Docker
+- ジャッジサーバー: Go
+  - ORM: [Bun](https://github.com/uptrace/bun)
+  - Sandbox: Docker SDK for Go
 
 ## 4. データベース設計
 

@@ -100,6 +100,7 @@ func main() {
 }
 
 func read_db_password() string {
+	// TODO: modify this to be ready for deploying
 	data, err := os.ReadFile("../config/db_app_password.txt")
 	if err != nil {
 		log.Fatalf("failed to read db password: %v", err)

@@ -35,11 +35,6 @@ services:
       db:
         condition: service_healthy
     build: ./dsa-judgeserver
-    ports:
-      # ホストのlocalhost:8080番ポートをコンテナの8080番ポートにマッピング
-      # 注意) デフォルトだとグローバルIPアドレスからアクセスできてしまうため，
-      #       ホストのlocalhostのみにマッピングする
-      - "127.0.0.1:8080:8080"
     volumes:
       # ホスト環境のDockerサービスにアクセスするためのDockerソケットのマウント
       # 注) ホスト環境がUbuntuである必要あり
@@ -56,13 +51,11 @@ services:
       # ログディレクトリのマウント
       - ./logs/dsa-judgeserver:/logs
     environment:
-      DATABASE_HOST: db
-      DATABASE_NAME: dsa
-      DATABASE_USER: dsa
-      DATABASE_PASSWORD: dsa-jikken
-      DATABASE_PORT: 3306
       DOCKER_HOST: unix:///var/run/docker.sock
       TZ: Asia/Tokyo
+    secrets:
+      - db_app_password
+    restart: always
 
   nginx:
     image: nginx:latest
