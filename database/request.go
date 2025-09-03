@@ -1,10 +1,10 @@
-package storage
+package database
 
 import (
 	"context"
 
-	"github.com/takoyaki65/dsa-project/database-orm/model"
-	"github.com/takoyaki65/dsa-project/database-orm/model/requeststatus"
+	"github.com/takoyaki65/dsa-project/database/model"
+	"github.com/takoyaki65/dsa-project/database/model/requeststatus"
 	"github.com/uptrace/bun"
 )
 

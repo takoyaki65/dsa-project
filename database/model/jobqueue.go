@@ -4,9 +4,9 @@ import (
 	"context"
 	"time"
 
-	"github.com/takoyaki65/dsa-project/database-orm/model/queuestatus"
-	"github.com/takoyaki65/dsa-project/database-orm/model/queuetype"
-	"github.com/takoyaki65/dsa-project/database-orm/model/requeststatus"
+	"github.com/takoyaki65/dsa-project/database/model/queuestatus"
+	"github.com/takoyaki65/dsa-project/database/model/queuetype"
+	"github.com/takoyaki65/dsa-project/database/model/requeststatus"
 	"github.com/uptrace/bun"
 )
 

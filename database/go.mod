@@ -1,4 +1,4 @@
-module github.com/takoyaki65/dsa-project/database-orm
+module github.com/takoyaki65/dsa-project/database
 
 go 1.24.5
 
