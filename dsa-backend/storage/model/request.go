@@ -2,6 +2,7 @@ package model
 
 import (
 	"context"
+	"dsa-backend/storage/model/requeststatus"
 	"time"
 
 	"github.com/uptrace/bun"
@@ -17,16 +18,16 @@ type ResultValues struct {
 type ValidationRequest struct {
 	bun.BaseModel `bun:"table:validationrequest"`
 
-	ID          int64      `bun:"id,pk,autoincrement" json:"id"`
-	TS          time.Time  `bun:"ts,notnull" json:"ts"`
-	UserCode    int64      `bun:"usercode,notnull" json:"usercode"`
-	LectureID   int64      `bun:"lecture_id,notnull" json:"lecture_id"`
-	ProblemID   int64      `bun:"problem_id,notnull" json:"problem"`
-	UploadDirID int64      `bun:"upload_dir_id,notnull" json:"upload_dir_id"`
-	ResultID    int64      `bun:"result,notnull" json:"result_id"`
-	Log         RequestLog `bun:"log,notnull,type:jsonb" json:"log"`
-	TimeMS      int64      `bun:"timems,notnull" json:"time_ms"`
-	MemoryKB    int64      `bun:"memorykb,notnull" json:"memory_kb"`
+	ID          int64               `bun:"id,pk,autoincrement" json:"id"`
+	TS          time.Time           `bun:"ts,notnull" json:"ts"`
+	UserCode    int64               `bun:"usercode,notnull" json:"usercode"`
+	LectureID   int64               `bun:"lecture_id,notnull" json:"lecture_id"`
+	ProblemID   int64               `bun:"problem_id,notnull" json:"problem"`
+	UploadDirID int64               `bun:"upload_dir_id,notnull" json:"upload_dir_id"`
+	ResultID    requeststatus.State `bun:"result,notnull" json:"result_id"`
+	Log         RequestLog          `bun:"log,notnull,type:jsonb" json:"log"`
+	TimeMS      int64               `bun:"timems,notnull" json:"time_ms"`
+	MemoryKB    int64               `bun:"memorykb,notnull" json:"memory_kb"`
 
 	Problem      *Problem      `bun:"rel:belongs-to,join:lecture_id=lecture_id,join:problem_id=problem_id"`
 	Result       *ResultValues `bun:"rel:has-one,join:result=value"`
@@ -37,18 +38,18 @@ type ValidationRequest struct {
 type GradingRequest struct {
 	bun.BaseModel `bun:"table:gradingrequest"`
 
-	LectureID       int64      `bun:"lecture_id,pk,notnull" json:"lecture_id"`
-	ProblemID       int64      `bun:"problem_id,pk,notnull" json:"problem"`
-	UserCode        int64      `bun:"usercode,pk,notnull" json:"usercode"`
-	SubmissionTS    time.Time  `bun:"submission_ts,pk,notnull" json:"submission_ts"`
-	ID              int64      `bun:"id,unique,autoincrement,notnull" json:"id"`
-	TS              time.Time  `bun:"ts,notnull" json:"ts"`
-	RequestUserCode int64      `bun:"request_usercode,notnull" json:"request_usercode"`
-	UploadDirID     int64      `bun:"upload_dir_id,notnull" json:"upload_dir_id"`
-	ResultID        int64      `bun:"result,notnull" json:"result_id"`
-	Log             RequestLog `bun:"log,notnull,type:jsonb" json:"log"`
-	TimeMS          int64      `bun:"timems,notnull" json:"time_ms"`
-	MemoryKB        int64      `bun:"memorykb,notnull" json:"memory_kb"`
+	LectureID       int64               `bun:"lecture_id,pk,notnull" json:"lecture_id"`
+	ProblemID       int64               `bun:"problem_id,pk,notnull" json:"problem"`
+	UserCode        int64               `bun:"usercode,pk,notnull" json:"usercode"`
+	SubmissionTS    time.Time           `bun:"submission_ts,pk,notnull" json:"submission_ts"`
+	ID              int64               `bun:"id,unique,autoincrement,notnull" json:"id"`
+	TS              time.Time           `bun:"ts,notnull" json:"ts"`
+	RequestUserCode int64               `bun:"request_usercode,notnull" json:"request_usercode"`
+	UploadDirID     int64               `bun:"upload_dir_id,notnull" json:"upload_dir_id"`
+	ResultID        requeststatus.State `bun:"result,notnull" json:"result_id"`
+	Log             RequestLog          `bun:"log,notnull,type:jsonb" json:"log"`
+	TimeMS          int64               `bun:"timems,notnull" json:"time_ms"`
+	MemoryKB        int64               `bun:"memorykb,notnull" json:"memory_kb"`
 
 	Problem      *Problem      `bun:"rel:belongs-to,join:lecture_id=lecture_id,join:problem_id=problem_id"`
 	Result       *ResultValues `bun:"rel:has-one,join:result=value"`

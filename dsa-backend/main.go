@@ -50,7 +50,9 @@ func main() {
 
 	db_user := "dsa_app"
 	db_password := read_db_password()
-	dsn := fmt.Sprintf("postgres://%s:%s@127.0.0.1:5432/dsa_db?sslmode=disable", db_user, db_password)
+	// TODO: modify this for production
+	db_host := "127.0.0.1:5432"
+	dsn := fmt.Sprintf("postgres://%s:%s@%s/dsa_db?sslmode=disable", db_user, db_password, db_host)
 
 	// initialize connection
 	sqldb := sql.OpenDB(pgdriver.NewConnector(pgdriver.WithDSN(dsn)))

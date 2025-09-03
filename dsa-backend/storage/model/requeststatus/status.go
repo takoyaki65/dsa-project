@@ -1,10 +1,10 @@
 package requeststatus
 
-type RequestResultState int64
+type State int64
 
 // refer to docs/README.md
 const (
-	AC RequestResultState = iota
+	AC State = iota
 	WA
 	TLE
 	MLE

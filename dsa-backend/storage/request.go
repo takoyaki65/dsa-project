@@ -2,8 +2,8 @@ package storage
 
 import (
 	"context"
-	requeststatus "dsa-backend/handler/problem/requestStatus"
 	"dsa-backend/storage/model"
+	"dsa-backend/storage/model/requeststatus"
 
 	"github.com/uptrace/bun"
 )
@@ -12,12 +12,12 @@ type RequestStore struct {
 	db *bun.DB
 }
 
-func (r RequestStore) UpdateGradingRequestStatus(context *context.Context, id int64, e requeststatus.RequestResultState) error {
+func (r RequestStore) UpdateGradingRequestStatus(context *context.Context, id int64, e requeststatus.State) error {
 	_, err := r.db.NewUpdate().Model(&model.GradingRequest{}).Set("result = ?", int64(e)).Where("id = ?", id).Exec(*context)
 	return err
 }
 
-func (r RequestStore) UpdateValidationRequestStatus(context *context.Context, id int64, status_id requeststatus.RequestResultState) error {
+func (r RequestStore) UpdateValidationRequestStatus(context *context.Context, id int64, status_id requeststatus.State) error {
 	_, err := r.db.NewUpdate().Model(&model.ValidationRequest{}).Set("result = ?", int64(status_id)).Where("id = ?", id).Exec(*context)
 	return err
 }

@@ -2,18 +2,15 @@ package model
 
 import (
 	"context"
-	"dsa-backend/storage/model/queuestatus"
-	"dsa-backend/storage/model/queuetype"
-	"dsa-backend/storage/model/requeststatus"
+	"dsa-judgeserver/storage/model/queuestatus"
+	"dsa-judgeserver/storage/model/queuetype"
+	"dsa-judgeserver/storage/model/requeststatus"
 	"time"
 
 	"github.com/uptrace/bun"
 )
 
-/**
- * NOTE: When modifying these data structures, make sure to update the
- * corresponding definitions in [here](dsa-judgeserver/storage/model/model.go).
-**/
+/** Those codes are almost same as [here](dsa-backend/storage/model/jobqueue.go) **/
 
 type JobQueue struct {
 	bun.BaseModel `bun:"table:jobqueue"`
@@ -36,6 +33,18 @@ type JobDetail struct {
 	JudgeTasks []TestCase `json:"judge"`
 }
 
+type TestCase struct {
+	ID          int64  `json:"id"`
+	Title       string `json:"title"`
+	Description string `json:"description"`
+	Command     string `json:"command"`
+	Evaluation  bool   `json:"eval_only"`
+	StdinPath   string `json:"stdin,omitempty"`
+	StdoutPath  string `json:"stdout,omitempty"`
+	StderrPath  string `json:"stderr,omitempty"`
+	ExitCode    int64  `json:"exit,omitempty"`
+}
+
 type ResultQueue struct {
 	bun.BaseModel `bun:"table:resultqueue"`
 
@@ -50,6 +59,21 @@ type ResultDetail struct {
 	MemoryMB int64               `json:"memory_mb"`
 	ResultID requeststatus.State `json:"result_id"`
 	Log      RequestLog          `json:"log"`
+}
+
+type RequestLog struct {
+	BuildResults []TaskLog `json:"build_results"`
+	JudgeResults []TaskLog `json:"judge_results"`
+}
+
+type TaskLog struct {
+	TestCaseID int64 `json:"test_case_id"`
+	ResultID   int64 `json:"result_id"`
+	TimeMS     int64 `json:"timeMS"`
+	MemoryKB   int64 `json:"memoryKB"`
+	ExitCode   int64 `json:"exitCode"`
+	StdoutPath int64 `json:"stdoutPath"`
+	StdErrPath int64 `json:"stderrPath"`
 }
 
 var _ bun.BeforeAppendModelHook = (*JobQueue)(nil)

@@ -5,9 +5,11 @@ import (
 	"context"
 	"dsa-backend/handler/auth"
 	"dsa-backend/handler/middleware"
-	requeststatus "dsa-backend/handler/problem/requestStatus"
 	"dsa-backend/handler/response"
 	"dsa-backend/storage/model"
+	"dsa-backend/storage/model/queuestatus"
+	"dsa-backend/storage/model/queuetype"
+	"dsa-backend/storage/model/requeststatus"
 	"fmt"
 	"io"
 	"net/http"
@@ -167,7 +169,7 @@ func (h *Handler) RequestValidation(c echo.Context) error {
 		LectureID:   req.LectureID,
 		ProblemID:   req.ProblemID,
 		UploadDirID: fileLocation.ID,
-		ResultID:    int64(requeststatus.WJ),
+		ResultID:    requeststatus.WJ,
 		TimeMS:      0,
 		MemoryKB:    0,
 	}
@@ -213,9 +215,9 @@ func (h *Handler) RequestValidation(c echo.Context) error {
 
 	// Create JobQueue Entry
 	job := model.JobQueue{
-		RequestType: "validation",
+		RequestType: queuetype.Validation,
 		RequestID:   request.ID,
-		Status:      "pending",
+		Status:      queuestatus.Pending,
 		CreatedAt:   time.Now(),
 		Detail: model.JobDetail{
 			TimeMS:     problem.Detail.TimeMS,
@@ -393,7 +395,7 @@ func (h *Handler) BatchValidation(c echo.Context) error {
 			LectureID:   req.LectureID,
 			ProblemID:   problem.ProblemID,
 			UploadDirID: fileLocation.ID,
-			ResultID:    int64(requeststatus.WJ),
+			ResultID:    requeststatus.WJ,
 			TimeMS:      0,
 			MemoryKB:    0,
 		}
@@ -433,9 +435,9 @@ func (h *Handler) BatchValidation(c echo.Context) error {
 
 		// Make an entity pushing to job queue.
 		job := model.JobQueue{
-			RequestType: "validation",
+			RequestType: queuetype.Validation,
 			RequestID:   request.ID,
-			Status:      "pending",
+			Status:      queuestatus.Pending,
 			CreatedAt:   time.Now(),
 			Detail: model.JobDetail{
 				TimeMS:     problem.Detail.TimeMS,
@@ -636,7 +638,7 @@ func (h *Handler) RequestGrading(c echo.Context) error {
 		TS:              requestTime,
 		RequestUserCode: userCodeOfRequester,
 		UploadDirID:     fileLocation.ID,
-		ResultID:        int64(requeststatus.WJ),
+		ResultID:        requeststatus.WJ,
 		TimeMS:          0,
 		MemoryKB:        0,
 	}
@@ -660,9 +662,9 @@ func (h *Handler) RequestGrading(c echo.Context) error {
 
 	// Create JobQueue Entry
 	job := model.JobQueue{
-		RequestType: "grading",
+		RequestType: queuetype.Grading,
 		RequestID:   request.ID,
-		Status:      "pending",
+		Status:      queuestatus.Pending,
 		CreatedAt:   time.Now(),
 		Detail: model.JobDetail{
 			TimeMS:     problem.Detail.TimeMS,
@@ -868,7 +870,7 @@ func (h *Handler) BatchGrading(c echo.Context) error {
 			TS:              requestTime,
 			RequestUserCode: userCodeOfRequester,
 			UploadDirID:     fileLocation.ID,
-			ResultID:        int64(requeststatus.WJ),
+			ResultID:        requeststatus.WJ,
 			TimeMS:          0,
 			MemoryKB:        0,
 		}
@@ -888,9 +890,9 @@ func (h *Handler) BatchGrading(c echo.Context) error {
 
 		// Make an entity pushing to job queue.
 		job := model.JobQueue{
-			RequestType: "grading",
+			RequestType: queuetype.Grading,
 			RequestID:   request.ID,
-			Status:      "pending",
+			Status:      queuestatus.Pending,
 			CreatedAt:   time.Now(),
 			Detail: model.JobDetail{
 				TimeMS:     problem.Detail.TimeMS,
