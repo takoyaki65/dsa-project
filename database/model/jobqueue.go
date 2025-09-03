@@ -10,11 +10,6 @@ import (
 	"github.com/uptrace/bun"
 )
 
-/**
- * NOTE: When modifying these data structures, make sure to update the
- * corresponding definitions in [here](dsa-judgeserver/storage/model/model.go).
-**/
-
 type JobQueue struct {
 	bun.BaseModel `bun:"table:jobqueue"`
 

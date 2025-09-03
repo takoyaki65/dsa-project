@@ -5,8 +5,6 @@ import (
 	"database/sql"
 	"dsa-backend/handler"
 	"dsa-backend/router"
-	store "dsa-backend/storage"
-	"dsa-backend/storage/model"
 	"encoding/json"
 	"fmt"
 	"log"
@@ -21,6 +19,8 @@ import (
 	"github.com/go-playground/validator/v10"
 	"github.com/labstack/echo/v4"
 	echoSwagger "github.com/swaggo/echo-swagger"
+	"github.com/takoyaki65/dsa-project/database"
+	"github.com/takoyaki65/dsa-project/database/model"
 	"github.com/uptrace/bun"
 	"github.com/uptrace/bun/dialect/pgdialect"
 	"github.com/uptrace/bun/driver/pgdriver"
@@ -113,7 +113,8 @@ func read_db_password() string {
 // Checks if an admin user exists and create one if not
 func ensureAdminUser(db *bun.DB, r *echo.Echo) error {
 	ctx := context.Background()
-	userStore := store.NewUserStore(db)
+	// userStore := storage.NewUserStore(db)
+	userStore := database.NewUserStore(db)
 
 	// Check if admin user exists
 	adminUsers, err := userStore.GetUserListByUserRole(&ctx, "admin")

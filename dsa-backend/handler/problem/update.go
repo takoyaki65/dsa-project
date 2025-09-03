@@ -4,7 +4,6 @@ import (
 	"archive/zip"
 	"context"
 	"dsa-backend/handler/response"
-	"dsa-backend/storage/model"
 	"errors"
 	"io"
 	"net/http"
@@ -15,6 +14,7 @@ import (
 	"time"
 
 	"github.com/labstack/echo/v4"
+	"github.com/takoyaki65/dsa-project/database/model"
 )
 
 type LectureEntryRequest struct {

@@ -5,12 +5,12 @@ import (
 	"dsa-backend/handler/auth"
 	"dsa-backend/handler/middleware"
 	"dsa-backend/handler/response"
-	"dsa-backend/storage"
-	"dsa-backend/storage/model"
 	"net/http"
 	"time"
 
 	"github.com/labstack/echo/v4"
+	"github.com/takoyaki65/dsa-project/database"
+	"github.com/takoyaki65/dsa-project/database/model"
 	"github.com/uptrace/bun"
 	"golang.org/x/crypto/bcrypt"
 )
@@ -45,14 +45,14 @@ type userLoginResponse struct {
 
 type Handler struct {
 	db        *bun.DB
-	userStore storage.UserStore
+	userStore database.UserStore
 	jwtSecret string
 }
 
 func NewUserHandler(jwtSecret string, db *bun.DB) *Handler {
 	return &Handler{
 		db:        db,
-		userStore: *storage.NewUserStore(db),
+		userStore: *database.NewUserStore(db),
 		jwtSecret: jwtSecret,
 	}
 }

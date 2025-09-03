@@ -3,30 +3,30 @@ package problem
 import (
 	"dsa-backend/handler/auth"
 	"dsa-backend/handler/middleware"
-	"dsa-backend/storage"
 
 	"github.com/labstack/echo/v4"
+	"github.com/takoyaki65/dsa-project/database"
 	"github.com/uptrace/bun"
 )
 
 type Handler struct {
 	db            *bun.DB
-	problemStore  storage.ProblemStore
-	requestStore  storage.RequestStore
-	fileStore     storage.FileStore
-	userStore     storage.UserStore
-	jobQueueStore storage.JobQueueStore
+	problemStore  database.ProblemStore
+	requestStore  database.RequestStore
+	fileStore     database.FileStore
+	userStore     database.UserStore
+	jobQueueStore database.JobQueueStore
 	jwtSecret     string
 }
 
 func NewProblemHandler(jwtSecret string, db *bun.DB) *Handler {
 	return &Handler{
 		db:            db,
-		problemStore:  *storage.NewProblemStore(db),
-		requestStore:  *storage.NewRequestStore(db),
-		fileStore:     *storage.NewFileStore(db),
-		userStore:     *storage.NewUserStore(db),
-		jobQueueStore: *storage.NewJobQueueStore(db),
+		problemStore:  *database.NewProblemStore(db),
+		requestStore:  *database.NewRequestStore(db),
+		fileStore:     *database.NewFileStore(db),
+		userStore:     *database.NewUserStore(db),
+		jobQueueStore: *database.NewJobQueueStore(db),
 		jwtSecret:     jwtSecret,
 	}
 }

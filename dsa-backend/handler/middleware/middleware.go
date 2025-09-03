@@ -3,13 +3,13 @@ package middleware
 import (
 	"context"
 	"dsa-backend/handler/auth"
-	"dsa-backend/storage"
 	"net/http"
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
 	echojwt "github.com/labstack/echo-jwt/v4"
 	"github.com/labstack/echo/v4"
+	"github.com/takoyaki65/dsa-project/database"
 	"github.com/uptrace/bun"
 )
 
@@ -69,7 +69,7 @@ func CheckValidityOfJWTMiddleware(db *bun.DB) echo.MiddlewareFunc {
 			}
 
 			ctx := context.Background()
-			userStore := storage.NewUserStore(db)
+			userStore := database.NewUserStore(db)
 
 			// Check login history existence
 			loginHistory, err := userStore.GetLoginHistory(&ctx, claims.UserID, claims.IssuedAt.Time)

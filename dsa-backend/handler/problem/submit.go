@@ -6,10 +6,6 @@ import (
 	"dsa-backend/handler/auth"
 	"dsa-backend/handler/middleware"
 	"dsa-backend/handler/response"
-	"dsa-backend/storage/model"
-	"dsa-backend/storage/model/queuestatus"
-	"dsa-backend/storage/model/queuetype"
-	"dsa-backend/storage/model/requeststatus"
 	"fmt"
 	"io"
 	"net/http"
@@ -19,6 +15,10 @@ import (
 	"time"
 
 	"github.com/labstack/echo/v4"
+	"github.com/takoyaki65/dsa-project/database/model"
+	"github.com/takoyaki65/dsa-project/database/model/queuestatus"
+	"github.com/takoyaki65/dsa-project/database/model/queuetype"
+	"github.com/takoyaki65/dsa-project/database/model/requeststatus"
 )
 
 // TODO: Discuss file size limits
