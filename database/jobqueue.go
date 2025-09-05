@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/takoyaki65/dsa-project/database/model"
+	"github.com/takoyaki65/dsa-project/database/model/queuestatus"
 	"github.com/uptrace/bun"
 )
 
@@ -20,4 +21,10 @@ func NewJobQueueStore(db *bun.DB) *JobQueueStore {
 	return &JobQueueStore{
 		db: db,
 	}
+}
+
+func (j *JobQueueStore) FetchJobs(ctx *context.Context, status queuestatus.Status, limit int32) ([]model.JobQueue, error) {
+	var jobs []model.JobQueue
+	err := j.db.NewSelect().Model(&jobs).Where("status = ?", status).Limit(int(limit)).Scan(*ctx)
+	return jobs, err
 }

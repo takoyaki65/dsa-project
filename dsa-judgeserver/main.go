@@ -1,12 +1,17 @@
 package main
 
 import (
+	"context"
 	"database/sql"
 	"fmt"
 	"log"
+	"log/slog"
 	"os"
 	"strings"
+	"time"
 
+	"github.com/takoyaki65/dsa-project/database"
+	"github.com/takoyaki65/dsa-project/database/model/queuestatus"
 	"github.com/uptrace/bun"
 	"github.com/uptrace/bun/dialect/pgdialect"
 	"github.com/uptrace/bun/driver/pgdriver"
@@ -28,7 +33,44 @@ func main() {
 	// For debugging purpose, print all queries to stdout.
 	db.AddQueryHook(bundebug.NewQueryHook(bundebug.WithVerbose(true)))
 
-	// TODO launch go rountines for workers, and monitoring job queues.
+	jobQueueStore := database.NewJobQueueStore(db)
+
+	ctx := context.Background()
+	textHandler := slog.NewTextHandler(os.Stdout, nil)
+	logger := slog.New(textHandler)
+
+	// Create Docker Client
+	jobExecutor, err := NewJobExecutor()
+	if err != nil {
+		logger.Error("Failed to create job executor", slog.String("error", err.Error()))
+		return
+	}
+
+	for {
+		// Infinite loop to keep the program running
+
+		// Fetch Pending tasks from JobQueue
+		jobs, err := jobQueueStore.FetchJobs(&ctx, queuestatus.Pending, 1)
+
+		if err != nil {
+			logger.Error("Failed to fetch jobs", slog.String("error", err.Error()))
+			continue
+		}
+
+		if len(jobs) == 0 {
+			logger.Info("No pending jobs found. Sleeping for a while...")
+			// Sleep for a while before checking again
+			time.Sleep(5 * time.Second) // Uncomment this line to add a delay
+			continue
+		}
+
+		// Pick the first job
+		job := jobs[0]
+		logger.Info("Processing job", slog.Int64("job_id", job.ID))
+
+		// Execute the job
+		jobExecutor.execute_job(&job)
+	}
 }
 
 func read_db_password() string {
