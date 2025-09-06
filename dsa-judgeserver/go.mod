@@ -4,6 +4,7 @@ go 1.24.5
 
 require (
 	github.com/docker/docker v28.4.0+incompatible
+	github.com/google/uuid v1.6.0
 	github.com/takoyaki65/dsa-project/database v0.0.0-20250904122933-bed78bac1852
 	github.com/uptrace/bun v1.2.15
 	github.com/uptrace/bun/dialect/pgdialect v1.2.15

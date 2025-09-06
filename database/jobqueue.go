@@ -12,6 +12,16 @@ type JobQueueStore struct {
 	db *bun.DB
 }
 
+func (j *JobQueueStore) InsertResult(context *context.Context, resultEntry *model.ResultQueue) error {
+	_, err := j.db.NewInsert().Model(resultEntry).Exec(*context)
+	return err
+}
+
+func (j *JobQueueStore) UpdateJobStatus(context *context.Context, id int64, processing queuestatus.Status) error {
+	_, err := j.db.NewUpdate().Model(&model.JobQueue{}).Set("status = ?", processing).Where("id = ?", id).Exec(*context)
+	return err
+}
+
 func (j *JobQueueStore) InsertJob(context *context.Context, job *model.JobQueue) error {
 	_, err := j.db.NewInsert().Model(job).Exec(*context)
 	return err

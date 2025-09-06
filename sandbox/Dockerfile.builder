@@ -23,7 +23,7 @@ RUN --mount=type=cache,target=/home/guest/.cargo,sharing=locked \
   --mount=type=cache,target=/home/guest/watchdog/target,sharing=locked \
   cargo build --release
 
-# Copy source code
+# Copy source code (except target dir)
 COPY ./watchdog /home/guest/watchdog
 
 # Final build (force rebuild by updating time stamp)

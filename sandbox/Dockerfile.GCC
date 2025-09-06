@@ -13,7 +13,7 @@ RUN groupadd -g 1002 guest && \
     useradd -m -s /bin/bash -u 1002 -g 1002 guest
 
 # builderステージからwatchdogをコピー
-COPY --from=builder /home/guest/watchdog /home/watchdog
+COPY --from=builder /tmp/watchdog /home/watchdog
 RUN chown root:root /home/watchdog && \
     chmod 700 /home/watchdog
 
