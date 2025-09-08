@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"fmt"
+	"path/filepath"
 
 	"github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/api/types/volume"
@@ -14,6 +15,8 @@ import (
 type JobExecutor struct {
 	client *client.Client
 }
+
+const UPLOAD_DIR_IN_HOST = "/upload/"
 
 func NewJobExecutor() (*JobExecutor, error) {
 	// Create API Client
@@ -39,11 +42,13 @@ func (executor *JobExecutor) ExecuteJob(ctx *context.Context, job *model.JobDeta
 		return nil, err
 	}
 
+	defer executor.RemoveVolume(ctx, volume.Name)
+
 	// Launch Sandbox Container to compile user codes
 	build_container_name := fmt.Sprintf("build-%s", uuid.New().String())
 
 	cpuSet := "0"         // only 1 CPU core can be used.
-	timeout := 360        // seconds timeout for stopping container
+	timeout := 360        // timeout in seconds for stopping container
 	pidLimit := int64(64) // limit max number of processes available to spawn
 
 	buildContainer_createResponse, err := executor.client.ContainerCreate(*ctx,
@@ -108,9 +113,45 @@ func (executor *JobExecutor) ExecuteJob(ctx *context.Context, job *model.JobDeta
 		return nil, err
 	}
 
-	// TODO: start container and copy files into the volume
+	defer executor.RemoveContainer(ctx, buildContainer_createResponse.ID)
+
+	for _, testFile := range job.TestFiles {
+		testFilePath := filepath.Join(UPLOAD_DIR_IN_HOST, testFile)
+		err = executor.CopyContentsToContainer(*ctx, testFilePath, buildContainer_createResponse.ID, "/home/guest/")
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	userSubmittedFolderPath := filepath.Join(UPLOAD_DIR_IN_HOST, job.FileDir)
+	err = executor.CopyContentsToContainer(*ctx, userSubmittedFolderPath, buildContainer_createResponse.ID, "/home/guest/")
+	if err != nil {
+		return nil, err
+	}
 
 	panic("Not implemented")
+}
+
+// Copy file (or directory) from host to container
+func (executor *JobExecutor) CopyContentsToContainer(ctx context.Context, srcInHost, containerID, dstInContainer string) error {
+	// Create tar archive from source path
+	tarReader, err := createTarArchive(srcInHost)
+	if err != nil {
+		return fmt.Errorf("failed to create tar archive: %w", err)
+	}
+
+	// Copy tar archive to container
+	err = executor.client.CopyToContainer(ctx, containerID, dstInContainer, tarReader, container.CopyToContainerOptions{
+		// it will be an error if unpacking the given content would cause an existing directory to be replaced with a non-directory and vice versa.
+		AllowOverwriteDirWithFile: false,
+		CopyUIDGID:                false,
+	})
+
+	if err != nil {
+		return fmt.Errorf("failed to copy to container: %w", err)
+	}
+
+	return nil
 }
 
 func (executor *JobExecutor) CheckImageExists(ctx *context.Context, imageName string) (bool, error) {
@@ -124,4 +165,17 @@ func (executor *JobExecutor) CheckImageExists(ctx *context.Context, imageName st
 
 func (executor *JobExecutor) Close() error {
 	return executor.client.Close()
+}
+
+func (executor *JobExecutor) RemoveVolume(ctx *context.Context, volumeName string) error {
+	return executor.client.VolumeRemove(*ctx, volumeName, true)
+}
+
+func (executor *JobExecutor) RemoveContainer(ctx *context.Context, containerID string) error {
+	return executor.client.ContainerRemove(*ctx, containerID, container.RemoveOptions{
+		// Remove anonymous volumes associated with the container.
+		Force: true,
+		// If the container is running, kill it before removing it.
+		RemoveVolumes: true,
+	})
 }
