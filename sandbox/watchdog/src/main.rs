@@ -311,6 +311,44 @@ fn execute_task(task: TaskInput) -> TaskOutput {
     }
 }
 
+/// Executes a task with resource limits and captures output.
+/// Returns JSON log with execution details.
+///
+/// Input are given on stdin as JSON, output is printed to stdout as JSON.
+///
+/// ```json
+/// {
+///    "command": "cmd [args...]",
+///    "stdin": "stdin data",
+///    "timeout_ms": 3000,
+///    "memory_limit_mb": 1024,
+///    "uid": 1000,
+///    "gid": 1000,
+///    "stdout_max_bytes": 1024,
+///    "stderr_max_bytes": 1024,
+/// }
+/// ```
+///
+/// The command is executed as `/bin/sh -c "command"`, so shell features like
+///  pipe forwarding are available.
+///
+/// Output JSON format:
+///
+/// ```json
+/// {
+///    "exit_code": 0,   // None if error occurs on setup/monitoring
+///    "stdout": "",
+///    "stderr": "",     // Contains error message if exit_code is None
+///    "time_ms": 123,
+///    "memory_kb": 456,
+///    "TLE": false,     // Time Limit Exceeded If true
+///    "MLE": false,     // Memory Limit Exceeded If true
+///    "OLE": false,     // Output Limit Exceeded If true
+/// }
+/// ```
+///
+/// If there are some errors when setting up or monitoring the process,
+/// exit_code will be None and stderr will contain the error message.
 fn main() {
     // Read JSON from stdin
     // Expected JSON format:

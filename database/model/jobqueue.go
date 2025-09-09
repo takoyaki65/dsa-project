@@ -42,9 +42,45 @@ type ResultQueue struct {
 
 type ResultDetail struct {
 	TimeMS   int64               `json:"time_ms"`
-	MemoryMB int64               `json:"memory_mb"`
+	MemoryKB int64               `json:"memory_kb"`
 	ResultID requeststatus.State `json:"result_id"`
-	Log      RequestLog          `json:"log"`
+	BuildLog []ResultLog         `json:"log"`
+	JudgeLog []ResultLog         `json:"judge_log"`
+}
+
+type ResultLog struct {
+	TestCaseID int64               `json:"test_case_id"`
+	ResultID   requeststatus.State `json:"result_id"`
+	TimeMS     int64               `json:"timeMS"`
+	MemoryKB   int64               `json:"memoryKB"`
+	ExitCode   int64               `json:"exitCode"`
+	StdoutPath string              `json:"stdoutPath"`
+	StderrPath string              `json:"stderrPath"`
+}
+
+func (r *ResultDetail) ConstructFromLogs(buildLogs []ResultLog, judgeLogs []ResultLog) {
+	r.BuildLog = buildLogs
+	r.JudgeLog = judgeLogs
+
+	// calculate total time and memory
+	var maxTimeMS int64 = 0
+	var maxMemoryKB int64 = 0
+	var maxResultState requeststatus.State = requeststatus.AC
+
+	for _, log := range buildLogs {
+		if log.TimeMS > maxTimeMS {
+			maxTimeMS = log.TimeMS
+		}
+
+		if log.MemoryKB > maxMemoryKB {
+			maxMemoryKB = log.MemoryKB
+		}
+		maxResultState = maxResultState.Max(log.ResultID)
+	}
+
+	r.TimeMS = maxTimeMS
+	r.MemoryKB = maxMemoryKB
+	r.ResultID = maxResultState
 }
 
 var _ bun.BeforeAppendModelHook = (*JobQueue)(nil)

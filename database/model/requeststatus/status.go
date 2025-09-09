@@ -16,3 +16,10 @@ const (
 	Judging
 	WJ
 )
+
+func (s State) Max(other State) State {
+	if s > other {
+		return s
+	}
+	return other
+}

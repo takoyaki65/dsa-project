@@ -65,13 +65,13 @@ type RequestLog struct {
 }
 
 type TaskLog struct {
-	TestCaseID int64 `json:"test_case_id"`
-	ResultID   int64 `json:"result_id"`
-	TimeMS     int64 `json:"timeMS"`
-	MemoryKB   int64 `json:"memoryKB"`
-	ExitCode   int64 `json:"exitCode"`
-	StdoutPath int64 `json:"stdoutPath"`
-	StdErrPath int64 `json:"stderrPath"`
+	TestCaseID int64               `json:"test_case_id"`
+	ResultID   requeststatus.State `json:"result_id"`
+	TimeMS     int64               `json:"timeMS"`
+	MemoryKB   int64               `json:"memoryKB"`
+	ExitCode   int64               `json:"exitCode"`
+	StdoutPath int64               `json:"stdoutPath"`
+	StdErrPath int64               `json:"stderrPath"`
 }
 
 var _ bun.BeforeAppendModelHook = (*ValidationRequest)(nil)

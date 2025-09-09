@@ -1,15 +1,21 @@
 package main
 
 import (
+	"bytes"
 	"context"
+	"encoding/json"
 	"fmt"
+	"os"
 	"path/filepath"
+	"time"
 
 	"github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/api/types/volume"
 	"github.com/docker/docker/client"
+	"github.com/docker/docker/pkg/stdcopy"
 	"github.com/google/uuid"
 	"github.com/takoyaki65/dsa-project/database/model"
+	"github.com/takoyaki65/dsa-project/database/model/requeststatus"
 )
 
 type JobExecutor struct {
@@ -47,9 +53,10 @@ func (executor *JobExecutor) ExecuteJob(ctx *context.Context, job *model.JobDeta
 	// Launch Sandbox Container to compile user codes
 	build_container_name := fmt.Sprintf("build-%s", uuid.New().String())
 
-	cpuSet := "0"         // only 1 CPU core can be used.
-	timeout := 360        // timeout in seconds for stopping container
-	pidLimit := int64(64) // limit max number of processes available to spawn
+	cpuSet := "0"                                           // only 1 CPU core can be used.
+	timeout := 360                                          // timeout in seconds for stopping container
+	pidLimit := int64(64)                                   // limit max number of processes available to spawn
+	totalMemoryInBytes := (job.MemoryMB + 32) * 1024 * 1024 // add 32MB for overhead
 
 	buildContainer_createResponse, err := executor.client.ContainerCreate(*ctx,
 		&container.Config{
@@ -67,9 +74,9 @@ func (executor *JobExecutor) ExecuteJob(ctx *context.Context, job *model.JobDeta
 			Binds: []string{fmt.Sprintf("%s:/home/guest", volume.Name)},
 			Resources: container.Resources{
 				CpusetCpus: cpuSet, // only 1 CPU core can be used.
-				Memory:     job.MemoryMB * 1024 * 1024,
-				MemorySwap: job.MemoryMB * 1024 * 1024, // disable swap
-				PidsLimit:  &pidLimit,                  // limit max number of processes available to spawn
+				Memory:     totalMemoryInBytes,
+				MemorySwap: totalMemoryInBytes, // disable swap
+				PidsLimit:  &pidLimit,          // limit max number of processes available to spawn
 				Ulimits: []*container.Ulimit{
 					{
 						Name: "nofile", // limit max number of open files
@@ -115,6 +122,19 @@ func (executor *JobExecutor) ExecuteJob(ctx *context.Context, job *model.JobDeta
 
 	defer executor.RemoveContainer(ctx, buildContainer_createResponse.ID)
 
+	// Start the build container
+	err = executor.client.ContainerStart(*ctx, buildContainer_createResponse.ID, container.StartOptions{})
+	if err != nil {
+		return nil, err
+	}
+	timeoutBeforeStop := 0
+	defer executor.client.ContainerStop(*ctx, buildContainer_createResponse.ID, container.StopOptions{
+		Signal:  "SIGKILL",
+		Timeout: &timeoutBeforeStop, // do not wait before killing the container
+	})
+
+	// Copy test files and user submitted files to the build container
+	// Copy test files
 	for _, testFile := range job.TestFiles {
 		testFilePath := filepath.Join(UPLOAD_DIR_IN_HOST, testFile)
 		err = executor.CopyContentsToContainer(*ctx, testFilePath, buildContainer_createResponse.ID, "/home/guest/")
@@ -123,11 +143,193 @@ func (executor *JobExecutor) ExecuteJob(ctx *context.Context, job *model.JobDeta
 		}
 	}
 
+	// Copy user submitted files
 	userSubmittedFolderPath := filepath.Join(UPLOAD_DIR_IN_HOST, job.FileDir)
 	err = executor.CopyContentsToContainer(*ctx, userSubmittedFolderPath, buildContainer_createResponse.ID, "/home/guest/")
 	if err != nil {
 		return nil, err
 	}
+
+	buildLog := []model.ResultLog{}
+	judgeLog := []model.ResultLog{}
+
+	resultDetail := model.ResultDetail{}
+
+	// Execute build tasks
+	for _, buildTask := range job.BuildTasks {
+		// Read stdin from buildTask.StdinPath
+		stdinPath := filepath.Join(UPLOAD_DIR_IN_HOST, buildTask.StdinPath)
+		stdinContent, err := os.ReadFile(stdinPath)
+		if err != nil {
+			return nil, fmt.Errorf("failed to read stdin file %s: %w", stdinPath, err)
+		}
+
+		TotalTimeoutInSeconds := job.TimeMS/1000 + 5 // add 5 seconds for overhead
+
+		watchdogInput := WatchdogInput{
+			Command:        buildTask.Command,
+			Stdin:          string(stdinContent),
+			TimeoutMS:      job.TimeMS,
+			MemoryMB:       job.MemoryMB,
+			UID:            1002,
+			GID:            1002,
+			StdoutMaxBytes: 2048, // 2 KB
+			StderrMaxBytes: 2048, // 2 KB
+		}
+
+		// Convert watchdogInput to JSON string
+		watchdogInputJSON, err := json.Marshal(watchdogInput)
+		if err != nil {
+			return nil, fmt.Errorf("failed to marshal watchdog input: %w", err)
+		}
+
+		execConfig := ExecConfig{
+			Cmd:              []string{"/home/watchdog"},
+			Stdin:            string(watchdogInputJSON),
+			WorkingDir:       "/home/guest",
+			Env:              []string{},
+			TimeoutInSeconds: TotalTimeoutInSeconds,
+			User:             "root", // need root to run watchdog
+		}
+
+		execResult, err := executor.ExecuteCommand(*ctx, buildContainer_createResponse.ID, execConfig)
+		if err != nil {
+			// If some internal error occurs (not the command execution error),
+			// return ResultDetail with IE(Internal Error) status.
+			buildLog = append(buildLog, model.ResultLog{
+				TestCaseID: buildTask.ID,
+				ResultID:   requeststatus.IE,
+				TimeMS:     0,
+				MemoryKB:   0,
+				ExitCode:   -1,
+			})
+
+			resultDetail.ConstructFromLogs(buildLog, judgeLog)
+			return &resultDetail, fmt.Errorf("failed to execute build task %s: %w", buildTask.Title, err)
+		}
+
+		if execResult.ExitCode != 0 {
+			// If the watchdog itself fails (e.g., due to OOM), return IE(Internal Error) status.
+			buildLog = append(buildLog, model.ResultLog{
+				TestCaseID: buildTask.ID,
+				ResultID:   requeststatus.IE,
+				TimeMS:     0,
+				MemoryKB:   0,
+				ExitCode:   -1,
+			})
+
+			resultDetail.ConstructFromLogs(buildLog, judgeLog)
+			return &resultDetail, fmt.Errorf("watchdog failed with exit code %d, stderr: %s", execResult.ExitCode, execResult.Stderr)
+		}
+
+		if execResult.Stderr != "" {
+			// If watchdog writes something to stderr, return IE(Internal Error) status.
+			buildLog = append(buildLog, model.ResultLog{
+				TestCaseID: buildTask.ID,
+				ResultID:   requeststatus.IE,
+				TimeMS:     0,
+				MemoryKB:   0,
+				ExitCode:   -1,
+			})
+
+			resultDetail.ConstructFromLogs(buildLog, judgeLog)
+			return &resultDetail, fmt.Errorf("watchdog wrote to stderr: %s", execResult.Stderr)
+		}
+
+		// Save stdout and stderr to files
+		stdoutRelPath := filepath.Join(job.ResultDir, fmt.Sprintf("build_%d_stdout.txt", buildTask.ID))
+		stdoutFileAbsPath := filepath.Join(UPLOAD_DIR_IN_HOST, stdoutRelPath)
+		err = os.WriteFile(stdoutFileAbsPath, []byte(execResult.Stdout), 0644)
+		if err != nil {
+			buildLog = append(buildLog, model.ResultLog{
+				TestCaseID: buildTask.ID,
+				ResultID:   requeststatus.IE,
+				TimeMS:     0,
+				MemoryKB:   0,
+				ExitCode:   -1,
+			})
+
+			resultDetail.ConstructFromLogs(buildLog, judgeLog)
+			return &resultDetail, fmt.Errorf("failed to write stdout file %s: %w", stdoutFileAbsPath, err)
+		}
+
+		stderrRelPath := filepath.Join(job.ResultDir, fmt.Sprintf("build_%d_stderr.txt", buildTask.ID))
+		stderrAbsFilePath := filepath.Join(UPLOAD_DIR_IN_HOST, stderrRelPath)
+		err = os.WriteFile(stderrAbsFilePath, []byte(execResult.Stderr), 0644)
+		if err != nil {
+			buildLog = append(buildLog, model.ResultLog{
+				TestCaseID: buildTask.ID,
+				ResultID:   requeststatus.IE,
+				TimeMS:     0,
+				MemoryKB:   0,
+				ExitCode:   -1,
+			})
+
+			resultDetail.ConstructFromLogs(buildLog, judgeLog)
+			return &resultDetail, fmt.Errorf("failed to write stderr file %s: %w", stderrAbsFilePath, err)
+		}
+
+		// parse execResult.Stdout as WatchdogOutput
+		var watchdogOutput WatchdogOutput
+		err = json.Unmarshal([]byte(execResult.Stdout), &watchdogOutput)
+		if err != nil {
+			buildLog = append(buildLog, model.ResultLog{
+				TestCaseID: buildTask.ID,
+				ResultID:   requeststatus.IE,
+				TimeMS:     0,
+				MemoryKB:   0,
+				ExitCode:   -1,
+			})
+
+			resultDetail.ConstructFromLogs(buildLog, judgeLog)
+			return &resultDetail, fmt.Errorf("failed to unmarshal watchdog output: %w", err)
+		}
+
+		if watchdogOutput.ExitCode == nil {
+			// If ExitCode is nil, it means the watchdog was terminated abnormally.
+			buildLog = append(buildLog, model.ResultLog{
+				TestCaseID: buildTask.ID,
+				ResultID:   requeststatus.IE,
+				TimeMS:     0,
+				MemoryKB:   0,
+				ExitCode:   -1,
+			})
+
+			resultDetail.ConstructFromLogs(buildLog, judgeLog)
+			return &resultDetail, fmt.Errorf("watchdog terminated abnormally")
+		}
+
+		// Determine result status
+		var resultStatus requeststatus.State = requeststatus.AC
+
+		if watchdogOutput.OLE {
+			resultStatus = resultStatus.Max(requeststatus.OLE)
+		}
+		if watchdogOutput.MLE {
+			resultStatus = resultStatus.Max(requeststatus.MLE)
+		}
+		if watchdogOutput.TLE {
+			resultStatus = resultStatus.Max(requeststatus.TLE)
+		}
+
+		if *watchdogOutput.ExitCode != buildTask.ExitCode {
+			// If the exit code is different from the expected one, mark it as WA
+			resultStatus = resultStatus.Max(requeststatus.WA)
+		}
+
+		// Append to requestLog
+		buildLog = append(buildLog, model.ResultLog{
+			TestCaseID: buildTask.ID,
+			ResultID:   resultStatus,
+			TimeMS:     watchdogInput.TimeoutMS,
+			MemoryKB:   watchdogOutput.MemoryKB,
+			ExitCode:   *watchdogOutput.ExitCode,
+			StdoutPath: stdoutRelPath,
+			StderrPath: stderrRelPath,
+		})
+	}
+
+	// TODO: Execute judge tasks
 
 	panic("Not implemented")
 }
@@ -152,6 +354,131 @@ func (executor *JobExecutor) CopyContentsToContainer(ctx context.Context, srcInH
 	}
 
 	return nil
+}
+
+type ExecConfig struct {
+	Cmd              []string
+	Stdin            string
+	WorkingDir       string
+	Env              []string
+	TimeoutInSeconds int64
+	User             string // Format: "uid:gid" or just "uid"
+}
+
+type ExecResult struct {
+	ExitCode int64
+	Stdout   string
+	Stderr   string
+	TimeOut  bool
+}
+
+// Execute a command in a running container with given configuration.
+func (executor *JobExecutor) ExecuteCommand(ctx context.Context, containerID string, config ExecConfig) (ExecResult, error) {
+	var result ExecResult
+
+	// Create a context with timeout if specified
+	var cancelFunc context.CancelFunc
+	if config.TimeoutInSeconds > 0 {
+		ctx, cancelFunc = context.WithTimeout(ctx, time.Duration(config.TimeoutInSeconds)*time.Second)
+		defer cancelFunc()
+	}
+
+	// Prepare exec configuration
+	execOptions := container.ExecOptions{
+		User:         config.User,
+		Privileged:   false,
+		Tty:          false,
+		AttachStdin:  config.Stdin != "",
+		AttachStdout: true,
+		AttachStderr: true,
+		Env:          config.Env,
+		WorkingDir:   config.WorkingDir,
+		Cmd:          config.Cmd,
+	}
+
+	// Create exec instance
+	execResp, err := executor.client.ContainerExecCreate(ctx, containerID, execOptions)
+	if err != nil {
+		return result, fmt.Errorf("failed to create exec instance: %w", err)
+	}
+
+	// Attach to exec instance
+	attachResp, err := executor.client.ContainerExecAttach(ctx, execResp.ID, container.ExecAttachOptions{
+		Detach: false,
+		Tty:    false,
+	})
+	if err != nil {
+		return result, fmt.Errorf("failed to attach to exec instance: %w", err)
+	}
+	defer attachResp.Close()
+
+	// Handle stdin if provided
+	if config.Stdin != "" {
+		go func() {
+			defer attachResp.CloseWrite()
+			_, _ = attachResp.Conn.Write([]byte(config.Stdin))
+		}()
+	}
+
+	// Create channels for output collection
+	outputDone := make(chan error, 1)
+	var stdoutBuf, stderrBuf bytes.Buffer
+
+	// Collect output in a goroutine
+	go func() {
+		// Since we're not using TTY, we need to use stdcopy to demultiplex stdout and stderr
+		_, err := stdcopy.StdCopy(&stdoutBuf, &stderrBuf, attachResp.Reader)
+		outputDone <- err
+	}()
+
+	// Wait for output collection or timeout
+	select {
+	case err := <-outputDone:
+		if err != nil {
+			return result, fmt.Errorf("error while reading output: %w", err)
+		}
+	case <-ctx.Done():
+		// Timeout occurred
+		result.TimeOut = true
+		result.Stderr = stdoutBuf.String()
+		result.Stdout = stderrBuf.String()
+
+		// Return timeout error immediately
+		// The caller has responsibility to container cleanup
+		return result, fmt.Errorf("command execution timed out after %d seconds", config.TimeoutInSeconds)
+	}
+
+	// Get exec inspect information to retrieve exit code
+	inspectResp, err := executor.client.ContainerExecInspect(context.Background(), execResp.ID)
+	if err != nil {
+		return result, fmt.Errorf("failed to inspect exec instance: %w", err)
+	}
+
+	// Set results
+	result.ExitCode = int64(inspectResp.ExitCode)
+	result.Stdout = stdoutBuf.String()
+	result.Stderr = stderrBuf.String()
+
+	return result, nil
+}
+
+// Helper function to execute a simple command and get output
+func (executor *JobExecutor) ExecuteSimpleCommand(ctx context.Context, containerID string, cmd []string) (ExecResult, error) {
+	config := ExecConfig{
+		Cmd:              cmd,
+		TimeoutInSeconds: 30,
+	}
+
+	result, err := executor.ExecuteCommand(ctx, containerID, config)
+	if err != nil {
+		return ExecResult{}, err
+	}
+
+	if result.ExitCode != 0 {
+		return result, fmt.Errorf("command %v failed with exit code %d, stderr: %s", cmd, result.ExitCode, result.Stderr)
+	}
+
+	return result, nil
 }
 
 func (executor *JobExecutor) CheckImageExists(ctx *context.Context, imageName string) (bool, error) {
