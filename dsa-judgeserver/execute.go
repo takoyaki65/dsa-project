@@ -23,6 +23,10 @@ type JobExecutor struct {
 }
 
 const UPLOAD_DIR_IN_HOST = "/upload/"
+const UID_GUEST = 1002
+const GID_GUEST = 1002
+const MAX_STDOUT_BYTES = 2 * 1024 // 2 KB
+const MAX_STDERR_BYTES = 2 * 1024 // 2 KB
 
 func NewJobExecutor() (*JobExecutor, error) {
 	// Create API Client
@@ -54,7 +58,7 @@ func (executor *JobExecutor) ExecuteJob(ctx *context.Context, job *model.JobDeta
 	build_container_name := fmt.Sprintf("build-%s", uuid.New().String())
 
 	cpuSet := "0"                                           // only 1 CPU core can be used.
-	timeout := 360                                          // timeout in seconds for stopping container
+	timeout := 120                                          // timeout in seconds for stopping container
 	pidLimit := int64(64)                                   // limit max number of processes available to spawn
 	totalMemoryInBytes := (job.MemoryMB + 32) * 1024 * 1024 // add 32MB for overhead
 
@@ -171,10 +175,10 @@ func (executor *JobExecutor) ExecuteJob(ctx *context.Context, job *model.JobDeta
 			Stdin:          string(stdinContent),
 			TimeoutMS:      job.TimeMS,
 			MemoryMB:       job.MemoryMB,
-			UID:            1002,
-			GID:            1002,
-			StdoutMaxBytes: 2048, // 2 KB
-			StderrMaxBytes: 2048, // 2 KB
+			UID:            UID_GUEST,
+			GID:            GID_GUEST,
+			StdoutMaxBytes: MAX_STDOUT_BYTES,
+			StderrMaxBytes: MAX_STDERR_BYTES,
 		}
 
 		// Convert watchdogInput to JSON string
@@ -236,10 +240,26 @@ func (executor *JobExecutor) ExecuteJob(ctx *context.Context, job *model.JobDeta
 			return &resultDetail, fmt.Errorf("watchdog wrote to stderr: %s", execResult.Stderr)
 		}
 
+		// parse execResult.Stdout as WatchdogOutput
+		var watchdogOutput WatchdogOutput
+		err = json.Unmarshal([]byte(execResult.Stdout), &watchdogOutput)
+		if err != nil {
+			buildLog = append(buildLog, model.ResultLog{
+				TestCaseID: buildTask.ID,
+				ResultID:   requeststatus.IE,
+				TimeMS:     0,
+				MemoryKB:   0,
+				ExitCode:   -1,
+			})
+
+			resultDetail.ConstructFromLogs(buildLog, judgeLog)
+			return &resultDetail, fmt.Errorf("failed to unmarshal watchdog output: %w", err)
+		}
+
 		// Save stdout and stderr to files
 		stdoutRelPath := filepath.Join(job.ResultDir, fmt.Sprintf("build_%d_stdout.txt", buildTask.ID))
 		stdoutFileAbsPath := filepath.Join(UPLOAD_DIR_IN_HOST, stdoutRelPath)
-		err = os.WriteFile(stdoutFileAbsPath, []byte(execResult.Stdout), 0644)
+		err = os.WriteFile(stdoutFileAbsPath, []byte(watchdogOutput.Stdout), 0644)
 		if err != nil {
 			buildLog = append(buildLog, model.ResultLog{
 				TestCaseID: buildTask.ID,
@@ -255,7 +275,7 @@ func (executor *JobExecutor) ExecuteJob(ctx *context.Context, job *model.JobDeta
 
 		stderrRelPath := filepath.Join(job.ResultDir, fmt.Sprintf("build_%d_stderr.txt", buildTask.ID))
 		stderrAbsFilePath := filepath.Join(UPLOAD_DIR_IN_HOST, stderrRelPath)
-		err = os.WriteFile(stderrAbsFilePath, []byte(execResult.Stderr), 0644)
+		err = os.WriteFile(stderrAbsFilePath, []byte(watchdogOutput.Stderr), 0644)
 		if err != nil {
 			buildLog = append(buildLog, model.ResultLog{
 				TestCaseID: buildTask.ID,
@@ -267,22 +287,6 @@ func (executor *JobExecutor) ExecuteJob(ctx *context.Context, job *model.JobDeta
 
 			resultDetail.ConstructFromLogs(buildLog, judgeLog)
 			return &resultDetail, fmt.Errorf("failed to write stderr file %s: %w", stderrAbsFilePath, err)
-		}
-
-		// parse execResult.Stdout as WatchdogOutput
-		var watchdogOutput WatchdogOutput
-		err = json.Unmarshal([]byte(execResult.Stdout), &watchdogOutput)
-		if err != nil {
-			buildLog = append(buildLog, model.ResultLog{
-				TestCaseID: buildTask.ID,
-				ResultID:   requeststatus.IE,
-				TimeMS:     0,
-				MemoryKB:   0,
-				ExitCode:   -1,
-			})
-
-			resultDetail.ConstructFromLogs(buildLog, judgeLog)
-			return &resultDetail, fmt.Errorf("failed to unmarshal watchdog output: %w", err)
 		}
 
 		if watchdogOutput.ExitCode == nil {
@@ -312,9 +316,16 @@ func (executor *JobExecutor) ExecuteJob(ctx *context.Context, job *model.JobDeta
 			resultStatus = resultStatus.Max(requeststatus.TLE)
 		}
 
-		if *watchdogOutput.ExitCode != buildTask.ExitCode {
-			// If the exit code is different from the expected one, mark it as WA
-			resultStatus = resultStatus.Max(requeststatus.WA)
+		if buildTask.ExitCode == 0 {
+			if *watchdogOutput.ExitCode != 0 {
+				// If the expected exit code is 0 (successful execution), but the actual exit code is not 0, mark it as CE
+				resultStatus = resultStatus.Max(requeststatus.CE)
+			}
+		} else {
+			if *watchdogOutput.ExitCode != buildTask.ExitCode {
+				// If the exit code is different from the expected one, mark it as CE
+				resultStatus = resultStatus.Max(requeststatus.RE)
+			}
 		}
 
 		// Append to requestLog
@@ -329,9 +340,284 @@ func (executor *JobExecutor) ExecuteJob(ctx *context.Context, job *model.JobDeta
 		})
 	}
 
-	// TODO: Execute judge tasks
+	// Start Judge Container to run user program against test cases
+	judge_container_name := fmt.Sprintf("judge-%s", uuid.New().String())
 
-	panic("Not implemented")
+	judgeContainer_createResponse, err := executor.client.ContainerCreate(*ctx,
+		&container.Config{
+			User:  "guest",
+			Cmd:   []string{"/bin/sh", "-c", "sleep 3600"},
+			Image: "binary-runner",
+			Volumes: map[string]struct{}{
+				"/home/guest": {},
+			},
+			WorkingDir:      "/home/guest",
+			NetworkDisabled: true,
+			StopTimeout:     &timeout,
+		},
+		&container.HostConfig{
+			Binds: []string{fmt.Sprintf("%s:/home/guest", volume.Name)},
+			Resources: container.Resources{
+				CpusetCpus: cpuSet, // only 1 CPU core can be used.
+				Memory:     totalMemoryInBytes,
+				MemorySwap: totalMemoryInBytes, // disable swap
+				PidsLimit:  &pidLimit,          // limit max number of processes available to spawn
+				Ulimits: []*container.Ulimit{
+					{
+						Name: "nofile", // limit max number of open files
+						Hard: 64,
+						Soft: 64,
+					},
+					{
+						Name: "nproc", // limit max number of processes
+						Hard: 64,
+						Soft: 64,
+					},
+					{
+						Name: "fsize",                   // limit max size of files that can be created, the unit is file-blocks (assumes 4kB = 4096 bytes)
+						Hard: (10 * 1024 * 1024) / 4096, // 10 MB
+						Soft: (10 * 1024 * 1024) / 4096, // 10 MB
+					},
+					{
+						Name: "stack",     // limit max stack size, the unit is kB (1024 bytes)
+						Hard: (32 * 1024), // 32 MB
+						Soft: (32 * 1024), // 32 MB
+					},
+				},
+			},
+			// TODO: try this to check whether this works or not.
+			// StorageOpt: map[string]string{
+			// 	"size": "256m", // limit container writable layer size
+			// },
+		},
+		nil,
+		nil,
+		judge_container_name,
+	)
+
+	if judgeContainer_createResponse.Warnings != nil {
+		for _, warning := range judgeContainer_createResponse.Warnings {
+			fmt.Printf("Docker Warning: %s\n", warning)
+		}
+	}
+
+	if err != nil {
+		return nil, err
+	}
+
+	defer executor.RemoveContainer(ctx, judgeContainer_createResponse.ID)
+
+	// Start the judge container
+	err = executor.client.ContainerStart(*ctx, judgeContainer_createResponse.ID, container.StartOptions{})
+	if err != nil {
+		return nil, err
+	}
+	timeoutBeforeStop = 0
+	defer executor.client.ContainerStop(*ctx, judgeContainer_createResponse.ID, container.StopOptions{
+		Signal:  "SIGKILL",
+		Timeout: &timeoutBeforeStop, // do not wait before killing the container
+	})
+
+	// Execute judge tasks
+	for _, judgeTask := range job.JudgeTasks {
+		// Read stdin from judgeTask.StdinPath
+		stdinPath := filepath.Join(UPLOAD_DIR_IN_HOST, judgeTask.StdinPath)
+		stdinContent, err := os.ReadFile(stdinPath)
+		if err != nil {
+			return nil, fmt.Errorf("failed to read stdin file %s: %w", stdinPath, err)
+		}
+
+		// Read expected stdout and stderr if specified
+		var expectedStdoutContent []byte = nil
+		var expectedStderrContent []byte = nil
+		if judgeTask.StdoutPath != "" {
+			expectedStdoutPath := filepath.Join(UPLOAD_DIR_IN_HOST, judgeTask.StdoutPath)
+			expectedStdoutContent, err = os.ReadFile(expectedStdoutPath)
+			if err != nil {
+				return nil, fmt.Errorf("failed to read expected stdout file %s: %w", expectedStdoutPath, err)
+			}
+		}
+		if judgeTask.StderrPath != "" {
+			expectedStderrPath := filepath.Join(UPLOAD_DIR_IN_HOST, judgeTask.StderrPath)
+			expectedStderrContent, err = os.ReadFile(expectedStderrPath)
+			if err != nil {
+				return nil, fmt.Errorf("failed to read expected stderr file %s: %w", expectedStderrPath, err)
+			}
+		}
+
+		TotalTimeoutInSeconds := job.TimeMS/1000 + 5 // add 5 seconds for overhead
+
+		watchdogInput := WatchdogInput{
+			Command:        judgeTask.Command,
+			Stdin:          string(stdinContent),
+			TimeoutMS:      job.TimeMS,
+			MemoryMB:       job.MemoryMB,
+			UID:            UID_GUEST,
+			GID:            GID_GUEST,
+			StdoutMaxBytes: MAX_STDOUT_BYTES,
+			StderrMaxBytes: MAX_STDERR_BYTES,
+		}
+
+		// Convert watchdogInput to JSON string
+		watchdogInputJSON, err := json.Marshal(watchdogInput)
+		if err != nil {
+			return nil, fmt.Errorf("failed to marshal watchdog input: %w", err)
+		}
+
+		execConfig := ExecConfig{
+			Cmd:              []string{"/home/watchdog"},
+			Stdin:            string(watchdogInputJSON),
+			WorkingDir:       "/home/guest",
+			Env:              []string{},
+			TimeoutInSeconds: TotalTimeoutInSeconds,
+			User:             "root", // need root to run watchdog
+		}
+
+		execResult, err := executor.ExecuteCommand(*ctx, judgeContainer_createResponse.ID, execConfig)
+		if err != nil {
+			// If some internal error occurs (not the command execution error),
+			// return ResultDetail with IE(Internal Error) status.
+			buildLog = append(buildLog, model.ResultLog{
+				TestCaseID: judgeTask.ID,
+				ResultID:   requeststatus.IE,
+				TimeMS:     0,
+				MemoryKB:   0,
+				ExitCode:   -1,
+			})
+
+			resultDetail.ConstructFromLogs(buildLog, judgeLog)
+			return &resultDetail, fmt.Errorf("failed to execute judge task %s: %w", judgeTask.Title, err)
+		}
+
+		if execResult.Stderr != "" {
+			// If watchdog writes something to stderr, return IE(Internal Error) status.
+			judgeLog = append(judgeLog, model.ResultLog{
+				TestCaseID: judgeTask.ID,
+				ResultID:   requeststatus.IE,
+				TimeMS:     0,
+				MemoryKB:   0,
+				ExitCode:   -1,
+			})
+
+			resultDetail.ConstructFromLogs(buildLog, judgeLog)
+			return &resultDetail, fmt.Errorf("watchdog wrote to stderr: %s", execResult.Stderr)
+		}
+
+		// parse execResult.Stdout as WatchdogOutput
+		var watchdogOutput WatchdogOutput
+		err = json.Unmarshal([]byte(execResult.Stdout), &watchdogOutput)
+		if err != nil {
+			judgeLog = append(judgeLog, model.ResultLog{
+				TestCaseID: judgeTask.ID,
+				ResultID:   requeststatus.IE,
+				TimeMS:     0,
+				MemoryKB:   0,
+				ExitCode:   -1,
+			})
+
+			resultDetail.ConstructFromLogs(buildLog, judgeLog)
+			return &resultDetail, fmt.Errorf("failed to unmarshal watchdog output: %w", err)
+		}
+
+		// Save stdout and stderr to files
+		stdoutRelPath := filepath.Join(job.ResultDir, fmt.Sprintf("judge_%d_stdout.txt", judgeTask.ID))
+		stdoutFileAbsPath := filepath.Join(UPLOAD_DIR_IN_HOST, stdoutRelPath)
+		err = os.WriteFile(stdoutFileAbsPath, []byte(watchdogOutput.Stdout), 0644)
+		if err != nil {
+			judgeLog = append(judgeLog, model.ResultLog{
+				TestCaseID: judgeTask.ID,
+				ResultID:   requeststatus.IE,
+				TimeMS:     0,
+				MemoryKB:   0,
+				ExitCode:   -1,
+			})
+
+			resultDetail.ConstructFromLogs(buildLog, judgeLog)
+			return &resultDetail, fmt.Errorf("failed to write stdout file %s: %w", stdoutFileAbsPath, err)
+		}
+
+		stderrRelPath := filepath.Join(job.ResultDir, fmt.Sprintf("judge_%d_stderr.txt", judgeTask.ID))
+		stderrAbsFilePath := filepath.Join(UPLOAD_DIR_IN_HOST, stderrRelPath)
+		err = os.WriteFile(stderrAbsFilePath, []byte(watchdogOutput.Stderr), 0644)
+		if err != nil {
+			judgeLog = append(judgeLog, model.ResultLog{
+				TestCaseID: judgeTask.ID,
+				ResultID:   requeststatus.IE,
+				TimeMS:     0,
+				MemoryKB:   0,
+				ExitCode:   -1,
+			})
+
+			resultDetail.ConstructFromLogs(buildLog, judgeLog)
+			return &resultDetail, fmt.Errorf("failed to write stderr file %s: %w", stderrAbsFilePath, err)
+		}
+
+		if watchdogOutput.ExitCode == nil {
+			// If ExitCode is nil, it means the watchdog was terminated abnormally.
+			judgeLog = append(judgeLog, model.ResultLog{
+				TestCaseID: judgeTask.ID,
+				ResultID:   requeststatus.IE,
+				TimeMS:     0,
+				MemoryKB:   0,
+				ExitCode:   -1,
+			})
+
+			resultDetail.ConstructFromLogs(buildLog, judgeLog)
+			return &resultDetail, fmt.Errorf("watchdog terminated abnormally")
+		}
+
+		// Determine result status
+		var resultStatus requeststatus.State = requeststatus.AC
+
+		if watchdogOutput.OLE {
+			resultStatus = resultStatus.Max(requeststatus.OLE)
+		}
+		if watchdogOutput.MLE {
+			resultStatus = resultStatus.Max(requeststatus.MLE)
+		}
+		if watchdogOutput.TLE {
+			resultStatus = resultStatus.Max(requeststatus.TLE)
+		}
+
+		if judgeTask.ExitCode == 0 {
+			if *watchdogOutput.ExitCode != 0 {
+				// If the expected exit code is 0 (successful execution), but the actual exit code is not 0, mark it as RE (Runtime Error)
+				resultStatus = resultStatus.Max(requeststatus.RE)
+			}
+		} else {
+			if *watchdogOutput.ExitCode != judgeTask.ExitCode {
+				// Expected non-zero exit code, but the actual exit code is different, mark it as WA (Wrong Answer)
+				resultStatus = resultStatus.Max(requeststatus.WA)
+			}
+		}
+
+		// Check stdout and stderr if expected files are provided
+		if expectedStdoutContent != nil {
+			if !StandardChecker.Match(StandardChecker{}, string(expectedStdoutContent), watchdogOutput.Stdout) {
+				resultStatus = resultStatus.Max(requeststatus.WA)
+			}
+		}
+
+		if expectedStderrContent != nil {
+			if !StandardChecker.Match(StandardChecker{}, string(expectedStderrContent), watchdogOutput.Stderr) {
+				resultStatus = resultStatus.Max(requeststatus.WA)
+			}
+		}
+
+		// Append to judgeLog
+		judgeLog = append(judgeLog, model.ResultLog{
+			TestCaseID: judgeTask.ID,
+			ResultID:   resultStatus,
+			TimeMS:     watchdogInput.TimeoutMS,
+			MemoryKB:   watchdogOutput.MemoryKB,
+			ExitCode:   *watchdogOutput.ExitCode,
+			StdoutPath: stdoutRelPath,
+			StderrPath: stderrRelPath,
+		})
+	}
+
+	resultDetail.ConstructFromLogs(buildLog, judgeLog)
+	return &resultDetail, nil
 }
 
 // Copy file (or directory) from host to container
