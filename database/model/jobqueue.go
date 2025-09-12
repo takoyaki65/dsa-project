@@ -34,53 +34,13 @@ type JobDetail struct {
 type ResultQueue struct {
 	bun.BaseModel `bun:"table:resultqueue"`
 
-	ID        int64        `bun:"id,pk,autoincrement" json:"id"`
-	JobID     int64        `bun:"job_id,notnull" json:"job_id"`
-	CreatedAt time.Time    `bun:"created_at,notnull" json:"created_at"`
-	Result    ResultDetail `bun:"result,notnull,type:jsonb" json:"result"`
-}
+	ID        int64               `bun:"id,pk,autoincrement" json:"id"`
+	JobID     int64               `bun:"job_id,notnull" json:"job_id"`
+	CreatedAt time.Time           `bun:"created_at,notnull" json:"created_at"`
+	ResultID  requeststatus.State `bun:"result,notnull" json:"result_id"`
+	Log       RequestLog          `bun:"log,notnull,type:jsonb" json:"log"`
 
-type ResultDetail struct {
-	TimeMS   int64               `json:"time_ms"`
-	MemoryKB int64               `json:"memory_kb"`
-	ResultID requeststatus.State `json:"result_id"`
-	BuildLog []ResultLog         `json:"log"`
-	JudgeLog []ResultLog         `json:"judge_log"`
-}
-
-type ResultLog struct {
-	TestCaseID int64               `json:"test_case_id"`
-	ResultID   requeststatus.State `json:"result_id"`
-	TimeMS     int64               `json:"timeMS"`
-	MemoryKB   int64               `json:"memoryKB"`
-	ExitCode   int64               `json:"exitCode"`
-	StdoutPath string              `json:"stdoutPath"`
-	StderrPath string              `json:"stderrPath"`
-}
-
-func (r *ResultDetail) ConstructFromLogs(buildLogs []ResultLog, judgeLogs []ResultLog) {
-	r.BuildLog = buildLogs
-	r.JudgeLog = judgeLogs
-
-	// calculate total time and memory
-	var maxTimeMS int64 = 0
-	var maxMemoryKB int64 = 0
-	var maxResultState requeststatus.State = requeststatus.AC
-
-	for _, log := range buildLogs {
-		if log.TimeMS > maxTimeMS {
-			maxTimeMS = log.TimeMS
-		}
-
-		if log.MemoryKB > maxMemoryKB {
-			maxMemoryKB = log.MemoryKB
-		}
-		maxResultState = maxResultState.Max(log.ResultID)
-	}
-
-	r.TimeMS = maxTimeMS
-	r.MemoryKB = maxMemoryKB
-	r.ResultID = maxResultState
+	Result *ResultValues `bun:"rel:has-one,join:result=value"`
 }
 
 var _ bun.BeforeAppendModelHook = (*JobQueue)(nil)

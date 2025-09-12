@@ -170,8 +170,6 @@ func (h *Handler) RequestValidation(c echo.Context) error {
 		ProblemID:   req.ProblemID,
 		UploadDirID: fileLocation.ID,
 		ResultID:    requeststatus.WJ,
-		TimeMS:      0,
-		MemoryKB:    0,
 	}
 
 	// Register request
@@ -396,8 +394,6 @@ func (h *Handler) BatchValidation(c echo.Context) error {
 			ProblemID:   problem.ProblemID,
 			UploadDirID: fileLocation.ID,
 			ResultID:    requeststatus.WJ,
-			TimeMS:      0,
-			MemoryKB:    0,
 		}
 
 		// -------------------------------------------------------------
@@ -639,8 +635,6 @@ func (h *Handler) RequestGrading(c echo.Context) error {
 		RequestUserCode: userCodeOfRequester,
 		UploadDirID:     fileLocation.ID,
 		ResultID:        requeststatus.WJ,
-		TimeMS:          0,
-		MemoryKB:        0,
 	}
 
 	// Register request
@@ -871,8 +865,6 @@ func (h *Handler) BatchGrading(c echo.Context) error {
 			RequestUserCode: userCodeOfRequester,
 			UploadDirID:     fileLocation.ID,
 			ResultID:        requeststatus.WJ,
-			TimeMS:          0,
-			MemoryKB:        0,
 		}
 
 		// -------------------------------------------------------------

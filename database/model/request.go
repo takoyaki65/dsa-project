@@ -26,8 +26,6 @@ type ValidationRequest struct {
 	UploadDirID int64               `bun:"upload_dir_id,notnull" json:"upload_dir_id"`
 	ResultID    requeststatus.State `bun:"result,notnull" json:"result_id"`
 	Log         RequestLog          `bun:"log,notnull,type:jsonb" json:"log"`
-	TimeMS      int64               `bun:"timems,notnull" json:"time_ms"`
-	MemoryKB    int64               `bun:"memorykb,notnull" json:"memory_kb"`
 
 	Problem      *Problem      `bun:"rel:belongs-to,join:lecture_id=lecture_id,join:problem_id=problem_id"`
 	Result       *ResultValues `bun:"rel:has-one,join:result=value"`
@@ -48,8 +46,6 @@ type GradingRequest struct {
 	UploadDirID     int64               `bun:"upload_dir_id,notnull" json:"upload_dir_id"`
 	ResultID        requeststatus.State `bun:"result,notnull" json:"result_id"`
 	Log             RequestLog          `bun:"log,notnull,type:jsonb" json:"log"`
-	TimeMS          int64               `bun:"timems,notnull" json:"time_ms"`
-	MemoryKB        int64               `bun:"memorykb,notnull" json:"memory_kb"`
 
 	Problem      *Problem      `bun:"rel:belongs-to,join:lecture_id=lecture_id,join:problem_id=problem_id"`
 	Result       *ResultValues `bun:"rel:has-one,join:result=value"`
@@ -60,8 +56,11 @@ type GradingRequest struct {
 }
 
 type RequestLog struct {
-	BuildResults []TaskLog `json:"build_results"`
-	JudgeResults []TaskLog `json:"judge_results"`
+	ResultID     requeststatus.State `json:"result_id"`
+	TimeMS       int64               `json:"time_ms"`
+	MemoryKB     int64               `json:"memory_kb"`
+	BuildResults []TaskLog           `json:"build_results"`
+	JudgeResults []TaskLog           `json:"judge_results"`
 }
 
 type TaskLog struct {
@@ -70,8 +69,33 @@ type TaskLog struct {
 	TimeMS     int64               `json:"timeMS"`
 	MemoryKB   int64               `json:"memoryKB"`
 	ExitCode   int64               `json:"exitCode"`
-	StdoutPath int64               `json:"stdoutPath"`
-	StdErrPath int64               `json:"stderrPath"`
+	StdoutPath string              `json:"stdoutPath"`
+	StderrPath string              `json:"stderrPath"`
+}
+
+func (rl *RequestLog) ConstructFromTaskLogs(buildLogs []TaskLog, judgeLogs []TaskLog) {
+	rl.BuildResults = buildLogs
+	rl.JudgeResults = judgeLogs
+
+	// calculate total time and memory
+	var maxTimeMS int64 = 0
+	var maxMemoryKB int64 = 0
+	var maxResultState requeststatus.State = requeststatus.AC
+
+	for _, log := range buildLogs {
+		if log.TimeMS > maxTimeMS {
+			maxTimeMS = log.TimeMS
+		}
+
+		if log.MemoryKB > maxMemoryKB {
+			maxMemoryKB = log.MemoryKB
+		}
+		maxResultState = maxResultState.Max(log.ResultID)
+	}
+
+	rl.TimeMS = maxTimeMS
+	rl.MemoryKB = maxMemoryKB
+	rl.ResultID = maxResultState
 }
 
 var _ bun.BeforeAppendModelHook = (*ValidationRequest)(nil)

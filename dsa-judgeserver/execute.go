@@ -47,7 +47,7 @@ func NewJobExecutor() (*JobExecutor, error) {
 	}, nil
 }
 
-func (executor *JobExecutor) ExecuteJob(ctx context.Context, job *model.JobDetail) (*model.ResultDetail, error) {
+func (executor *JobExecutor) ExecuteJob(ctx context.Context, job *model.JobDetail) (*model.RequestLog, error) {
 	// Create Docker Volume to store user program files and compilation results
 	volume_name := fmt.Sprintf("job-%s", uuid.New().String())
 
@@ -161,21 +161,21 @@ func (executor *JobExecutor) ExecuteJob(ctx context.Context, job *model.JobDetai
 		return nil, err
 	}
 
-	resultDetail := model.ResultDetail{}
+	requestLog := model.RequestLog{}
 
 	buildLog, err := executor.executeBuildTasks(ctx, job, volume.Name)
 	if err != nil {
-		resultDetail.ConstructFromLogs(buildLog, nil)
-		return &resultDetail, err
+		requestLog.ConstructFromTaskLogs(buildLog, nil)
+		return &requestLog, err
 	}
 
 	judgeLog, err := executor.executeJudgeTasks(ctx, job, volume.Name)
 
-	resultDetail.ConstructFromLogs(buildLog, judgeLog)
-	return &resultDetail, err
+	requestLog.ConstructFromTaskLogs(buildLog, judgeLog)
+	return &requestLog, err
 }
 
-func (executor *JobExecutor) executeBuildTasks(ctx context.Context, job *model.JobDetail, volumeName string) ([]model.ResultLog, error) {
+func (executor *JobExecutor) executeBuildTasks(ctx context.Context, job *model.JobDetail, volumeName string) ([]model.TaskLog, error) {
 	// Launch Sandbox Container to compile user codes
 	build_container_name := fmt.Sprintf("build-%s", uuid.New().String())
 
@@ -273,11 +273,11 @@ func (executor *JobExecutor) executeBuildTasks(ctx context.Context, job *model.J
 		}
 	}
 
-	buildLog := []model.ResultLog{}
+	buildLog := []model.TaskLog{}
 
 	// Execute build tasks
 	for _, buildTask := range job.BuildTasks {
-		result := model.ResultLog{
+		result := model.TaskLog{
 			TestCaseID: buildTask.ID,
 			ResultID:   requeststatus.IE,
 			TimeMS:     0,
@@ -396,7 +396,7 @@ func (executor *JobExecutor) executeBuildTasks(ctx context.Context, job *model.J
 		}
 
 		// Append to requestLog
-		result = model.ResultLog{
+		result = model.TaskLog{
 			TestCaseID: buildTask.ID,
 			ResultID:   resultStatus,
 			TimeMS:     watchdogInput.TimeoutMS,
@@ -411,7 +411,7 @@ func (executor *JobExecutor) executeBuildTasks(ctx context.Context, job *model.J
 	return buildLog, nil
 }
 
-func (executor *JobExecutor) executeJudgeTasks(ctx context.Context, job *model.JobDetail, volumeName string) ([]model.ResultLog, error) {
+func (executor *JobExecutor) executeJudgeTasks(ctx context.Context, job *model.JobDetail, volumeName string) ([]model.TaskLog, error) {
 	// Start Judge Container to run user program against test cases
 	judge_container_name := fmt.Sprintf("judge-%s", uuid.New().String())
 
@@ -498,11 +498,11 @@ func (executor *JobExecutor) executeJudgeTasks(ctx context.Context, job *model.J
 		Timeout: &timeoutBeforeStop, // do not wait before killing the container
 	})
 
-	judgeLog := []model.ResultLog{}
+	judgeLog := []model.TaskLog{}
 
 	// Execute judge tasks
 	for _, judgeTask := range job.JudgeTasks {
-		result := model.ResultLog{
+		result := model.TaskLog{
 			TestCaseID: judgeTask.ID,
 			ResultID:   requeststatus.IE,
 			TimeMS:     0,
@@ -646,7 +646,7 @@ func (executor *JobExecutor) executeJudgeTasks(ctx context.Context, job *model.J
 		}
 
 		// Append to judgeLog
-		result = model.ResultLog{
+		result = model.TaskLog{
 			TestCaseID: judgeTask.ID,
 			ResultID:   resultStatus,
 			TimeMS:     watchdogInput.TimeoutMS,

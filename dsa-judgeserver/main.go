@@ -120,12 +120,17 @@ func main() {
 			logger.Error("Failed to update job status to done", slog.String("error", err.Error()))
 			panic(err)
 		}
+		if result == nil {
+			logger.Error("Job execution returned nil result")
+			continue
+		}
 
 		// Register the result in ResultQueue
 		resultEntry := &model.ResultQueue{
 			JobID:     job.ID,
 			CreatedAt: time.Now(),
-			Result:    *result,
+			ResultID:  result.ResultID,
+			Log:       *result,
 		}
 
 		// Insert the result into the database

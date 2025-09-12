@@ -95,8 +95,6 @@ CREATE TABLE IF NOT EXISTS ValidationRequest (
     upload_dir_id INTEGER NOT NULL REFERENCES FileLocation(id),
     result INTEGER NOT NULL REFERENCES ResultValues(value),
     log JSONB NOT NULL,
-    timeMS INTEGER NOT NULL,
-    memoryKB INTEGER NOT NULL,
     FOREIGN KEY (usercode) REFERENCES UserList(id) ON DELETE CASCADE,
     FOREIGN KEY (lecture_id, problem_id) REFERENCES Problem(lecture_id, problem_id) ON DELETE CASCADE
 );
@@ -112,8 +110,6 @@ CREATE TABLE IF NOT EXISTS GradingRequest (
     upload_dir_id INTEGER NOT NULL REFERENCES FileLocation(id),
     result INTEGER NOT NULL REFERENCES ResultValues(value),
     log JSONB NOT NULL,
-    timems INTEGER NOT NULL,
-    memorykb INTEGER NOT NULL,
     FOREIGN KEY (lecture_id, problem_id) REFERENCES Problem(lecture_id, problem_id) ON DELETE CASCADE,
     FOREIGN KEY (usercode) REFERENCES UserList(id) ON DELETE CASCADE,
     FOREIGN KEY (request_usercode) REFERENCES UserList(id) ON DELETE CASCADE,
@@ -135,7 +131,8 @@ CREATE TABLE IF NOT EXISTS ResultQueue (
     id SERIAL PRIMARY KEY,
     job_id INTEGER NOT NULL,
     created_at TIMESTAMP(0) WITH TIME ZONE NOT NULL,
-    result JSONB NOT NULL,
+    result INTEGER NOT NULL REFERENCES ResultValues(value),
+    log JSONB NOT NULL,
     FOREIGN KEY (job_id) REFERENCES JobQueue(id) ON DELETE CASCADE
 );
 
