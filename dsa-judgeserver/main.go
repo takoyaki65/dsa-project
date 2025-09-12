@@ -49,7 +49,7 @@ func main() {
 	defer jobExecutor.Close()
 
 	// Check the existence of "checker-lang-gcc" and "binary-runners" docker image
-	imageExists, err := jobExecutor.CheckImageExists(&ctx, "checker-lang-gcc")
+	imageExists, err := jobExecutor.CheckImageExists(ctx, "checker-lang-gcc")
 	if err != nil {
 		logger.Error("Failed to check image existence", slog.String("error", err.Error()))
 		return
@@ -59,7 +59,7 @@ func main() {
 		return
 	}
 	logger.Info("Docker image 'checker-lang-gcc' exists.")
-	imageExists, err = jobExecutor.CheckImageExists(&ctx, "binary-runners")
+	imageExists, err = jobExecutor.CheckImageExists(ctx, "binary-runners")
 	if err != nil {
 		logger.Error("Failed to check image existence", slog.String("error", err.Error()))
 		return
@@ -101,7 +101,7 @@ func main() {
 		}
 
 		// Execute the job
-		result, err := jobExecutor.ExecuteJob(&ctx, &job.Detail)
+		result, err := jobExecutor.ExecuteJob(ctx, &job.Detail)
 		if err != nil {
 			logger.Error("Failed to execute job", slog.String("error", err.Error()))
 			// Update the job status to "failed"

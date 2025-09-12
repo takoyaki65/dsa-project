@@ -1,4 +1,4 @@
-package main
+package util
 
 import (
 	"archive/tar"
@@ -10,7 +10,7 @@ import (
 )
 
 // Creates a tar archive from the given source path.
-func createTarArchive(srcPath string) (io.Reader, error) {
+func CreateTarArchive(srcPath string) (io.Reader, error) {
 	// Clean the source path
 	srcPath = filepath.Clean(srcPath)
 

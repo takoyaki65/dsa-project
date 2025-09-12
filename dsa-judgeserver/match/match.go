@@ -1,8 +1,6 @@
-package main
+package match
 
 import "strings"
-
-type StandardChecker struct{}
 
 // Compares two strings with whitespace normalization.
 // Returns true if they match, false otherwise.
@@ -11,7 +9,7 @@ type StandardChecker struct{}
 // collapses multiple whitespace characters between tokens into a single space,
 // and ignores empty lines.
 // It performs a line-by-line and token-by-token comparison after normalization.
-func (sc StandardChecker) Match(ls, rs string) bool {
+func Match(ls, rs string) bool {
 	// split by newlines
 	lsLines := strings.Split(ls, "\n")
 	rsLines := strings.Split(rs, "\n")
