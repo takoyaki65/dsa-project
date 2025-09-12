@@ -61,106 +61,6 @@ func (executor *JobExecutor) ExecuteJob(ctx context.Context, job *model.JobDetai
 
 	defer executor.RemoveVolume(ctx, volume.Name)
 
-	// Launch Sandbox Container to compile user codes
-	build_container_name := fmt.Sprintf("build-%s", uuid.New().String())
-
-	cpuSet := "0"                                           // only 1 CPU core can be used.
-	timeout := 120                                          // timeout in seconds for stopping container
-	pidLimit := int64(64)                                   // limit max number of processes available to spawn
-	totalMemoryInBytes := (job.MemoryMB + 32) * 1024 * 1024 // add 32MB for overhead
-
-	buildContainer_createResponse, err := executor.client.ContainerCreate(ctx,
-		&container.Config{
-			User:  "guest",
-			Cmd:   []string{"/bin/sh", "-c", "sleep 3600"},
-			Image: "checker-lang-gcc",
-			Volumes: map[string]struct{}{
-				"/home/guest": {},
-			},
-			WorkingDir:      "/home/guest",
-			NetworkDisabled: true,
-			StopTimeout:     &timeout,
-		},
-		&container.HostConfig{
-			Binds: []string{fmt.Sprintf("%s:/home/guest", volume.Name)},
-			Resources: container.Resources{
-				CpusetCpus: cpuSet, // only 1 CPU core can be used.
-				Memory:     totalMemoryInBytes,
-				MemorySwap: totalMemoryInBytes, // disable swap
-				PidsLimit:  &pidLimit,          // limit max number of processes available to spawn
-				Ulimits: []*container.Ulimit{
-					{
-						Name: "nofile", // limit max number of open files
-						Hard: 64,
-						Soft: 64,
-					},
-					{
-						Name: "nproc", // limit max number of processes
-						Hard: 64,
-						Soft: 64,
-					},
-					{
-						Name: "fsize",                   // limit max size of files that can be created, the unit is file-blocks (assumes 4kB = 4096 bytes)
-						Hard: (10 * 1024 * 1024) / 4096, // 10 MB
-						Soft: (10 * 1024 * 1024) / 4096, // 10 MB
-					},
-					{
-						Name: "stack",     // limit max stack size, the unit is kB (1024 bytes)
-						Hard: (32 * 1024), // 32 MB
-						Soft: (32 * 1024), // 32 MB
-					},
-				},
-			},
-			// TODO: try this to check whether this works or not.
-			// StorageOpt: map[string]string{
-			// 	"size": "256m", // limit container writable layer size
-			// },
-		},
-		nil,
-		nil,
-		build_container_name,
-	)
-
-	if buildContainer_createResponse.Warnings != nil {
-		for _, warning := range buildContainer_createResponse.Warnings {
-			fmt.Printf("Docker Warning: %s\n", warning)
-		}
-	}
-
-	if err != nil {
-		return nil, err
-	}
-
-	defer executor.RemoveContainer(ctx, buildContainer_createResponse.ID)
-
-	// Start the build container
-	err = executor.client.ContainerStart(ctx, buildContainer_createResponse.ID, container.StartOptions{})
-	if err != nil {
-		return nil, err
-	}
-	timeoutBeforeStop := 0
-	defer executor.client.ContainerStop(ctx, buildContainer_createResponse.ID, container.StopOptions{
-		Signal:  "SIGKILL",
-		Timeout: &timeoutBeforeStop, // do not wait before killing the container
-	})
-
-	// Copy test files and user submitted files to the build container
-	// Copy test files
-	for _, testFile := range job.TestFiles {
-		testFilePath := filepath.Join(UPLOAD_DIR_IN_HOST, testFile)
-		err = executor.CopyContentsToContainer(ctx, testFilePath, buildContainer_createResponse.ID, "/home/guest/")
-		if err != nil {
-			return nil, err
-		}
-	}
-
-	// Copy user submitted files
-	userSubmittedFolderPath := filepath.Join(UPLOAD_DIR_IN_HOST, job.FileDir)
-	err = executor.CopyContentsToContainer(ctx, userSubmittedFolderPath, buildContainer_createResponse.ID, "/home/guest/")
-	if err != nil {
-		return nil, err
-	}
-
 	requestLog := model.RequestLog{}
 
 	buildLog, err := executor.executeBuildTasks(ctx, job, volume.Name)
@@ -182,10 +82,9 @@ func (executor *JobExecutor) executeBuildTasks(ctx context.Context, job *model.J
 	cpuSet := CPU_SET
 	timeout := TIMEOUT_BEFORE_CONTAINER_STOP
 	pidLimit := int64(PID_LIMIT)
-	totalMemoryInBytes := (job.MemoryMB + 32) * 1024 * 1024 // add 32MB for overhead
-	if totalMemoryInBytes > MAX_MEMORY_LIMIT_MB*1024*1024 {
-		totalMemoryInBytes = MAX_MEMORY_LIMIT_MB * 1024 * 1024
-	}
+	// add 32MB for overhead
+	totalMemoryInBytes := min(
+		(job.MemoryMB+32)*1024*1024, MAX_MEMORY_LIMIT_MB*1024*1024)
 
 	buildContainer_createResponse, err := executor.client.ContainerCreate(ctx,
 		&container.Config{
@@ -271,6 +170,13 @@ func (executor *JobExecutor) executeBuildTasks(ctx context.Context, job *model.J
 		if err != nil {
 			return nil, err
 		}
+	}
+
+	// Copy user submitted files
+	userSubmittedFolderPath := filepath.Join(UPLOAD_DIR_IN_HOST, job.FileDir)
+	err = executor.CopyContentsToContainer(ctx, userSubmittedFolderPath, buildContainer_createResponse.ID, "/home/guest/")
+	if err != nil {
+		return nil, err
 	}
 
 	buildLog := []model.TaskLog{}
@@ -418,10 +324,9 @@ func (executor *JobExecutor) executeJudgeTasks(ctx context.Context, job *model.J
 	cpuSet := CPU_SET
 	timeout := TIMEOUT_BEFORE_CONTAINER_STOP
 	pidLimit := int64(PID_LIMIT)
-	totalMemoryInBytes := (job.MemoryMB + 32) * 1024 * 1024 // add 32MB for overhead
-	if totalMemoryInBytes > MAX_MEMORY_LIMIT_MB*1024*1024 {
-		totalMemoryInBytes = MAX_MEMORY_LIMIT_MB * 1024 * 1024
-	}
+	// add 32MB for overhead
+	totalMemoryInBytes := min(
+		(job.MemoryMB+32)*1024*1024, MAX_MEMORY_LIMIT_MB*1024*1024)
 
 	judgeContainer_createResponse, err := executor.client.ContainerCreate(ctx,
 		&container.Config{
