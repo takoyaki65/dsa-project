@@ -20,15 +20,17 @@ services:
       - "127.0.0.1:8000:8000"
     volumes:
       - ./dsa-backend:/app
-      - ./upload:/upload
+      - ./upload:/app/upload
       - ./resource:/resource
+      - ./database:/database # for shared database module
+      - backend-go-pkg:/go # for caching Go packages, remove when deploying to production
     environment:
       TZ: Asia/Tokyo
-      ACCESS_TOKEN_EXPIRE_MINUTES: 180
     secrets:
       - db_app_password
       - admin_info_json
     restart: always
+    entrypoint: [ "dockerize", "-wait", "tcp://db:5432", "-timeout", "30s", "./start.sh" ]
 
   judge:
     depends_on:
@@ -41,15 +43,10 @@ services:
       - /var/run/docker.sock:/var/run/docker.sock
       # ソースコードのマウント
       - ./dsa-judgeserver:/app
-      # ホストの./dsa-judge/.venvをコンテナ内の/app/.venvに反映させないために、
-      # コンテナ内の/app/.venvをAnonymous Volumeとしてマウント
-      - /app/.venv
       # アップロードされたファイル用のディレクトリのマウント
-      - ./upload:/upload
-      # リソースディレクトリ(テストケース、サンプルプログラム等)のマウント
-      - ./resource:/resource
-      # ログディレクトリのマウント
-      - ./logs/dsa-judgeserver:/logs
+      - ./upload:/app/upload
+      # for shared database module
+      - ./database:/database
     environment:
       DOCKER_HOST: unix:///var/run/docker.sock
       TZ: Asia/Tokyo
@@ -106,6 +103,7 @@ services:
 volumes:
   db-data:
   frontend-node_modules:
+  backend-go-pkg:
 
 
 secrets:

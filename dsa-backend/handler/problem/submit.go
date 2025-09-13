@@ -103,8 +103,8 @@ func (h *Handler) RequestValidation(c echo.Context) error {
 	// ---------------------------------------------------------------------------------------------
 	// store files at dir: upload/validation/{userID}/{lectureID}/{problemID}/{YYYY-MM-DD-HH-mm-ss}/file
 	// ---------------------------------------------------------------------------------------------
-	basePath := fmt.Sprintf("upload/validation/%s/%d/%d/%s", userID, req.LectureID, req.ProblemID, requestTime.Format("2006-01-02-15-04-05"))
-	uploadDir := fmt.Sprintf("%s/file", basePath)
+	basePath := filepath.Join(VALIDATION_DIR, fmt.Sprintf("%s/%d/%d/%s", userID, req.LectureID, req.ProblemID, requestTime.Format("2006-01-02-15-04-05")))
+	uploadDir := filepath.Join(basePath, "file")
 
 	// Check the existence of directory
 	if info, err := os.Stat(uploadDir); err != nil {
@@ -187,7 +187,8 @@ func (h *Handler) RequestValidation(c echo.Context) error {
 	if err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, response.NewError("Failed to get problem info"))
 	}
-	resultDir := fmt.Sprintf("%s/result", basePath)
+	// All results are stored in {basePath}/result
+	resultDir := filepath.Join(basePath, "result")
 
 	filteredBuildTasks := make([]model.TestCase, 0)
 	filteredJudgeTasks := make([]model.TestCase, 0)
@@ -312,8 +313,8 @@ func (h *Handler) BatchValidation(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusBadRequest, response.NewError(fmt.Sprintf("Zip file size exceeds the limit of %d bytes", maxZipSize)))
 	}
 
-	basePath := fmt.Sprintf("upload/validation/%s/%d/%s", userID, req.LectureID, requestTime.Format("2006-01-02-15-04-05"))
-	uploadDir := fmt.Sprintf("%s/file", basePath)
+	basePath := filepath.Join(VALIDATION_DIR, fmt.Sprintf("%s/%d/%s", userID, req.LectureID, requestTime.Format("2006-01-02-15-04-05")))
+	uploadDir := filepath.Join(basePath, "file")
 
 	// Check the existence of directory
 	if info, err := os.Stat(uploadDir); err != nil {
@@ -406,8 +407,11 @@ func (h *Handler) BatchValidation(c echo.Context) error {
 
 		// -------------------------------------------------------------
 		// Submit this request to job queue.
+		//
+		// Result data for each problem is stored in:
+		// {basePath}/result/{problemID}
 		// -------------------------------------------------------------
-		resultDir := fmt.Sprintf("%s/result/%d", basePath, problem.ProblemID)
+		resultDir := filepath.Join(basePath, "result", fmt.Sprintf("%d", problem.ProblemID))
 		filteredBuildTasks := make([]model.TestCase, 0)
 		filteredJudgeTasks := make([]model.TestCase, 0)
 
@@ -566,8 +570,8 @@ func (h *Handler) RequestGrading(c echo.Context) error {
 	// program codes for grading.
 	// Second {YYYY-MM-DD-HH-mm-ss} is the request timestamp.
 	// ---------------------------------------------------------------------------------------------
-	basePath := fmt.Sprintf("upload/grading/%s/%d/%d/%s/%s", req.TargetUserID, req.LectureID, req.ProblemID, submissionTS.Format("2006-01-02-15-04-05"), requestTime.Format("2006-01-02-15-04-05"))
-	uploadDir := fmt.Sprintf("%s/file", basePath)
+	basePath := filepath.Join(GRADING_DIR, fmt.Sprintf("%s/%d/%d/%s/%s", req.TargetUserID, req.LectureID, req.ProblemID, submissionTS.Format("2006-01-02-15-04-05"), requestTime.Format("2006-01-02-15-04-05")))
+	uploadDir := filepath.Join(basePath, "file")
 
 	// Check the existence of directory
 	if info, err := os.Stat(uploadDir); err != nil {
@@ -652,7 +656,8 @@ func (h *Handler) RequestGrading(c echo.Context) error {
 	if err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, response.NewError("Failed to get problem info"))
 	}
-	resultDir := fmt.Sprintf("%s/result", basePath)
+	// All results are stored in {basePath}/result
+	resultDir := filepath.Join(basePath, "result")
 
 	// Create JobQueue Entry
 	job := model.JobQueue{
@@ -781,8 +786,8 @@ func (h *Handler) BatchGrading(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusBadRequest, response.NewError(fmt.Sprintf("Zip file size exceeds the limit of %d bytes", maxZipSize)))
 	}
 
-	basePath := fmt.Sprintf("upload/grading/%s/%d/%s/%s", req.TargetUserID, req.LectureID, submissionTS.Format("2006-01-02-15-04-05"), requestTime.Format("2006-01-02-15-04-05"))
-	uploadDir := fmt.Sprintf("%s/file", basePath)
+	basePath := filepath.Join(GRADING_DIR, fmt.Sprintf("%s/%d/%s/%s", req.TargetUserID, req.LectureID, submissionTS.Format("2006-01-02-15-04-05"), requestTime.Format("2006-01-02-15-04-05")))
+	uploadDir := filepath.Join(basePath, "file")
 
 	// Check the existence of directory
 	if info, err := os.Stat(uploadDir); err != nil {
@@ -877,8 +882,11 @@ func (h *Handler) BatchGrading(c echo.Context) error {
 
 		// -------------------------------------------------------------
 		// Submit this request to job queue.
+		//
+		// Result data for each problem is stored in:
+		// {basePath}/result/{problemID}
 		// -------------------------------------------------------------
-		resultDir := fmt.Sprintf("%s/result/%d", basePath, problem.ProblemID)
+		resultDir := filepath.Join(basePath, "result", fmt.Sprintf("%d", problem.ProblemID))
 
 		// Make an entity pushing to job queue.
 		job := model.JobQueue{

@@ -4,6 +4,7 @@ import (
 	"archive/zip"
 	"context"
 	"dsa-backend/handler/response"
+	"dsa-backend/util"
 	"errors"
 	"io"
 	"net/http"
@@ -288,7 +289,10 @@ func (h *Handler) RegisterProblem(c echo.Context) error {
 	timestamp := time.Now().Format("2006-01-02T15-04-05")
 	lectureIDstr := strconv.FormatInt(req.LectureID, 10)
 	problemIDstr := strconv.FormatInt(req.ProblemID, 10)
-	destDir := filepath.Join("upload/resource", lectureIDstr, problemIDstr, timestamp)
+	// ---------------------------------------------------------------------------
+	// destDir: upload/resource/{lectureID}/{problemID}/{YYYY-MM-DD-HH-mm-ss}/
+	// ---------------------------------------------------------------------------
+	destDir := filepath.Join(RESOURCE_DIR, lectureIDstr, problemIDstr, timestamp)
 
 	// Check if the destination directory already exists
 	if _, err := os.Stat(destDir); !os.IsNotExist(err) {
@@ -303,7 +307,7 @@ func (h *Handler) RegisterProblem(c echo.Context) error {
 	}
 
 	// Move to the extracted directory to the destination
-	err = os.Rename(extractedDir, destDir)
+	err = util.CopyContents(extractedDir, destDir)
 	if err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, response.NewError("failed to move directory: "+err.Error()))
 	}

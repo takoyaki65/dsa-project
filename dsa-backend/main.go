@@ -49,9 +49,13 @@ func main() {
 	v1 := r.Group("/api")
 
 	db_user := "dsa_app"
-	db_password := read_db_password()
+	db_password, err := read_db_password()
+	if err != nil {
+		r.Logger.Fatalf("Failed to read db password: %v", err)
+		return
+	}
 	// TODO: modify this for production
-	db_host := "127.0.0.1:5432"
+	db_host := "db:5432"
 	dsn := fmt.Sprintf("postgres://%s:%s@%s/dsa_db?sslmode=disable", db_user, db_password, db_host)
 
 	// initialize connection
@@ -65,6 +69,7 @@ func main() {
 	// Check and create admin user if necessary
 	if err := ensureAdminUser(db, r); err != nil {
 		r.Logger.Fatalf("Failed to ensure admin user: %v", err)
+		return
 	}
 
 	// TODO: Initialize JobQueue
@@ -84,6 +89,7 @@ func main() {
 
 		if err := r.Start(port); err != nil && err != http.ErrServerClosed {
 			r.Logger.Fatal("shutting down the server: ", err)
+			return
 		}
 	}()
 
@@ -96,18 +102,19 @@ func main() {
 
 	if err := r.Shutdown(shutdownCtx); err != nil {
 		r.Logger.Fatal("Server forced to shutdown: ", err)
+		return
 	}
 
 	r.Logger.Info("Server gracefully stopped")
 }
 
-func read_db_password() string {
+func read_db_password() (string, error) {
 	// TODO: modify this to be ready for deploying
-	data, err := os.ReadFile("../config/db_app_password.txt")
+	data, err := os.ReadFile("/run/secrets/db_app_password")
 	if err != nil {
-		log.Fatalf("failed to read db password: %v", err)
+		return "", fmt.Errorf("failed to read db password: %v", err)
 	}
-	return strings.TrimSpace(string(data))
+	return strings.TrimSpace(string(data)), nil
 }
 
 // Checks if an admin user exists and create one if not
@@ -170,8 +177,7 @@ func ensureAdminUser(db *bun.DB, r *echo.Echo) error {
 }
 
 func readAdminFromSecrets() (*AdminInfo, error) {
-	secretPath := "../config/admin.json"
-	// secretPath := "/run/secrets/admin_info.json"
+	secretPath := "/run/secrets/admin_info_json"
 
 	// Check if file exists
 	if _, err := os.Stat(secretPath); os.IsNotExist(err) {
