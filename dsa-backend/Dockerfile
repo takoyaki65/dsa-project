@@ -10,4 +10,4 @@ RUN apt-get update \
   && apt-get autoremove -yqq --purge wget && rm -rf /var/lib/apt/lists/*
 
 # アプリケーションを起動
-CMD ["dockerize", "-wait", "tcp://db:5432", "-timeout", "30s", "air", "-c", ".air.toml"]
+# CMD ["dockerize", "-wait", "tcp://db:5432", "-timeout", "30s", "air", "-c", ".air.toml"]

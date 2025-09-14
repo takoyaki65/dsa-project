@@ -1,17 +1,14 @@
 package problem
 
 import (
-	"archive/zip"
 	"context"
 	"dsa-backend/handler/response"
 	"dsa-backend/util"
-	"errors"
 	"io"
 	"net/http"
 	"os"
 	"path/filepath"
 	"strconv"
-	"strings"
 	"time"
 
 	"github.com/labstack/echo/v4"
@@ -238,7 +235,7 @@ func (h *Handler) RegisterProblem(c echo.Context) error {
 
 	// Extract the zip file
 	extractedDir := filepath.Join(tempDir, "extracted")
-	err = unzip(zipPath, extractedDir)
+	err = util.SafeExtractZip(zipPath, extractedDir)
 	if err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, response.NewError("failed to unzip file: "+err.Error()))
 	}
@@ -422,50 +419,4 @@ func (h *Handler) DeleteProblem(c echo.Context) error {
 	}
 
 	return c.JSON(http.StatusOK, response.NewSuccess("Problem deleted successfully"))
-}
-
-// Helper function to unzip a file
-func unzip(src, dest string) error {
-	r, err := zip.OpenReader(src)
-	if err != nil {
-		return err
-	}
-	defer r.Close()
-
-	for _, f := range r.File {
-		fpath := filepath.Join(dest, f.Name)
-		if !strings.HasPrefix(fpath, filepath.Clean(dest)+string(os.PathSeparator)) {
-			return errors.New("illegal file path: " + fpath)
-		}
-
-		if f.FileInfo().IsDir() {
-			if err := os.MkdirAll(fpath, os.ModePerm); err != nil {
-				return err
-			}
-		} else {
-			if err := os.MkdirAll(filepath.Dir(fpath), os.ModePerm); err != nil {
-				return err
-			}
-
-			outFile, err := os.OpenFile(fpath, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, f.Mode())
-			if err != nil {
-				return err
-			}
-
-			rc, err := f.Open()
-			if err != nil {
-				return err
-			}
-
-			_, err = io.Copy(outFile, rc)
-
-			outFile.Close()
-			rc.Close()
-
-			if err != nil {
-				return err
-			}
-		}
-	}
-	return nil
 }

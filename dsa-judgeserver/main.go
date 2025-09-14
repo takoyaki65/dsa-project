@@ -23,7 +23,7 @@ func main() {
 	db_user := "dsa_app"
 	db_password := read_db_password()
 	// TODO: modify this for production
-	db_host := "127.0.0.1:5432"
+	db_host := "db:5432"
 	dsn := fmt.Sprintf("postgres://%s:%s@%s/dsa_db?sslmode=disable", db_user, db_password, db_host)
 
 	// initialize connection
@@ -59,7 +59,7 @@ func main() {
 		return
 	}
 	logger.Info("Docker image 'checker-lang-gcc' exists.")
-	imageExists, err = jobExecutor.CheckImageExists(ctx, "binary-runners")
+	imageExists, err = jobExecutor.CheckImageExists(ctx, "binary-runner")
 	if err != nil {
 		logger.Error("Failed to check image existence", slog.String("error", err.Error()))
 		return
@@ -147,7 +147,7 @@ func main() {
 }
 
 func read_db_password() string {
-	data, err := os.ReadFile("../config/db_app_password.txt")
+	data, err := os.ReadFile("/run/secrets/db_app_password")
 	if err != nil {
 		log.Fatalf("failed to read db password: %v", err)
 	}

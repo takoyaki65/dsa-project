@@ -1,11 +1,11 @@
 package problem
 
 import (
-	"archive/zip"
 	"context"
 	"dsa-backend/handler/auth"
 	"dsa-backend/handler/middleware"
 	"dsa-backend/handler/response"
+	"dsa-backend/util"
 	"fmt"
 	"io"
 	"net/http"
@@ -28,8 +28,6 @@ const (
 	maxUncompressedSize = 10 * 1024 * 1024
 	// Maximum size for a single uploaded file (5MB)
 	maxFileSize = 5 * 1024 * 1024
-	// Maximum number of uploaded files
-	maxFiles = 500
 	// Maximum size for an uploaded zip file (5MB)
 	maxZipSize = 5 * 1024 * 1024
 )
@@ -57,13 +55,10 @@ func (h *Handler) RequestValidation(c echo.Context) error {
 
 	ctx := context.Background()
 
-	// Check the existence of problem entry
-	exists, err := h.problemStore.CheckProblemExists(&ctx, req.LectureID, req.ProblemID)
+	// Fetch the resource path for this problem
+	resourcePath, err := h.problemStore.FetchResourcePath(&ctx, req.LectureID, req.ProblemID)
 	if err != nil {
-		return echo.NewHTTPError(http.StatusInternalServerError, response.NewError("Failed to check problem existence"))
-	}
-	if !exists {
-		return echo.NewHTTPError(http.StatusNotFound, response.NewError("Problem not found"))
+		return echo.NewHTTPError(http.StatusInternalServerError, response.NewError("Problem not found"))
 	}
 
 	//-------------
@@ -139,8 +134,12 @@ func (h *Handler) RequestValidation(c echo.Context) error {
 		defer src.Close()
 
 		// Destination
-		// TODO: Check if this operation is safe and there are no risks like path-traversal attacks
-		dst, err := os.Create(fmt.Sprintf("%s/%s", uploadDir, filepath.Clean(file.Filename)))
+		dstPath := filepath.Join(uploadDir, filepath.Clean(file.Filename))
+		// Ensure the destination path is within the uploadDir to prevent path traversal attacks
+		if !strings.HasPrefix(dstPath, uploadDir) {
+			return echo.NewHTTPError(http.StatusBadRequest, response.NewError("Invalid file name"))
+		}
+		dst, err := os.Create(dstPath)
 		if err != nil {
 			return echo.NewHTTPError(http.StatusInternalServerError, response.NewError("Failed to create destination file"))
 		}
@@ -219,13 +218,14 @@ func (h *Handler) RequestValidation(c echo.Context) error {
 		Status:      queuestatus.Pending,
 		CreatedAt:   time.Now(),
 		Detail: model.JobDetail{
-			TimeMS:     problem.Detail.TimeMS,
-			MemoryMB:   problem.Detail.MemoryMB,
-			TestFiles:  problem.Detail.TestFiles,
-			FileDir:    uploadDir,
-			ResultDir:  resultDir,
-			BuildTasks: filteredBuildTasks,
-			JudgeTasks: filteredJudgeTasks,
+			TimeMS:      problem.Detail.TimeMS,
+			MemoryMB:    problem.Detail.MemoryMB,
+			TestFiles:   problem.Detail.TestFiles,
+			ResourceDir: resourcePath, // resource files for this problem
+			FileDir:     uploadDir,
+			ResultDir:   resultDir,
+			BuildTasks:  filteredBuildTasks,
+			JudgeTasks:  filteredJudgeTasks,
 		},
 	}
 
@@ -348,7 +348,7 @@ func (h *Handler) BatchValidation(c echo.Context) error {
 	}
 
 	// Extract zip file **safely**
-	if err := safeExtractZip(tempFile.Name(), uploadDir); err != nil {
+	if err := util.SafeExtractZip(tempFile.Name(), uploadDir); err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, response.NewError("Failed to extract zip file: "+err.Error()))
 	}
 
@@ -440,9 +440,11 @@ func (h *Handler) BatchValidation(c echo.Context) error {
 			Status:      queuestatus.Pending,
 			CreatedAt:   time.Now(),
 			Detail: model.JobDetail{
-				TimeMS:     problem.Detail.TimeMS,
-				MemoryMB:   problem.Detail.MemoryMB,
-				TestFiles:  problem.Detail.TestFiles,
+				TimeMS:    problem.Detail.TimeMS,
+				MemoryMB:  problem.Detail.MemoryMB,
+				TestFiles: problem.Detail.TestFiles,
+				// TODO: specify it.
+				// ResouceDir: resource files for this problem
 				FileDir:    uploadDir,
 				ResultDir:  resultDir,
 				BuildTasks: filteredBuildTasks,
@@ -512,6 +514,12 @@ func (h *Handler) RequestGrading(c echo.Context) error {
 	submissionTS := time.Unix(req.SubmissionTS, 0)
 
 	ctx := context.Background()
+
+	// Fetch the resource path for this problem
+	resourcePath, err := h.problemStore.FetchResourcePath(&ctx, req.LectureID, req.ProblemID)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError, response.NewError("Problem not found"))
+	}
 
 	// Check the existence of problem entry
 	exists, err := h.problemStore.CheckProblemExists(&ctx, req.LectureID, req.ProblemID)
@@ -607,7 +615,12 @@ func (h *Handler) RequestGrading(c echo.Context) error {
 
 		// Destination
 		// TODO: Check if this operation is safe and there are no risks like path-traversal attacks
-		dst, err := os.Create(fmt.Sprintf("%s/%s", uploadDir, filepath.Clean(file.Filename)))
+		dstPath := filepath.Join(uploadDir, filepath.Clean(file.Filename))
+		// Ensure the destination path is within the uploadDir to prevent path traversal attacks
+		if !strings.HasPrefix(dstPath, uploadDir) {
+			return echo.NewHTTPError(http.StatusBadRequest, response.NewError("Invalid file name"))
+		}
+		dst, err := os.Create(dstPath)
 		if err != nil {
 			return echo.NewHTTPError(http.StatusInternalServerError, response.NewError("Failed to create destination file"))
 		}
@@ -666,13 +679,14 @@ func (h *Handler) RequestGrading(c echo.Context) error {
 		Status:      queuestatus.Pending,
 		CreatedAt:   time.Now(),
 		Detail: model.JobDetail{
-			TimeMS:     problem.Detail.TimeMS,
-			MemoryMB:   problem.Detail.MemoryMB,
-			TestFiles:  problem.Detail.TestFiles,
-			FileDir:    uploadDir,
-			ResultDir:  resultDir,
-			BuildTasks: problem.Detail.BuildTasks, // We do not any filtering here, because only manager or admin can access this endpoint.
-			JudgeTasks: problem.Detail.JudgeTasks,
+			TimeMS:      problem.Detail.TimeMS,
+			MemoryMB:    problem.Detail.MemoryMB,
+			TestFiles:   problem.Detail.TestFiles,
+			ResourceDir: resourcePath, // resource files for this problem
+			FileDir:     uploadDir,
+			ResultDir:   resultDir,
+			BuildTasks:  problem.Detail.BuildTasks, // We do not any filtering here, because only manager or admin can access this endpoint.
+			JudgeTasks:  problem.Detail.JudgeTasks,
 		},
 	}
 
@@ -821,7 +835,7 @@ func (h *Handler) BatchGrading(c echo.Context) error {
 	}
 
 	// Extract zip file **safely**
-	if err := safeExtractZip(tempFile.Name(), uploadDir); err != nil {
+	if err := util.SafeExtractZip(tempFile.Name(), uploadDir); err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, response.NewError("Failed to extract zip file: "+err.Error()))
 	}
 
@@ -895,9 +909,11 @@ func (h *Handler) BatchGrading(c echo.Context) error {
 			Status:      queuestatus.Pending,
 			CreatedAt:   time.Now(),
 			Detail: model.JobDetail{
-				TimeMS:     problem.Detail.TimeMS,
-				MemoryMB:   problem.Detail.MemoryMB,
-				TestFiles:  problem.Detail.TestFiles,
+				TimeMS:    problem.Detail.TimeMS,
+				MemoryMB:  problem.Detail.MemoryMB,
+				TestFiles: problem.Detail.TestFiles,
+				// TODO: specify it.
+				// ResouceDir: resource files for this problem
 				FileDir:    uploadDir,
 				ResultDir:  resultDir,
 				BuildTasks: problem.Detail.BuildTasks, // We do not any filtering here, because only manager or admin can access this endpoint.
@@ -920,117 +936,4 @@ func (h *Handler) BatchGrading(c echo.Context) error {
 	}
 
 	return c.JSON(http.StatusOK, response.NewSuccess("Batched grading requests registered successfully"))
-}
-
-// Extracts zip file with validation of size constraints.
-// We check those constraints before/during extracting.
-//
-//  1. Check the number of files is above `maxFiles`.
-//  2. Check the total size of all uncompressed files is below `maxUncompressedSize`.
-//  3. Check the individual file sizes are below `maxFileSize`.
-//
-// Also, this function takes care of path-traversal attacks by sanitizing file paths.
-//
-// When all checks pass, extract the zip file to the specified destination directory.
-// Otherwise, remove the destination directory and return an error.
-func safeExtractZip(zipPath, destDir string) error {
-	reader, err := zip.OpenReader(zipPath)
-	if err != nil {
-		return fmt.Errorf("failed to open zip file: %w", err)
-	}
-	defer reader.Close()
-
-	// Check the number of files in the zip file.
-	if len(reader.File) > maxFiles {
-		return fmt.Errorf("zip file contains too many files (max: %d)", maxFiles)
-	}
-
-	// Check the total expected size of uncompressed files, before extracting.
-	var totalUncompressed uint64
-	for _, file := range reader.File {
-		totalUncompressed += file.UncompressedSize64
-		if totalUncompressed > maxUncompressedSize {
-			return fmt.Errorf("uncompressed size too large (max: %d MB)", maxUncompressedSize/(1024*1024))
-		}
-	}
-
-	// Make destination directory.
-	if err := os.MkdirAll(destDir, 0755); err != nil {
-		return fmt.Errorf("failed to create destination directory: %w", err)
-	}
-
-	// Extract files.
-	for _, file := range reader.File {
-		if err := extractFile(file, destDir); err != nil {
-			// When error occurs, remove destination directory
-			os.RemoveAll(destDir)
-			return err
-		}
-	}
-
-	return nil
-}
-
-func extractFile(file *zip.File, destDir string) error {
-	// Sanitize file name to prevent path traversal attacks.
-	cleanPath := filepath.Clean(file.Name)
-	if strings.Contains(cleanPath, "..") {
-		return fmt.Errorf("invalid file path: %s", file.Name)
-	}
-
-	targetPath := filepath.Join(destDir, cleanPath)
-
-	// Check if the target path is within the destination directory.
-	if !strings.HasPrefix(filepath.Clean(targetPath), filepath.Clean(destDir)) {
-		return fmt.Errorf("file path outside of destination directory: %s", file.Name)
-	}
-
-	// Check if this individual file exceeds the size limit.
-	if file.UncompressedSize64 > maxFileSize {
-		return fmt.Errorf("file %s too large (max %d MB)", file.Name, maxFileSize/(1024*1024))
-	}
-
-	// In the case of "file" is a directory
-	if file.FileInfo().IsDir() {
-		// make directory
-		return os.MkdirAll(targetPath, file.Mode())
-	}
-
-	// In the case of "file" is a regular file
-	// Make parent directory
-	if err := os.MkdirAll(filepath.Dir(targetPath), 0755); err != nil {
-		return fmt.Errorf("failed to create directory for %s: %w", targetPath, err)
-	}
-
-	// Open file
-	rc, err := file.Open()
-	if err != nil {
-		return fmt.Errorf("failed to open file %s in zip: %w", file.Name, err)
-	}
-	defer rc.Close()
-
-	// Create output file
-	outFile, err := os.OpenFile(targetPath, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, file.Mode())
-	if err != nil {
-		return fmt.Errorf("failed to create output file %s: %w", targetPath, err)
-	}
-	defer outFile.Close()
-
-	// Copy it with size limit
-	limitedReader := &io.LimitedReader{
-		R: rc,
-		N: int64(maxFileSize),
-	}
-
-	written, err := io.Copy(outFile, limitedReader)
-	if err != nil {
-		return fmt.Errorf("failed to extract file: %w", err)
-	}
-
-	// Check if the entire file was copied
-	if uint64(written) != file.UncompressedSize64 {
-		return fmt.Errorf("file size mismatch for %s", file.Name)
-	}
-
-	return nil
 }

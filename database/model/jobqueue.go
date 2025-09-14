@@ -22,13 +22,14 @@ type JobQueue struct {
 }
 
 type JobDetail struct {
-	TimeMS     int64      `json:"time_ms"`
-	MemoryMB   int64      `json:"memory_mb"`
-	TestFiles  []string   `json:"test_files"`
-	FileDir    string     `json:"file_dir"`   // directory that contain submitted codes
-	ResultDir  string     `json:"result_dir"` // directory that outputs will be stored
-	BuildTasks []TestCase `json:"build"`
-	JudgeTasks []TestCase `json:"judge"`
+	TimeMS      int64      `json:"time_ms"`
+	MemoryMB    int64      `json:"memory_mb"`
+	TestFiles   []string   `json:"test_files"`
+	ResourceDir string     `json:"resource_dir"` // directory that contains resource files (e.g., stdin input for judge tasks)
+	FileDir     string     `json:"file_dir"`     // directory that contain submitted codes
+	ResultDir   string     `json:"result_dir"`   // directory that outputs will be stored
+	BuildTasks  []TestCase `json:"build"`
+	JudgeTasks  []TestCase `json:"judge"`
 }
 
 type ResultQueue struct {

@@ -9,8 +9,5 @@ RUN apt-get update \
     && wget -O - https://github.com/jwilder/dockerize/releases/download/$DOCKERIZE_VERSION/dockerize-linux-amd64-$DOCKERIZE_VERSION.tar.gz | tar xzf - -C /usr/local/bin \
     && apt-get autoremove -yqq --purge wget && rm -rf /var/lib/apt/lists/*
 
-# download air, a live reload tool for Go
-RUN go install github.com/air-verse/air@latest
-
 # アプリケーションを起動
-CMD ["dockerize", "-wait", "tcp://db:5432", "-timeout", "30s", "air", "-c", ".air.toml"]
+# CMD ["dockerize", "-wait", "tcp://db:5432", "-timeout", "30s", "air", "-c", ".air.toml"]

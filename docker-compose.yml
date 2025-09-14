@@ -53,6 +53,7 @@ services:
     secrets:
       - db_app_password
     restart: always
+    entrypoint: [ "dockerize", "-wait", "tcp://db:5432", "-timeout", "30s", "./start.sh" ]
 
   nginx:
     image: nginx:latest

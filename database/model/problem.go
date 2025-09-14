@@ -28,7 +28,8 @@ type Problem struct {
 	ResourceLocationID int64     `bun:"resource_location_id,notnull" json:"resource_location_id"`
 	Detail             *Detail   `bun:"detail,notnull,type:jsonb" json:"detail"`
 
-	Lecture *Lecture `bun:"rel:belongs-to,join:lecture_id=id"`
+	Lecture          *Lecture      `bun:"rel:belongs-to,join:lecture_id=id"`
+	ResourceLocation *FileLocation `bun:"rel:has-one,join:resource_location_id=id"`
 }
 
 type Detail struct {

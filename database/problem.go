@@ -11,6 +11,22 @@ type ProblemStore struct {
 	db *bun.DB
 }
 
+func (ps *ProblemStore) FetchResourcePath(ctx *context.Context, lectureID int64, problemID int64) (string, error) {
+	// Fetch the resource path for the given lectureID and problemID
+	// only select FileLocation.path
+	var path string
+	err := ps.db.NewSelect().
+		Model((*model.Problem)(nil)).
+		Column("filelocation.path").
+		Join("JOIN filelocation ON problem.resource_location_id = filelocation.id").
+		Where("problem.lecture_id = ? AND problem.problem_id = ?", lectureID, problemID).
+		Scan(*ctx, &path)
+	if err != nil {
+		return "", err
+	}
+	return path, nil
+}
+
 func (ps *ProblemStore) GetLectureAndAllProblems(context *context.Context, d int64) (model.Lecture, error) {
 	var lecture model.Lecture
 	err := ps.db.NewSelect().Model(&lecture).Relation("Problems").Where("id = ?", d).Scan(*context)

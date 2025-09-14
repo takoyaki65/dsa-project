@@ -24,7 +24,7 @@ type JobExecutor struct {
 	client *client.Client
 }
 
-const UPLOAD_DIR_IN_HOST = "/upload/"
+const UPLOAD_DIR_IN_HOST = "upload/"
 const UID_GUEST = 1002
 const GID_GUEST = 1002
 const MAX_STDOUT_BYTES = 2 * 1024 // 2 KB
