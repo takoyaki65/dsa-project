@@ -47,6 +47,7 @@ services:
       - ./upload:/app/upload
       # for shared database module
       - ./database:/database
+      - judge-go-pkg:/go # for caching Go packages, remove when deploying to production
     environment:
       DOCKER_HOST: unix:///var/run/docker.sock
       TZ: Asia/Tokyo
@@ -105,6 +106,7 @@ volumes:
   db-data:
   frontend-node_modules:
   backend-go-pkg:
+  judge-go-pkg:
 
 
 secrets:
