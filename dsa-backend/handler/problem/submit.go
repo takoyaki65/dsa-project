@@ -397,6 +397,12 @@ func (h *Handler) BatchValidation(c echo.Context) error {
 			ResultID:    requeststatus.WJ,
 		}
 
+		// Fetch resource path for this problem
+		resourcePath, err := h.problemStore.FetchResourcePath(&ctx, problem.LectureID, problem.ProblemID)
+		if err != nil {
+			return echo.NewHTTPError(http.StatusInternalServerError, response.NewError("Problem not found"))
+		}
+
 		// -------------------------------------------------------------
 		// Register request
 		// -------------------------------------------------------------
@@ -440,15 +446,14 @@ func (h *Handler) BatchValidation(c echo.Context) error {
 			Status:      queuestatus.Pending,
 			CreatedAt:   time.Now(),
 			Detail: model.JobDetail{
-				TimeMS:    problem.Detail.TimeMS,
-				MemoryMB:  problem.Detail.MemoryMB,
-				TestFiles: problem.Detail.TestFiles,
-				// TODO: specify it.
-				// ResouceDir: resource files for this problem
-				FileDir:    uploadDir,
-				ResultDir:  resultDir,
-				BuildTasks: filteredBuildTasks,
-				JudgeTasks: filteredJudgeTasks,
+				TimeMS:      problem.Detail.TimeMS,
+				MemoryMB:    problem.Detail.MemoryMB,
+				TestFiles:   problem.Detail.TestFiles,
+				ResourceDir: resourcePath,
+				FileDir:     uploadDir,
+				ResultDir:   resultDir,
+				BuildTasks:  filteredBuildTasks,
+				JudgeTasks:  filteredJudgeTasks,
 			},
 		}
 
@@ -886,10 +891,16 @@ func (h *Handler) BatchGrading(c echo.Context) error {
 			ResultID:        requeststatus.WJ,
 		}
 
+		// Fetch the resource path for this problem
+		resourcePath, err := h.problemStore.FetchResourcePath(&ctx, problem.LectureID, problem.ProblemID)
+		if err != nil {
+			return echo.NewHTTPError(http.StatusInternalServerError, response.NewError("Problem not found"))
+		}
+
 		// -------------------------------------------------------------
 		// Register request
 		// -------------------------------------------------------------
-		err := h.requestStore.RegisterOrUpdateGradingRequest(&ctx, &request)
+		err = h.requestStore.RegisterOrUpdateGradingRequest(&ctx, &request)
 		if err != nil {
 			return echo.NewHTTPError(http.StatusInternalServerError, response.NewError("Failed to register grading request"))
 		}
@@ -909,15 +920,14 @@ func (h *Handler) BatchGrading(c echo.Context) error {
 			Status:      queuestatus.Pending,
 			CreatedAt:   time.Now(),
 			Detail: model.JobDetail{
-				TimeMS:    problem.Detail.TimeMS,
-				MemoryMB:  problem.Detail.MemoryMB,
-				TestFiles: problem.Detail.TestFiles,
-				// TODO: specify it.
-				// ResouceDir: resource files for this problem
-				FileDir:    uploadDir,
-				ResultDir:  resultDir,
-				BuildTasks: problem.Detail.BuildTasks, // We do not any filtering here, because only manager or admin can access this endpoint.
-				JudgeTasks: problem.Detail.JudgeTasks,
+				TimeMS:      problem.Detail.TimeMS,
+				MemoryMB:    problem.Detail.MemoryMB,
+				TestFiles:   problem.Detail.TestFiles,
+				ResourceDir: resourcePath,
+				FileDir:     uploadDir,
+				ResultDir:   resultDir,
+				BuildTasks:  problem.Detail.BuildTasks, // We do not any filtering here, because only manager or admin can access this endpoint.
+				JudgeTasks:  problem.Detail.JudgeTasks,
 			},
 		}
 

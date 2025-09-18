@@ -311,7 +311,7 @@ func (executor *JobExecutor) executeBuildTasks(ctx context.Context, job *model.J
 		result = model.TaskLog{
 			TestCaseID: buildTask.ID,
 			ResultID:   resultStatus,
-			TimeMS:     watchdogInput.TimeoutMS,
+			TimeMS:     watchdogOutput.TimeMS,
 			MemoryKB:   watchdogOutput.MemoryKB,
 			ExitCode:   *watchdogOutput.ExitCode,
 			StdoutPath: stdoutFilePath,
@@ -566,7 +566,7 @@ func (executor *JobExecutor) executeJudgeTasks(ctx context.Context, job *model.J
 		result = model.TaskLog{
 			TestCaseID: judgeTask.ID,
 			ResultID:   resultStatus,
-			TimeMS:     watchdogInput.TimeoutMS,
+			TimeMS:     watchdogOutput.TimeMS,
 			MemoryKB:   watchdogOutput.MemoryKB,
 			ExitCode:   *watchdogOutput.ExitCode,
 			StdoutPath: stdoutFilePath,
