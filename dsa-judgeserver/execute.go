@@ -108,8 +108,8 @@ func (executor *JobExecutor) executeBuildTasks(ctx context.Context, job *model.J
 				Ulimits: []*container.Ulimit{
 					{
 						Name: "nofile", // limit max number of open files
-						Hard: 64,
-						Soft: 64,
+						Hard: 1024,
+						Soft: 1024,
 					},
 					{
 						Name: "nproc", // limit max number of processes
@@ -117,9 +117,9 @@ func (executor *JobExecutor) executeBuildTasks(ctx context.Context, job *model.J
 						Soft: 64,
 					},
 					{
-						Name: "fsize",                   // limit max size of files that can be created, the unit is file-blocks (assumes 4kB = 4096 bytes)
-						Hard: (10 * 1024 * 1024) / 4096, // 10 MB
-						Soft: (10 * 1024 * 1024) / 4096, // 10 MB
+						Name: "fsize",                    // limit max size of files that can be created, the unit is file-blocks (assumes 4kB = 4096 bytes)
+						Hard: (100 * 1024 * 1024) / 4096, // 100 MB
+						Soft: (100 * 1024 * 1024) / 4096, // 100 MB
 					},
 					{
 						Name: "stack",     // limit max stack size, the unit is kB (1024 bytes)
@@ -165,7 +165,7 @@ func (executor *JobExecutor) executeBuildTasks(ctx context.Context, job *model.J
 	// Copy test files and user submitted files to the build container
 	// Copy test files
 	for _, testFile := range job.TestFiles {
-		testFilePath := filepath.Join(UPLOAD_DIR_IN_HOST, testFile)
+		testFilePath := filepath.Join(job.ResourceDir, testFile)
 		err = executor.CopyContentsToContainer(ctx, testFilePath, buildContainer_createResponse.ID, "/home/guest/")
 		if err != nil {
 			return nil, err
@@ -173,7 +173,7 @@ func (executor *JobExecutor) executeBuildTasks(ctx context.Context, job *model.J
 	}
 
 	// Copy user submitted files
-	userSubmittedFolderPath := filepath.Join(UPLOAD_DIR_IN_HOST, job.FileDir)
+	userSubmittedFolderPath := job.FileDir
 	err = executor.CopyContentsToContainer(ctx, userSubmittedFolderPath, buildContainer_createResponse.ID, "/home/guest/")
 	if err != nil {
 		return nil, err
@@ -192,10 +192,13 @@ func (executor *JobExecutor) executeBuildTasks(ctx context.Context, job *model.J
 		}
 
 		// Read stdin from buildTask.StdinPath
-		stdinPath := filepath.Join(UPLOAD_DIR_IN_HOST, buildTask.StdinPath)
-		stdinContent, err := os.ReadFile(stdinPath)
-		if err != nil {
-			return buildLog, fmt.Errorf("failed to read stdin file %s: %w", stdinPath, err)
+		stdinContent := []byte{}
+		if buildTask.StdinPath != "" {
+			stdinPath := filepath.Join(job.ResourceDir, buildTask.StdinPath)
+			stdinContent, err = os.ReadFile(stdinPath)
+			if err != nil {
+				return buildLog, fmt.Errorf("failed to read stdin file %s: %w", stdinPath, err)
+			}
 		}
 
 		TotalTimeoutInSeconds := job.TimeMS/1000 + 5 // add 5 seconds for overhead
@@ -256,20 +259,23 @@ func (executor *JobExecutor) executeBuildTasks(ctx context.Context, job *model.J
 		}
 
 		// Save stdout and stderr to files
-		stdoutRelPath := filepath.Join(job.ResultDir, fmt.Sprintf("build_%d_stdout.txt", buildTask.ID))
-		stdoutFileAbsPath := filepath.Join(UPLOAD_DIR_IN_HOST, stdoutRelPath)
-		err = os.WriteFile(stdoutFileAbsPath, []byte(watchdogOutput.Stdout), 0644)
-		if err != nil {
+		if err = os.MkdirAll(job.ResultDir, 0755); err != nil {
 			buildLog = append(buildLog, result)
-			return buildLog, fmt.Errorf("failed to write stdout file %s: %w", stdoutFileAbsPath, err)
+			return buildLog, fmt.Errorf("failed to create result directory %s: %w", job.ResultDir, err)
 		}
 
-		stderrRelPath := filepath.Join(job.ResultDir, fmt.Sprintf("build_%d_stderr.txt", buildTask.ID))
-		stderrAbsFilePath := filepath.Join(UPLOAD_DIR_IN_HOST, stderrRelPath)
-		err = os.WriteFile(stderrAbsFilePath, []byte(watchdogOutput.Stderr), 0644)
+		stdoutFilePath := filepath.Join(job.ResultDir, fmt.Sprintf("build_%d_stdout.txt", buildTask.ID))
+		err = os.WriteFile(stdoutFilePath, []byte(watchdogOutput.Stdout), 0644)
 		if err != nil {
 			buildLog = append(buildLog, result)
-			return buildLog, fmt.Errorf("failed to write stderr file %s: %w", stderrAbsFilePath, err)
+			return buildLog, fmt.Errorf("failed to write stdout file %s: %w", stdoutFilePath, err)
+		}
+
+		stderrFilePath := filepath.Join(job.ResultDir, fmt.Sprintf("build_%d_stderr.txt", buildTask.ID))
+		err = os.WriteFile(stderrFilePath, []byte(watchdogOutput.Stderr), 0644)
+		if err != nil {
+			buildLog = append(buildLog, result)
+			return buildLog, fmt.Errorf("failed to write stderr file %s: %w", stderrFilePath, err)
 		}
 
 		if watchdogOutput.ExitCode == nil {
@@ -308,8 +314,8 @@ func (executor *JobExecutor) executeBuildTasks(ctx context.Context, job *model.J
 			TimeMS:     watchdogInput.TimeoutMS,
 			MemoryKB:   watchdogOutput.MemoryKB,
 			ExitCode:   *watchdogOutput.ExitCode,
-			StdoutPath: stdoutRelPath,
-			StderrPath: stderrRelPath,
+			StdoutPath: stdoutFilePath,
+			StderrPath: stderrFilePath,
 		}
 		buildLog = append(buildLog, result)
 	}
@@ -416,24 +422,27 @@ func (executor *JobExecutor) executeJudgeTasks(ctx context.Context, job *model.J
 		}
 
 		// Read stdin from judgeTask.StdinPath
-		stdinPath := filepath.Join(UPLOAD_DIR_IN_HOST, judgeTask.StdinPath)
-		stdinContent, err := os.ReadFile(stdinPath)
-		if err != nil {
-			return judgeLog, fmt.Errorf("failed to read stdin file %s: %w", stdinPath, err)
+		stdinContent := []byte{}
+		if judgeTask.StdinPath != "" {
+			stdinPath := filepath.Join(job.ResourceDir, judgeTask.StdinPath)
+			stdinContent, err = os.ReadFile(stdinPath)
+			if err != nil {
+				return judgeLog, fmt.Errorf("failed to read stdin file %s: %w", stdinPath, err)
+			}
 		}
 
 		// Read expected stdout and stderr if specified
-		var expectedStdoutContent []byte = nil
-		var expectedStderrContent []byte = nil
+		expectedStdoutContent := []byte{}
+		expectedStderrContent := []byte{}
 		if judgeTask.StdoutPath != "" {
-			expectedStdoutPath := filepath.Join(UPLOAD_DIR_IN_HOST, judgeTask.StdoutPath)
+			expectedStdoutPath := filepath.Join(job.ResourceDir, judgeTask.StdoutPath)
 			expectedStdoutContent, err = os.ReadFile(expectedStdoutPath)
 			if err != nil {
 				return judgeLog, fmt.Errorf("failed to read expected stdout file %s: %w", expectedStdoutPath, err)
 			}
 		}
 		if judgeTask.StderrPath != "" {
-			expectedStderrPath := filepath.Join(UPLOAD_DIR_IN_HOST, judgeTask.StderrPath)
+			expectedStderrPath := filepath.Join(job.ResourceDir, judgeTask.StderrPath)
 			expectedStderrContent, err = os.ReadFile(expectedStderrPath)
 			if err != nil {
 				return judgeLog, fmt.Errorf("failed to read expected stderr file %s: %w", expectedStderrPath, err)
@@ -491,20 +500,23 @@ func (executor *JobExecutor) executeJudgeTasks(ctx context.Context, job *model.J
 		}
 
 		// Save stdout and stderr to files
-		stdoutRelPath := filepath.Join(job.ResultDir, fmt.Sprintf("judge_%d_stdout.txt", judgeTask.ID))
-		stdoutFileAbsPath := filepath.Join(UPLOAD_DIR_IN_HOST, stdoutRelPath)
-		err = os.WriteFile(stdoutFileAbsPath, []byte(watchdogOutput.Stdout), 0644)
-		if err != nil {
+		if err = os.MkdirAll(job.ResultDir, 0755); err != nil {
 			judgeLog = append(judgeLog, result)
-			return judgeLog, fmt.Errorf("failed to write stdout file %s: %w", stdoutFileAbsPath, err)
+			return judgeLog, fmt.Errorf("failed to create result directory %s: %w", job.ResultDir, err)
 		}
 
-		stderrRelPath := filepath.Join(job.ResultDir, fmt.Sprintf("judge_%d_stderr.txt", judgeTask.ID))
-		stderrAbsFilePath := filepath.Join(UPLOAD_DIR_IN_HOST, stderrRelPath)
-		err = os.WriteFile(stderrAbsFilePath, []byte(watchdogOutput.Stderr), 0644)
+		stdoutFilePath := filepath.Join(job.ResultDir, fmt.Sprintf("judge_%d_stdout.txt", judgeTask.ID))
+		err = os.WriteFile(stdoutFilePath, []byte(watchdogOutput.Stdout), 0644)
 		if err != nil {
 			judgeLog = append(judgeLog, result)
-			return judgeLog, fmt.Errorf("failed to write stderr file %s: %w", stderrAbsFilePath, err)
+			return judgeLog, fmt.Errorf("failed to write stdout file %s: %w", stdoutFilePath, err)
+		}
+
+		stderrFilePath := filepath.Join(job.ResultDir, fmt.Sprintf("judge_%d_stderr.txt", judgeTask.ID))
+		err = os.WriteFile(stderrFilePath, []byte(watchdogOutput.Stderr), 0644)
+		if err != nil {
+			judgeLog = append(judgeLog, result)
+			return judgeLog, fmt.Errorf("failed to write stderr file %s: %w", stderrFilePath, err)
 		}
 
 		if watchdogOutput.ExitCode == nil {
@@ -557,8 +569,8 @@ func (executor *JobExecutor) executeJudgeTasks(ctx context.Context, job *model.J
 			TimeMS:     watchdogInput.TimeoutMS,
 			MemoryKB:   watchdogOutput.MemoryKB,
 			ExitCode:   *watchdogOutput.ExitCode,
-			StdoutPath: stdoutRelPath,
-			StderrPath: stderrRelPath,
+			StdoutPath: stdoutFilePath,
+			StderrPath: stderrFilePath,
 		}
 		judgeLog = append(judgeLog, result)
 	}
