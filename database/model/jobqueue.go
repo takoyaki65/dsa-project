@@ -42,6 +42,7 @@ type ResultQueue struct {
 	Log       RequestLog          `bun:"log,notnull,type:jsonb" json:"log"`
 
 	Result *ResultValues `bun:"rel:has-one,join:result=value"`
+	Job    *JobQueue     `bun:"rel:belongs-to,join:job_id=id"`
 }
 
 var _ bun.BeforeAppendModelHook = (*JobQueue)(nil)

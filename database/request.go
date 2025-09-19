@@ -35,6 +35,24 @@ func (r *RequestStore) RegisterOrUpdateGradingRequest(ctx *context.Context, requ
 	return err
 }
 
+func (r *RequestStore) UpdateResultOfValidationRequest(ctx *context.Context, id int64, result_id requeststatus.State, Log model.RequestLog) error {
+	_, err := r.db.NewUpdate().Model(&model.ValidationRequest{}).
+		Set("result = ?", int64(result_id)).
+		Set("log = ?", Log).
+		Where("id = ?", id).
+		Exec(*ctx)
+	return err
+}
+
+func (r *RequestStore) UpdateResultOfGradingRequest(ctx *context.Context, id int64, result_id requeststatus.State, Log model.RequestLog) error {
+	_, err := r.db.NewUpdate().Model(&model.GradingRequest{}).
+		Set("result = ?", int64(result_id)).
+		Set("log = ?", Log).
+		Where("id = ?", id).
+		Exec(*ctx)
+	return err
+}
+
 func NewRequestStore(db *bun.DB) *RequestStore {
 	return &RequestStore{
 		db: db,

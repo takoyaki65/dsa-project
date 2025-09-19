@@ -12,4 +12,4 @@ DSA サーバーのバックエンドです。
   * Swagger UI の作成方法はURL先のREADMEを参照すること。`swag`ツールをインストールし、`swag init`を実行することで、プログラム内のコメントからSwaggerドキュメントが自動生成される。
 
 # Inspiration
-* [golang-echo-realworld-example-app](https://github.com/xesina/golang-echo-realworld-example-app/tree)
+* [golang-echo-realworld-example-app](https://github.com/xesina/golang-echo-realworld-example-app)

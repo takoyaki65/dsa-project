@@ -38,3 +38,19 @@ func (j *JobQueueStore) FetchJobs(ctx *context.Context, status queuestatus.Statu
 	err := j.db.NewSelect().Model(&jobs).Where("status = ?", status).Limit(int(limit)).Scan(*ctx)
 	return jobs, err
 }
+
+func (j *JobQueueStore) FetchResults(ctx *context.Context, limit int32) ([]model.ResultQueue, error) {
+	var results []model.ResultQueue
+	err := j.db.NewSelect().Model(&results).Relation("Job").Limit(int(limit)).Scan(*ctx)
+	return results, err
+}
+
+func (j *JobQueueStore) DeleteResultEntry(ctx *context.Context, id int64) error {
+	_, err := j.db.NewDelete().Model(&model.ResultQueue{}).Where("id = ?", id).Exec(*ctx)
+	return err
+}
+
+func (j *JobQueueStore) DeleteJobEntry(ctx *context.Context, id int64) error {
+	_, err := j.db.NewDelete().Model(&model.JobQueue{}).Where("id = ?", id).Exec(*ctx)
+	return err
+}

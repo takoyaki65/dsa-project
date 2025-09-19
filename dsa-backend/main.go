@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"database/sql"
+	"dsa-backend/background"
 	"dsa-backend/handler"
 	"dsa-backend/router"
 	"encoding/json"
@@ -92,6 +93,9 @@ func main() {
 			return
 		}
 	}()
+
+	// Start background process
+	go background.ProcessJobQueue(ctx, db, &r.Logger)
 
 	<-ctx.Done()
 	r.Logger.Info("Interrupt signal received, shutting down server...")
