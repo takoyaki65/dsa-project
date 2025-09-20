@@ -6,14 +6,15 @@ import { useNavigate } from "react-router";
 interface Problem {
   lecture_id: number;
   problem_id: number;
+  registered_at: number;
   title: string;
 }
 
 interface Lecture {
   id: number;
   title: string;
-  start_date: string;
-  deadline: string;
+  start_date: number;
+  deadline: number;
   problems: Problem[];
 }
 

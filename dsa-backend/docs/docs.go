@@ -347,7 +347,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/problem.ProblemDetailResponse"
+                            "$ref": "#/definitions/util.ProblemDetail"
                         }
                     },
                     "400": {
@@ -394,7 +394,7 @@ const docTemplate = `{
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/problem.LectureEntryResponse"
+                                "$ref": "#/definitions/util.LectureEntry"
                             }
                         }
                     },
@@ -856,72 +856,6 @@ const docTemplate = `{
                 }
             }
         },
-        "problem.LectureEntryResponse": {
-            "type": "object",
-            "properties": {
-                "deadline": {
-                    "type": "string"
-                },
-                "id": {
-                    "type": "integer"
-                },
-                "problems": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/problem.ProblemEntryResponse"
-                    }
-                },
-                "start_date": {
-                    "type": "string"
-                },
-                "title": {
-                    "type": "string"
-                }
-            }
-        },
-        "problem.ProblemDetailResponse": {
-            "type": "object",
-            "properties": {
-                "description": {
-                    "type": "string"
-                },
-                "lecture_id": {
-                    "type": "integer"
-                },
-                "memory_mb": {
-                    "type": "integer"
-                },
-                "problem_id": {
-                    "type": "integer"
-                },
-                "required_files": {
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
-                },
-                "time_ms": {
-                    "type": "integer"
-                },
-                "title": {
-                    "type": "string"
-                }
-            }
-        },
-        "problem.ProblemEntryResponse": {
-            "type": "object",
-            "properties": {
-                "lecture_id": {
-                    "type": "integer"
-                },
-                "problem_id": {
-                    "type": "integer"
-                },
-                "title": {
-                    "type": "string"
-                }
-            }
-        },
         "response.Error": {
             "type": "object",
             "properties": {
@@ -972,6 +906,75 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "name": {
+                    "type": "string"
+                }
+            }
+        },
+        "util.LectureEntry": {
+            "type": "object",
+            "properties": {
+                "deadline": {
+                    "type": "integer"
+                },
+                "lecture_id": {
+                    "type": "integer"
+                },
+                "problems": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/util.ProblemEntry"
+                    }
+                },
+                "start_date": {
+                    "type": "integer"
+                },
+                "title": {
+                    "type": "string"
+                }
+            }
+        },
+        "util.ProblemDetail": {
+            "type": "object",
+            "properties": {
+                "description": {
+                    "type": "string"
+                },
+                "lecture_id": {
+                    "type": "integer"
+                },
+                "memory_mb": {
+                    "type": "integer"
+                },
+                "problem_id": {
+                    "type": "integer"
+                },
+                "required_files": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "time_ms": {
+                    "type": "integer"
+                },
+                "title": {
+                    "type": "string"
+                }
+            }
+        },
+        "util.ProblemEntry": {
+            "type": "object",
+            "properties": {
+                "lecture_id": {
+                    "type": "integer"
+                },
+                "problem_id": {
+                    "type": "integer"
+                },
+                "registered_at": {
+                    "type": "integer"
+                },
+                "title": {
                     "type": "string"
                 }
             }

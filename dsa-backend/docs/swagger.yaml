@@ -19,49 +19,6 @@ definitions:
     - start_date
     - title
     type: object
-  problem.LectureEntryResponse:
-    properties:
-      deadline:
-        type: string
-      id:
-        type: integer
-      problems:
-        items:
-          $ref: '#/definitions/problem.ProblemEntryResponse'
-        type: array
-      start_date:
-        type: string
-      title:
-        type: string
-    type: object
-  problem.ProblemDetailResponse:
-    properties:
-      description:
-        type: string
-      lecture_id:
-        type: integer
-      memory_mb:
-        type: integer
-      problem_id:
-        type: integer
-      required_files:
-        items:
-          type: string
-        type: array
-      time_ms:
-        type: integer
-      title:
-        type: string
-    type: object
-  problem.ProblemEntryResponse:
-    properties:
-      lecture_id:
-        type: integer
-      problem_id:
-        type: integer
-      title:
-        type: string
-    type: object
   response.Error:
     properties:
       errors:
@@ -97,6 +54,51 @@ definitions:
       id:
         type: string
       name:
+        type: string
+    type: object
+  util.LectureEntry:
+    properties:
+      deadline:
+        type: integer
+      lecture_id:
+        type: integer
+      problems:
+        items:
+          $ref: '#/definitions/util.ProblemEntry'
+        type: array
+      start_date:
+        type: integer
+      title:
+        type: string
+    type: object
+  util.ProblemDetail:
+    properties:
+      description:
+        type: string
+      lecture_id:
+        type: integer
+      memory_mb:
+        type: integer
+      problem_id:
+        type: integer
+      required_files:
+        items:
+          type: string
+        type: array
+      time_ms:
+        type: integer
+      title:
+        type: string
+    type: object
+  util.ProblemEntry:
+    properties:
+      lecture_id:
+        type: integer
+      problem_id:
+        type: integer
+      registered_at:
+        type: integer
+      title:
         type: string
     type: object
 host: localhost:8000
@@ -314,7 +316,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/problem.ProblemDetailResponse'
+            $ref: '#/definitions/util.ProblemDetail'
         "400":
           description: invalid request
           schema:
@@ -345,7 +347,7 @@ paths:
           description: OK
           schema:
             items:
-              $ref: '#/definitions/problem.LectureEntryResponse'
+              $ref: '#/definitions/util.LectureEntry'
             type: array
         "500":
           description: failed to get lecture entries

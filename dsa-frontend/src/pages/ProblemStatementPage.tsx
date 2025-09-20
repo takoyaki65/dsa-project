@@ -43,6 +43,8 @@ const renderProblemDetail = (detail: ProblemDetail): JSX.Element => {
   const handleOnSubmit = async (files: File[]) => {
     const formData = new FormData();
 
+    // TODO: restrict file size and type
+
     files.forEach(file => {
       formData.append('files', file);
     });

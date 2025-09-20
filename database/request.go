@@ -53,6 +53,22 @@ func (r *RequestStore) UpdateResultOfGradingRequest(ctx context.Context, id int6
 	return err
 }
 
+// GetValidationResults retrieves validation results for a user filtered by allowed lecture IDs, with pagination support.
+// NOTE: This function does not utilize OFFSET, because OFFSET can be inefficient for large datasets.
+// Instead, it uses the "last" parameter to fetch results with IDs less than the provided value.
+func (r *RequestStore) GetValidationResults(ctx context.Context, usercode int64, lecture_ids []int64, last int64, limit int) ([]model.ValidationRequest, error) {
+	var results []model.ValidationRequest
+	err := r.db.NewSelect().Model(&results).
+		Where("usercode = ?", usercode).
+		Where("lecture_id IN (?)", bun.In(lecture_ids)).
+		Where("id < ?", last).
+		Order("id DESC").
+		Limit(limit).
+		Scan(ctx)
+
+	return results, err
+}
+
 func NewRequestStore(db *bun.DB) *RequestStore {
 	return &RequestStore{
 		db: db,

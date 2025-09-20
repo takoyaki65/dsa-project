@@ -47,7 +47,7 @@ func (ps *ProblemStore) GetProblemByID(ctx context.Context, lectureID int64, pro
 	return &problem, nil
 }
 
-func (ps *ProblemStore) GetAllLectureAndProblems(ctx context.Context) (*[]model.Lecture, error) {
+func (ps *ProblemStore) GetAllLectureAndProblems(ctx context.Context) ([]model.Lecture, error) {
 	var lectures []model.Lecture
 	err := ps.db.NewSelect().Model(&lectures).Relation("Problems", func(q *bun.SelectQuery) *bun.SelectQuery {
 		return q.Order("problem.problem_id")
@@ -55,7 +55,7 @@ func (ps *ProblemStore) GetAllLectureAndProblems(ctx context.Context) (*[]model.
 	if err != nil {
 		return nil, err
 	}
-	return &lectures, nil
+	return lectures, nil
 }
 
 func (ps *ProblemStore) DeleteLectureEntry(ctx context.Context, i int64) error {
