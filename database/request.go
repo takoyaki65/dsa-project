@@ -12,44 +12,44 @@ type RequestStore struct {
 	db *bun.DB
 }
 
-func (r RequestStore) UpdateGradingRequestStatus(context *context.Context, id int64, e requeststatus.State) error {
-	_, err := r.db.NewUpdate().Model(&model.GradingRequest{}).Set("result = ?", int64(e)).Where("id = ?", id).Exec(*context)
+func (r RequestStore) UpdateGradingRequestStatus(ctx context.Context, id int64, e requeststatus.State) error {
+	_, err := r.db.NewUpdate().Model(&model.GradingRequest{}).Set("result = ?", int64(e)).Where("id = ?", id).Exec(ctx)
 	return err
 }
 
-func (r RequestStore) UpdateValidationRequestStatus(context *context.Context, id int64, status_id requeststatus.State) error {
-	_, err := r.db.NewUpdate().Model(&model.ValidationRequest{}).Set("result = ?", int64(status_id)).Where("id = ?", id).Exec(*context)
+func (r RequestStore) UpdateValidationRequestStatus(ctx context.Context, id int64, status_id requeststatus.State) error {
+	_, err := r.db.NewUpdate().Model(&model.ValidationRequest{}).Set("result = ?", int64(status_id)).Where("id = ?", id).Exec(ctx)
 	return err
 }
 
-func (r *RequestStore) RegisterValidationRequest(ctx *context.Context, request *model.ValidationRequest) error {
+func (r *RequestStore) RegisterValidationRequest(ctx context.Context, request *model.ValidationRequest) error {
 	_, err := r.db.NewInsert().Model(request).Returning("id"). // Return auto-incremented ID
-									Exec(*ctx)
+									Exec(ctx)
 	return err
 }
 
-func (r *RequestStore) RegisterOrUpdateGradingRequest(ctx *context.Context, request *model.GradingRequest) error {
+func (r *RequestStore) RegisterOrUpdateGradingRequest(ctx context.Context, request *model.GradingRequest) error {
 	_, err := r.db.NewInsert().Model(request).On("CONFLICT (lecture_id,problem_id,usercode,submission_ts) DO UPDATE"). // Upsert
 																Returning("id"). // Return auto-incremented ID
-																Exec(*ctx)
+																Exec(ctx)
 	return err
 }
 
-func (r *RequestStore) UpdateResultOfValidationRequest(ctx *context.Context, id int64, result_id requeststatus.State, Log model.RequestLog) error {
+func (r *RequestStore) UpdateResultOfValidationRequest(ctx context.Context, id int64, result_id requeststatus.State, Log model.RequestLog) error {
 	_, err := r.db.NewUpdate().Model(&model.ValidationRequest{}).
 		Set("result = ?", int64(result_id)).
 		Set("log = ?", Log).
 		Where("id = ?", id).
-		Exec(*ctx)
+		Exec(ctx)
 	return err
 }
 
-func (r *RequestStore) UpdateResultOfGradingRequest(ctx *context.Context, id int64, result_id requeststatus.State, Log model.RequestLog) error {
+func (r *RequestStore) UpdateResultOfGradingRequest(ctx context.Context, id int64, result_id requeststatus.State, Log model.RequestLog) error {
 	_, err := r.db.NewUpdate().Model(&model.GradingRequest{}).
 		Set("result = ?", int64(result_id)).
 		Set("log = ?", Log).
 		Where("id = ?", id).
-		Exec(*ctx)
+		Exec(ctx)
 	return err
 }
 

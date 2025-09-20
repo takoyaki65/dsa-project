@@ -56,7 +56,7 @@ func (h *Handler) RequestValidation(c echo.Context) error {
 	ctx := context.Background()
 
 	// Fetch the resource path for this problem
-	resourcePath, err := h.problemStore.FetchResourcePath(&ctx, req.LectureID, req.ProblemID)
+	resourcePath, err := h.problemStore.FetchResourcePath(ctx, req.LectureID, req.ProblemID)
 	if err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, response.NewError("Problem not found"))
 	}
@@ -156,7 +156,7 @@ func (h *Handler) RequestValidation(c echo.Context) error {
 		Path: uploadDir,
 		Ts:   requestTime,
 	}
-	err = h.fileStore.RegisterFileLocation(&ctx, &fileLocation)
+	err = h.fileStore.RegisterFileLocation(ctx, &fileLocation)
 	if err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, response.NewError("Failed to register file location"))
 	}
@@ -172,7 +172,7 @@ func (h *Handler) RequestValidation(c echo.Context) error {
 	}
 
 	// Register request
-	err = h.requestStore.RegisterValidationRequest(&ctx, &request)
+	err = h.requestStore.RegisterValidationRequest(ctx, &request)
 	if err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, response.NewError("Failed to register validation request"))
 	}
@@ -182,7 +182,7 @@ func (h *Handler) RequestValidation(c echo.Context) error {
 	// --------------------------------------
 
 	// Get Problem info
-	problem, err := h.problemStore.GetProblem(&ctx, req.LectureID, req.ProblemID)
+	problem, err := h.problemStore.GetProblem(ctx, req.LectureID, req.ProblemID)
 	if err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, response.NewError("Failed to get problem info"))
 	}
@@ -230,11 +230,11 @@ func (h *Handler) RequestValidation(c echo.Context) error {
 	}
 
 	// Register job
-	err = h.jobQueueStore.InsertJob(&ctx, &job)
+	err = h.jobQueueStore.InsertJob(ctx, &job)
 	if err != nil {
 
 		// update status of ValidationRequest to "IE (Internal Error)"
-		err = h.requestStore.UpdateValidationRequestStatus(&ctx, request.ID, requeststatus.IE)
+		err = h.requestStore.UpdateValidationRequestStatus(ctx, request.ID, requeststatus.IE)
 		if err != nil {
 			// TODO: log this with FATAL Level, because this should not happen.
 			return echo.NewHTTPError(http.StatusInternalServerError, response.NewError("Failed to update validation request status"))
@@ -274,7 +274,7 @@ func (h *Handler) BatchValidation(c echo.Context) error {
 	ctx := context.Background()
 
 	// Check if the Lecture entry exists
-	lecture, err := h.problemStore.GetLectureAndAllProblems(&ctx, req.LectureID)
+	lecture, err := h.problemStore.GetLectureAndAllProblems(ctx, req.LectureID)
 	if err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, response.NewError("Failed to check lecture existence"+err.Error()))
 	}
@@ -379,7 +379,7 @@ func (h *Handler) BatchValidation(c echo.Context) error {
 		Path: uploadDir,
 		Ts:   requestTime,
 	}
-	err = h.fileStore.RegisterFileLocation(&ctx, &fileLocation)
+	err = h.fileStore.RegisterFileLocation(ctx, &fileLocation)
 	if err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, response.NewError("Failed to register file location"))
 	}
@@ -398,7 +398,7 @@ func (h *Handler) BatchValidation(c echo.Context) error {
 		}
 
 		// Fetch resource path for this problem
-		resourcePath, err := h.problemStore.FetchResourcePath(&ctx, problem.LectureID, problem.ProblemID)
+		resourcePath, err := h.problemStore.FetchResourcePath(ctx, problem.LectureID, problem.ProblemID)
 		if err != nil {
 			return echo.NewHTTPError(http.StatusInternalServerError, response.NewError("Problem not found"))
 		}
@@ -406,7 +406,7 @@ func (h *Handler) BatchValidation(c echo.Context) error {
 		// -------------------------------------------------------------
 		// Register request
 		// -------------------------------------------------------------
-		err = h.requestStore.RegisterValidationRequest(&ctx, &request)
+		err = h.requestStore.RegisterValidationRequest(ctx, &request)
 		if err != nil {
 			return echo.NewHTTPError(http.StatusInternalServerError, response.NewError("Failed to register validation request"))
 		}
@@ -458,10 +458,10 @@ func (h *Handler) BatchValidation(c echo.Context) error {
 		}
 
 		// Register job
-		err = h.jobQueueStore.InsertJob(&ctx, &job)
+		err = h.jobQueueStore.InsertJob(ctx, &job)
 		if err != nil {
 			// update status of ValidationRequest to "IE (Internal Error)"
-			err = h.requestStore.UpdateValidationRequestStatus(&ctx, request.ID, requeststatus.IE)
+			err = h.requestStore.UpdateValidationRequestStatus(ctx, request.ID, requeststatus.IE)
 			if err != nil {
 				// TODO: log this with FATAL Level, because this should not happen.
 				return echo.NewHTTPError(http.StatusInternalServerError, response.NewError("Failed to update validation request status"))
@@ -521,13 +521,13 @@ func (h *Handler) RequestGrading(c echo.Context) error {
 	ctx := context.Background()
 
 	// Fetch the resource path for this problem
-	resourcePath, err := h.problemStore.FetchResourcePath(&ctx, req.LectureID, req.ProblemID)
+	resourcePath, err := h.problemStore.FetchResourcePath(ctx, req.LectureID, req.ProblemID)
 	if err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, response.NewError("Problem not found"))
 	}
 
 	// Check the existence of problem entry
-	exists, err := h.problemStore.CheckProblemExists(&ctx, req.LectureID, req.ProblemID)
+	exists, err := h.problemStore.CheckProblemExists(ctx, req.LectureID, req.ProblemID)
 	if err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, response.NewError("Failed to check problem existence"))
 	}
@@ -536,7 +536,7 @@ func (h *Handler) RequestGrading(c echo.Context) error {
 	}
 
 	// Get user code of user subjected to grading
-	userCodeOfSubject, err := h.userStore.GetIDByUserID(&ctx, req.TargetUserID)
+	userCodeOfSubject, err := h.userStore.GetIDByUserID(ctx, req.TargetUserID)
 	if err != nil || userCodeOfSubject == nil {
 		return echo.NewHTTPError(http.StatusBadRequest, response.NewError("Targeted user does not exist"))
 	}
@@ -642,7 +642,7 @@ func (h *Handler) RequestGrading(c echo.Context) error {
 		Path: uploadDir,
 		Ts:   requestTime,
 	}
-	err = h.fileStore.RegisterFileLocation(&ctx, &fileLocation)
+	err = h.fileStore.RegisterFileLocation(ctx, &fileLocation)
 	if err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, response.NewError("Failed to register file location"))
 	}
@@ -660,7 +660,7 @@ func (h *Handler) RequestGrading(c echo.Context) error {
 	}
 
 	// Register request
-	err = h.requestStore.RegisterOrUpdateGradingRequest(&ctx, &request)
+	err = h.requestStore.RegisterOrUpdateGradingRequest(ctx, &request)
 	if err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, response.NewError("Failed to register grading request"))
 	}
@@ -670,7 +670,7 @@ func (h *Handler) RequestGrading(c echo.Context) error {
 	// --------------------------------------
 
 	// Get Problem info
-	problem, err := h.problemStore.GetProblem(&ctx, req.LectureID, req.ProblemID)
+	problem, err := h.problemStore.GetProblem(ctx, req.LectureID, req.ProblemID)
 	if err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, response.NewError("Failed to get problem info"))
 	}
@@ -696,11 +696,11 @@ func (h *Handler) RequestGrading(c echo.Context) error {
 	}
 
 	// Register job
-	err = h.jobQueueStore.InsertJob(&ctx, &job)
+	err = h.jobQueueStore.InsertJob(ctx, &job)
 	if err != nil {
 
 		// update status of GradingRequest to "IE (Internal Error)"
-		err = h.requestStore.UpdateGradingRequestStatus(&ctx, request.ID, requeststatus.IE)
+		err = h.requestStore.UpdateGradingRequestStatus(ctx, request.ID, requeststatus.IE)
 		if err != nil {
 			// TODO: log this with FATAL Level, because this should not happen.
 			return echo.NewHTTPError(http.StatusInternalServerError, response.NewError("Failed to update grading request status"))
@@ -757,7 +757,7 @@ func (h *Handler) BatchGrading(c echo.Context) error {
 	ctx := context.Background()
 
 	// Check if the Lecture entry exists
-	lecture, err := h.problemStore.GetLectureAndAllProblems(&ctx, req.LectureID)
+	lecture, err := h.problemStore.GetLectureAndAllProblems(ctx, req.LectureID)
 	if err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, response.NewError("Failed to check lecture existence"+err.Error()))
 	}
@@ -768,7 +768,7 @@ func (h *Handler) BatchGrading(c echo.Context) error {
 	}
 
 	// Get user code of user subjected to grading
-	userCodeOfSubject, err := h.userStore.GetIDByUserID(&ctx, req.TargetUserID)
+	userCodeOfSubject, err := h.userStore.GetIDByUserID(ctx, req.TargetUserID)
 	if err != nil || userCodeOfSubject == nil {
 		return echo.NewHTTPError(http.StatusBadRequest, response.NewError("Targeted user does not exist"))
 	}
@@ -871,7 +871,7 @@ func (h *Handler) BatchGrading(c echo.Context) error {
 		Path: uploadDir,
 		Ts:   requestTime,
 	}
-	err = h.fileStore.RegisterFileLocation(&ctx, &fileLocation)
+	err = h.fileStore.RegisterFileLocation(ctx, &fileLocation)
 	if err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, response.NewError("Failed to register file location"))
 	}
@@ -892,7 +892,7 @@ func (h *Handler) BatchGrading(c echo.Context) error {
 		}
 
 		// Fetch the resource path for this problem
-		resourcePath, err := h.problemStore.FetchResourcePath(&ctx, problem.LectureID, problem.ProblemID)
+		resourcePath, err := h.problemStore.FetchResourcePath(ctx, problem.LectureID, problem.ProblemID)
 		if err != nil {
 			return echo.NewHTTPError(http.StatusInternalServerError, response.NewError("Problem not found"))
 		}
@@ -900,7 +900,7 @@ func (h *Handler) BatchGrading(c echo.Context) error {
 		// -------------------------------------------------------------
 		// Register request
 		// -------------------------------------------------------------
-		err = h.requestStore.RegisterOrUpdateGradingRequest(&ctx, &request)
+		err = h.requestStore.RegisterOrUpdateGradingRequest(ctx, &request)
 		if err != nil {
 			return echo.NewHTTPError(http.StatusInternalServerError, response.NewError("Failed to register grading request"))
 		}
@@ -932,10 +932,10 @@ func (h *Handler) BatchGrading(c echo.Context) error {
 		}
 
 		// Register job
-		err = h.jobQueueStore.InsertJob(&ctx, &job)
+		err = h.jobQueueStore.InsertJob(ctx, &job)
 		if err != nil {
 			// update status of GradingRequest to "IE (Internal Error)"
-			err = h.requestStore.UpdateGradingRequestStatus(&ctx, request.ID, requeststatus.IE)
+			err = h.requestStore.UpdateGradingRequestStatus(ctx, request.ID, requeststatus.IE)
 			if err != nil {
 				// TODO: log this with FATAL Level, because this should not happen.
 				return echo.NewHTTPError(http.StatusInternalServerError, response.NewError("Failed to update grading request status"))

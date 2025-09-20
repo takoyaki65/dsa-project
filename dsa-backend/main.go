@@ -22,6 +22,7 @@ import (
 	echoSwagger "github.com/swaggo/echo-swagger"
 	"github.com/takoyaki65/dsa-project/database"
 	"github.com/takoyaki65/dsa-project/database/model"
+	"github.com/takoyaki65/dsa-project/database/model/userrole"
 	"github.com/uptrace/bun"
 	"github.com/uptrace/bun/dialect/pgdialect"
 	"github.com/uptrace/bun/driver/pgdriver"
@@ -128,7 +129,7 @@ func ensureAdminUser(db *bun.DB, r *echo.Echo) error {
 	userStore := database.NewUserStore(db)
 
 	// Check if admin user exists
-	adminUsers, err := userStore.GetUserListByUserRole(&ctx, "admin")
+	adminUsers, err := userStore.GetUserListByUserRole(ctx, userrole.Admin)
 	if err != nil {
 		return fmt.Errorf("failed to check for admin users: %w", err)
 	}
@@ -147,11 +148,6 @@ func ensureAdminUser(db *bun.DB, r *echo.Echo) error {
 	// No admin user found, prompt for creation
 	r.Logger.Info("No admin user found, creating one admin user...")
 
-	adminRoleID, err := userStore.GetRoleID(&ctx, "admin")
-	if err != nil {
-		return fmt.Errorf("failed to get admin role ID: %w", err)
-	}
-
 	adminInfo, err := readAdminFromSecrets()
 	if err != nil {
 		return fmt.Errorf("failed to read admin info from secrets: %v", err)
@@ -167,12 +163,12 @@ func ensureAdminUser(db *bun.DB, r *echo.Echo) error {
 		UserID:         adminInfo.UserID,
 		Name:           adminInfo.Username,
 		HashedPassword: string(hashedPassword),
-		RoleID:         adminRoleID,
+		RoleID:         userrole.Admin,
 		DisabledAt:     time.Date(2100, 12, 31, 23, 59, 59, 0, time.UTC),
 		Email:          adminInfo.Email,
 	}
 
-	if err := userStore.CreateUser(&ctx, adminUser); err != nil {
+	if err := userStore.CreateUser(ctx, adminUser); err != nil {
 		return fmt.Errorf("failed to create admin user: %w", err)
 	}
 

@@ -67,13 +67,13 @@ func (h *Handler) CreateLectureEntry(c echo.Context) error {
 
 	// Check existence of Lecture entry
 	{
-		_, err := h.problemStore.GetLectureByID(&ctx, lectureEntry.ID)
+		_, err := h.problemStore.GetLectureByID(ctx, lectureEntry.ID)
 		if err == nil {
 			return echo.NewHTTPError(http.StatusInternalServerError, response.NewError("lecture entry already exists"))
 		}
 	}
 
-	err := h.problemStore.CreateLectureEntry(&ctx, &model.Lecture{
+	err := h.problemStore.CreateLectureEntry(ctx, &model.Lecture{
 		ID:        lectureEntry.ID,
 		Title:     lectureEntry.Title,
 		StartDate: lectureEntry.StartDate,
@@ -109,7 +109,7 @@ func (h *Handler) UpdateLectureEntry(c echo.Context) error {
 
 	// Check the existence of lecture entry
 	ctx := context.Background()
-	lectureEntryInDB, err := h.problemStore.GetLectureByID(&ctx, int64(lectureId))
+	lectureEntryInDB, err := h.problemStore.GetLectureByID(ctx, int64(lectureId))
 	if err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, response.NewError("failed to get lecture entry: "+err.Error()))
 	}
@@ -123,7 +123,7 @@ func (h *Handler) UpdateLectureEntry(c echo.Context) error {
 	lectureEntryInDB.StartDate = lectureEntryRequest.StartDate
 	lectureEntryInDB.Deadline = lectureEntryRequest.Deadline
 
-	err = h.problemStore.UpdateLectureEntry(&ctx, &lectureEntryInDB)
+	err = h.problemStore.UpdateLectureEntry(ctx, &lectureEntryInDB)
 	if err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, response.NewError("failed to update lecture entry: "+err.Error()))
 	}
@@ -153,12 +153,12 @@ func (h *Handler) DeleteLectureEntry(c echo.Context) error {
 
 	// Check the existence of lecture entry
 	ctx := context.Background()
-	_, err = h.problemStore.GetLectureByID(&ctx, int64(lectureId))
+	_, err = h.problemStore.GetLectureByID(ctx, int64(lectureId))
 	if err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, response.NewError("failed to get lecture entry: "+err.Error()))
 	}
 
-	err = h.problemStore.DeleteLectureEntry(&ctx, int64(lectureId))
+	err = h.problemStore.DeleteLectureEntry(ctx, int64(lectureId))
 	if err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, response.NewError("failed to delete lecture entry: "+err.Error()))
 	}
@@ -195,7 +195,7 @@ func (h *Handler) RegisterProblem(c echo.Context) error {
 	context := context.Background()
 
 	// Check the existence of problem entry
-	exists, err := h.problemStore.CheckProblemExists(&context, req.LectureID, req.ProblemID)
+	exists, err := h.problemStore.CheckProblemExists(context, req.LectureID, req.ProblemID)
 	if err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, response.NewError("failed to check problem existence: "+err.Error()))
 	}
@@ -314,7 +314,7 @@ func (h *Handler) RegisterProblem(c echo.Context) error {
 		Path: destDir,
 		Ts:   time.Now(),
 	}
-	err = h.fileStore.RegisterFileLocation(&context, &fileLocation)
+	err = h.fileStore.RegisterFileLocation(context, &fileLocation)
 
 	if err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, response.NewError("failed to register file location: "+err.Error()))
@@ -372,7 +372,7 @@ func (h *Handler) RegisterProblem(c echo.Context) error {
 		Detail:             &detail,
 	}
 
-	err = h.problemStore.RegisterProblem(&context, problem)
+	err = h.problemStore.RegisterProblem(context, problem)
 
 	if err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, response.NewError("failed to register problem: "+err.Error()))
@@ -405,7 +405,7 @@ func (h *Handler) DeleteProblem(c echo.Context) error {
 	ctx := context.Background()
 
 	// Check if corresponding problem data exists
-	exists, err := h.problemStore.CheckProblemExists(&ctx, req.LectureID, req.ProblemID)
+	exists, err := h.problemStore.CheckProblemExists(ctx, req.LectureID, req.ProblemID)
 	if err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, response.NewError("failed to check problem existence: "+err.Error()))
 	}
@@ -413,7 +413,7 @@ func (h *Handler) DeleteProblem(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusNotFound, response.NewError("problem not found"))
 	}
 
-	err = h.problemStore.DeleteProblem(&ctx, req.LectureID, req.ProblemID)
+	err = h.problemStore.DeleteProblem(ctx, req.LectureID, req.ProblemID)
 	if err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, response.NewError("failed to delete problem: "+err.Error()))
 	}

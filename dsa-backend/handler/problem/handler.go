@@ -54,4 +54,12 @@ func (h *Handler) RegisterRoutes(r *echo.Group) {
 	crudRouter.DELETE("/delete/:lectureid", h.DeleteLectureEntry)
 	crudRouter.POST("/create/:lectureid/:problemid", h.RegisterProblem)
 	crudRouter.DELETE("/delete/:lectureid/:problemid", h.DeleteProblem)
+
+	resultRouter := r.Group("/result")
+	resultRouter.GET("/validation/list", h.ListValidationResults)
+	resultRouter.GET("/validation/detail/:requestid", h.GetValidationResult)
+
+	gradingResultRouter := resultRouter.Group("/grading", middleware.RequiredScopesMiddleware(auth.ScopeGrading))
+	gradingResultRouter.GET("/list", h.ListGradingResults)
+	gradingResultRouter.GET("/detail/:requestid", h.GetGradingResult)
 }

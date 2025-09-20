@@ -17,15 +17,15 @@ func NewFileStore(db *bun.DB) *FileStore {
 	}
 }
 
-func (fs *FileStore) RegisterFileLocation(ctx *context.Context, fileLocation *model.FileLocation) error {
+func (fs *FileStore) RegisterFileLocation(ctx context.Context, fileLocation *model.FileLocation) error {
 	_, err := fs.db.NewInsert().Model(fileLocation).Returning("id"). // Return auto-incremented ID
-										Exec(*ctx)
+										Exec(ctx)
 	return err
 }
 
-func (fs *FileStore) GetFileLocation(ctx *context.Context, id int64) (*model.FileLocation, error) {
+func (fs *FileStore) GetFileLocation(ctx context.Context, id int64) (*model.FileLocation, error) {
 	var fileLocation model.FileLocation
-	err := fs.db.NewSelect().Model(&fileLocation).Where("id = ?", id).Scan(*ctx)
+	err := fs.db.NewSelect().Model(&fileLocation).Where("id = ?", id).Scan(ctx)
 	if err != nil {
 		return nil, err
 	}

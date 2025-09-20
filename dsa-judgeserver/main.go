@@ -74,7 +74,7 @@ func main() {
 		// Infinite loop to keep the program running
 
 		// Fetch Pending tasks from JobQueue
-		jobs, err := jobQueueStore.FetchJobs(&ctx, queuestatus.Pending, 1)
+		jobs, err := jobQueueStore.FetchJobs(ctx, queuestatus.Pending, 1)
 
 		if err != nil {
 			logger.Error("Failed to fetch jobs", slog.String("error", err.Error()))
@@ -93,7 +93,7 @@ func main() {
 		logger.Info("Processing job", slog.Int64("job_id", job.ID))
 
 		// Update the job status to "processing"
-		err = jobQueueStore.UpdateJobStatus(&ctx, job.ID, queuestatus.Processing)
+		err = jobQueueStore.UpdateJobStatus(ctx, job.ID, queuestatus.Processing)
 
 		if err != nil {
 			logger.Error("Failed to update job status to processing", slog.String("error", err.Error()))
@@ -105,7 +105,7 @@ func main() {
 		if err != nil {
 			logger.Error("Failed to execute job", slog.String("error", err.Error()))
 			// Update the job status to "failed"
-			err = jobQueueStore.UpdateJobStatus(&ctx, job.ID, queuestatus.Failed)
+			err = jobQueueStore.UpdateJobStatus(ctx, job.ID, queuestatus.Failed)
 			if err != nil {
 				logger.Error("Failed to update job status to failed", slog.String("error", err.Error()))
 				panic(err)
@@ -115,7 +115,7 @@ func main() {
 		}
 
 		// Update the job status to "done" and store the result
-		err = jobQueueStore.UpdateJobStatus(&ctx, job.ID, queuestatus.Done)
+		err = jobQueueStore.UpdateJobStatus(ctx, job.ID, queuestatus.Done)
 		if err != nil {
 			logger.Error("Failed to update job status to done", slog.String("error", err.Error()))
 			panic(err)
@@ -134,7 +134,7 @@ func main() {
 		}
 
 		// Insert the result into the database
-		err = jobQueueStore.InsertResult(&ctx, resultEntry)
+		err = jobQueueStore.InsertResult(ctx, resultEntry)
 		if err != nil {
 			logger.Error("Failed to insert result", slog.String("error", err.Error()))
 			panic(err)

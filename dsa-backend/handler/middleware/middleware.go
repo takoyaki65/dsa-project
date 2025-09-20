@@ -72,7 +72,7 @@ func CheckValidityOfJWTMiddleware(db *bun.DB) echo.MiddlewareFunc {
 			userStore := database.NewUserStore(db)
 
 			// Check login history existence
-			loginHistory, err := userStore.GetLoginHistory(&ctx, claims.UserID, claims.IssuedAt.Time)
+			loginHistory, err := userStore.GetLoginHistory(ctx, claims.UserID, claims.IssuedAt.Time)
 
 			if err != nil {
 				return echo.NewHTTPError(http.StatusInternalServerError, "failed to get login history")

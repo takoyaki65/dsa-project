@@ -4,26 +4,27 @@ import (
 	"context"
 	"time"
 
+	"github.com/takoyaki65/dsa-project/database/model/userrole"
 	"github.com/uptrace/bun"
 )
 
 type UserRole struct {
 	bun.BaseModel `bun:"table:userrole"`
 
-	ID   int64  `bun:"id,pk,autoincrement" json:"id"`
-	Name string `bun:"name,notnull" json:"name"`
+	ID   userrole.Role `bun:"id,pk,autoincrement" json:"id"`
+	Name string        `bun:"name,notnull" json:"name"`
 }
 
 type UserList struct {
 	bun.BaseModel `bun:"table:userlist"`
 
-	ID             int64     `bun:",pk,autoincrement" json:"id"`
-	UserID         string    `bun:"userid,type:varchar(255),notnull,unique" json:"userid"`
-	Name           string    `bun:"name,type:varchar(255),notnull" json:"name"`
-	HashedPassword string    `bun:"hashed_password,type:varchar(255),notnull" json:"hashed_password"`
-	RoleID         int64     `bun:"role_id,notnull" json:"role_id"`
-	DisabledAt     time.Time `bun:"disabled_at,notnull" json:"disabled_at"`
-	Email          *string   `bun:"email,type:varchar(255)" json:"email,omitempty"`
+	ID             int64         `bun:",pk,autoincrement" json:"id"`
+	UserID         string        `bun:"userid,type:varchar(255),notnull,unique" json:"userid"`
+	Name           string        `bun:"name,type:varchar(255),notnull" json:"name"`
+	HashedPassword string        `bun:"hashed_password,type:varchar(255),notnull" json:"hashed_password"`
+	RoleID         userrole.Role `bun:"role_id,notnull" json:"role_id"`
+	DisabledAt     time.Time     `bun:"disabled_at,notnull" json:"disabled_at"`
+	Email          *string       `bun:"email,type:varchar(255)" json:"email,omitempty"`
 
 	UserRole *UserRole `bun:"rel:has-one,join:role_id=id"`
 }

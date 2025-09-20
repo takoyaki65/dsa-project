@@ -121,7 +121,7 @@ func (h *Handler) GetProblemInfo(c echo.Context) error {
 	rightsToSeeAll := jwtClaim.HasAllScopes(auth.ScopeGrading) || jwtClaim.HasAllScopes(auth.ScopeAdmin)
 
 	// fetch lecture
-	lecture, err := h.problemStore.GetLectureByID(&ctx, req.LectureID)
+	lecture, err := h.problemStore.GetLectureByID(ctx, req.LectureID)
 	if err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, response.NewError("failed to get lecture"))
 	}
@@ -132,13 +132,13 @@ func (h *Handler) GetProblemInfo(c echo.Context) error {
 	}
 
 	// Fetch problem entry in DB
-	problem, err := h.problemStore.GetProblemByID(&ctx, req.LectureID, req.ProblemID)
+	problem, err := h.problemStore.GetProblemByID(ctx, req.LectureID, req.ProblemID)
 	if err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, response.NewError("failed to get problem"))
 	}
 
 	// read description md file
-	fileLocation, err := h.fileStore.GetFileLocation(&ctx, problem.ResourceLocationID)
+	fileLocation, err := h.fileStore.GetFileLocation(ctx, problem.ResourceLocationID)
 	if err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, response.NewError("failed to get file location"))
 	}

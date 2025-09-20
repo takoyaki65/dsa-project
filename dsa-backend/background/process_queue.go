@@ -22,7 +22,7 @@ func ProcessJobQueue(ctx context.Context, db *bun.DB, logger *echo.Logger) {
 		// Fetch "processing" jobs from the job queue
 		// and then update the corresponding request status to "judging"
 		// -------------------------------------------------------------------------
-		processingJobs, err := jobQueueStore.FetchJobs(&ctx, queuestatus.Processing, 100)
+		processingJobs, err := jobQueueStore.FetchJobs(ctx, queuestatus.Processing, 100)
 		if err != nil {
 			(*logger).Fatalf("Failed to fetch processing jobs: %v", err)
 			continue
@@ -35,9 +35,9 @@ func ProcessJobQueue(ctx context.Context, db *bun.DB, logger *echo.Logger) {
 		for _, job := range processingJobs {
 			switch job.RequestType {
 			case queuetype.Validation:
-				err = requestStore.UpdateValidationRequestStatus(&ctx, job.RequestID, requeststatus.Judging)
+				err = requestStore.UpdateValidationRequestStatus(ctx, job.RequestID, requeststatus.Judging)
 			case queuetype.Grading:
-				err = requestStore.UpdateGradingRequestStatus(&ctx, job.RequestID, requeststatus.Judging)
+				err = requestStore.UpdateGradingRequestStatus(ctx, job.RequestID, requeststatus.Judging)
 			default:
 				(*logger).Errorf("Unknown request type: %s", job.RequestType)
 				continue
@@ -52,7 +52,7 @@ func ProcessJobQueue(ctx context.Context, db *bun.DB, logger *echo.Logger) {
 		// Fetch "failed" jobs from the job queue
 		// and then update the result of corresponding request to "IE"
 		// -------------------------------------------------------------------------
-		failedJobs, err := jobQueueStore.FetchJobs(&ctx, queuestatus.Failed, 100)
+		failedJobs, err := jobQueueStore.FetchJobs(ctx, queuestatus.Failed, 100)
 		if err != nil {
 			(*logger).Fatalf("Failed to fetch failed jobs: %v", err)
 			continue
@@ -65,9 +65,9 @@ func ProcessJobQueue(ctx context.Context, db *bun.DB, logger *echo.Logger) {
 		for _, job := range failedJobs {
 			switch job.RequestType {
 			case queuetype.Validation:
-				err = requestStore.UpdateValidationRequestStatus(&ctx, job.RequestID, requeststatus.IE)
+				err = requestStore.UpdateValidationRequestStatus(ctx, job.RequestID, requeststatus.IE)
 			case queuetype.Grading:
-				err = requestStore.UpdateGradingRequestStatus(&ctx, job.RequestID, requeststatus.IE)
+				err = requestStore.UpdateGradingRequestStatus(ctx, job.RequestID, requeststatus.IE)
 			default:
 				(*logger).Errorf("Unknown request type: %s", job.RequestType)
 				continue
@@ -79,7 +79,7 @@ func ProcessJobQueue(ctx context.Context, db *bun.DB, logger *echo.Logger) {
 			}
 
 			// Delete the failed job from the job queue
-			err = jobQueueStore.DeleteJobEntry(&ctx, job.ID)
+			err = jobQueueStore.DeleteJobEntry(ctx, job.ID)
 			if err != nil {
 				(*logger).Errorf("Failed to delete failed job ID %d: %v", job.ID, err)
 				continue
@@ -89,7 +89,7 @@ func ProcessJobQueue(ctx context.Context, db *bun.DB, logger *echo.Logger) {
 		// -------------------------------------------------------------------------
 		// Fetch results from result queue
 		// -------------------------------------------------------------------------
-		results, err := jobQueueStore.FetchResults(&ctx, 100)
+		results, err := jobQueueStore.FetchResults(ctx, 100)
 		if err != nil {
 			(*logger).Errorf("Failed to fetch results: %v", err)
 			continue
@@ -110,9 +110,9 @@ func ProcessJobQueue(ctx context.Context, db *bun.DB, logger *echo.Logger) {
 			var err error
 			switch job.RequestType {
 			case queuetype.Validation:
-				err = requestStore.UpdateResultOfValidationRequest(&ctx, job.RequestID, result.ResultID, result.Log)
+				err = requestStore.UpdateResultOfValidationRequest(ctx, job.RequestID, result.ResultID, result.Log)
 			case queuetype.Grading:
-				err = requestStore.UpdateResultOfGradingRequest(&ctx, job.RequestID, result.ResultID, result.Log)
+				err = requestStore.UpdateResultOfGradingRequest(ctx, job.RequestID, result.ResultID, result.Log)
 			default:
 				(*logger).Errorf("Unknown request type: %s", job.RequestType)
 				continue
@@ -123,13 +123,13 @@ func ProcessJobQueue(ctx context.Context, db *bun.DB, logger *echo.Logger) {
 			}
 
 			// Delete the processed result entry from job queue and result queue
-			err = jobQueueStore.DeleteResultEntry(&ctx, result.ID)
+			err = jobQueueStore.DeleteResultEntry(ctx, result.ID)
 			if err != nil {
 				(*logger).Errorf("Failed to delete result ID %d: %v", result.ID, err)
 				continue
 			}
 
-			err = jobQueueStore.DeleteJobEntry(&ctx, job.ID)
+			err = jobQueueStore.DeleteJobEntry(ctx, job.ID)
 			if err != nil {
 				(*logger).Errorf("Failed to delete job ID %d: %v", job.ID, err)
 				continue

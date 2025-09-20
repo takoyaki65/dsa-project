@@ -11,7 +11,7 @@ type ProblemStore struct {
 	db *bun.DB
 }
 
-func (ps *ProblemStore) FetchResourcePath(ctx *context.Context, lectureID int64, problemID int64) (string, error) {
+func (ps *ProblemStore) FetchResourcePath(ctx context.Context, lectureID int64, problemID int64) (string, error) {
 	// Fetch the resource path for the given lectureID and problemID
 	// only select FileLocation.path
 	var path string
@@ -20,27 +20,27 @@ func (ps *ProblemStore) FetchResourcePath(ctx *context.Context, lectureID int64,
 		Column("filelocation.path").
 		Join("JOIN filelocation ON problem.resource_location_id = filelocation.id").
 		Where("problem.lecture_id = ? AND problem.problem_id = ?", lectureID, problemID).
-		Scan(*ctx, &path)
+		Scan(ctx, &path)
 	if err != nil {
 		return "", err
 	}
 	return path, nil
 }
 
-func (ps *ProblemStore) GetLectureAndAllProblems(context *context.Context, d int64) (model.Lecture, error) {
+func (ps *ProblemStore) GetLectureAndAllProblems(ctx context.Context, d int64) (model.Lecture, error) {
 	var lecture model.Lecture
-	err := ps.db.NewSelect().Model(&lecture).Relation("Problems").Where("id = ?", d).Scan(*context)
+	err := ps.db.NewSelect().Model(&lecture).Relation("Problems").Where("id = ?", d).Scan(ctx)
 	if err != nil {
 		return model.Lecture{}, err
 	}
 	return lecture, nil
 }
 
-func (ps *ProblemStore) GetProblemByID(context *context.Context, lectureID int64, problemID int64) (*model.Problem, error) {
+func (ps *ProblemStore) GetProblemByID(ctx context.Context, lectureID int64, problemID int64) (*model.Problem, error) {
 	var problem model.Problem
 	err := ps.db.NewSelect().Model(&problem).
 		Where("lecture_id = ? AND problem_id = ?", lectureID, problemID).
-		Scan(*context)
+		Scan(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -58,16 +58,16 @@ func (ps *ProblemStore) GetAllLectureAndProblems(ctx context.Context) (*[]model.
 	return &lectures, nil
 }
 
-func (ps *ProblemStore) DeleteLectureEntry(context *context.Context, i int64) error {
-	_, err := ps.db.NewDelete().Model(&model.Lecture{}).Where("id = ?", i).Exec(*context)
+func (ps *ProblemStore) DeleteLectureEntry(ctx context.Context, i int64) error {
+	_, err := ps.db.NewDelete().Model(&model.Lecture{}).Where("id = ?", i).Exec(ctx)
 	if err != nil {
 		return err
 	}
 	return nil
 }
 
-func (ps *ProblemStore) UpdateLectureEntry(context *context.Context, lectureEntryInDB *model.Lecture) error {
-	_, err := ps.db.NewUpdate().Model(lectureEntryInDB).Where("id = ?", lectureEntryInDB.ID).Exec(*context)
+func (ps *ProblemStore) UpdateLectureEntry(ctx context.Context, lectureEntryInDB *model.Lecture) error {
+	_, err := ps.db.NewUpdate().Model(lectureEntryInDB).Where("id = ?", lectureEntryInDB.ID).Exec(ctx)
 	if err != nil {
 		return err
 	}
@@ -80,54 +80,54 @@ func NewProblemStore(db *bun.DB) *ProblemStore {
 	}
 }
 
-func (ps *ProblemStore) GetLectureByID(ctx *context.Context, id int64) (model.Lecture, error) {
+func (ps *ProblemStore) GetLectureByID(ctx context.Context, id int64) (model.Lecture, error) {
 	var lecture model.Lecture
-	err := ps.db.NewSelect().Model(&lecture).Where("id = ?", id).Scan(*ctx)
+	err := ps.db.NewSelect().Model(&lecture).Where("id = ?", id).Scan(ctx)
 	if err != nil {
 		return model.Lecture{}, err
 	}
 	return lecture, nil
 }
 
-func (ps *ProblemStore) CreateLectureEntry(ctx *context.Context, lec *model.Lecture) error {
-	_, err := ps.db.NewInsert().Model(lec).Exec(*ctx)
+func (ps *ProblemStore) CreateLectureEntry(ctx context.Context, lec *model.Lecture) error {
+	_, err := ps.db.NewInsert().Model(lec).Exec(ctx)
 	if err != nil {
 		return err
 	}
 	return nil
 }
 
-func (ps *ProblemStore) RegisterProblem(ctx *context.Context, problem *model.Problem) error {
-	_, err := ps.db.NewInsert().Model(problem).Exec(*ctx)
+func (ps *ProblemStore) RegisterProblem(ctx context.Context, problem *model.Problem) error {
+	_, err := ps.db.NewInsert().Model(problem).Exec(ctx)
 	if err != nil {
 		return err
 	}
 	return nil
 }
 
-func (ps *ProblemStore) GetProblem(ctx *context.Context, lectureID, problemID int64) (*model.Problem, error) {
+func (ps *ProblemStore) GetProblem(ctx context.Context, lectureID, problemID int64) (*model.Problem, error) {
 	var problem model.Problem
 	err := ps.db.NewSelect().Model(&problem).
 		Where("lecture_id = ? AND problem_id = ?", lectureID, problemID).
-		Scan(*ctx)
+		Scan(ctx)
 	if err != nil {
 		return nil, err
 	}
 	return &problem, nil
 }
 
-func (ps *ProblemStore) CheckProblemExists(ctx *context.Context, lectureID, problemID int64) (bool, error) {
+func (ps *ProblemStore) CheckProblemExists(ctx context.Context, lectureID, problemID int64) (bool, error) {
 	count, err := ps.db.NewSelect().Model(&model.Problem{}).
 		Where("lecture_id = ? AND problem_id = ?", lectureID, problemID).
-		Count(*ctx)
+		Count(ctx)
 	if err != nil {
 		return false, err
 	}
 	return count > 0, nil
 }
 
-func (ps *ProblemStore) DeleteProblem(ctx *context.Context, lectureID, problemID int64) error {
-	_, err := ps.db.NewDelete().Model(&model.Problem{}).Where("lecture_id = ? AND problem_id = ?", lectureID, problemID).Exec(*ctx)
+func (ps *ProblemStore) DeleteProblem(ctx context.Context, lectureID, problemID int64) error {
+	_, err := ps.db.NewDelete().Model(&model.Problem{}).Where("lecture_id = ? AND problem_id = ?", lectureID, problemID).Exec(ctx)
 	if err != nil {
 		return err
 	}

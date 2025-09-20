@@ -88,7 +88,7 @@ func (h *Handler) Login(c echo.Context) error {
 
 	plain_password := loginRequest.Password
 
-	userRecord, err := h.userStore.GetUserByUserID(&ctx, loginRequest.UserId)
+	userRecord, err := h.userStore.GetUserByUserID(ctx, loginRequest.UserId)
 
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, response.NewError("failed to get user: "+err.Error()))
@@ -121,7 +121,7 @@ func (h *Handler) Login(c echo.Context) error {
 
 	// register LoginHistory
 	{
-		err := h.userStore.RegisterLoginHistory(&ctx, &model.LoginHistory{
+		err := h.userStore.RegisterLoginHistory(ctx, &model.LoginHistory{
 			UserID:   userRecord.UserID,
 			LoginAt:  issuedAt,
 			LogoutAt: expiredAt,
@@ -171,7 +171,7 @@ func (h *Handler) GetCurrentUser(c echo.Context) error {
 	}
 
 	// Get User data from db
-	userRecord, err := h.userStore.GetUserByUserID(&ctx, claim.UserID)
+	userRecord, err := h.userStore.GetUserByUserID(ctx, claim.UserID)
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, response.NewError("failed to get user: "+err.Error()))
 	}
@@ -208,7 +208,7 @@ func (h *Handler) Logout(c echo.Context) error {
 	}
 
 	// Update logout time in login history
-	err = h.userStore.UpdateLogoutTime(&ctx, claim.UserID, claim.IssuedAt.Time, time.Now())
+	err = h.userStore.UpdateLogoutTime(ctx, claim.UserID, claim.IssuedAt.Time, time.Now())
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, response.NewError("failed to update logout time: "+err.Error()))
 	}

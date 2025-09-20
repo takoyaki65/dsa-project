@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/takoyaki65/dsa-project/database/model"
+	"github.com/takoyaki65/dsa-project/database/model/userrole"
 	"github.com/uptrace/bun"
 )
 
@@ -13,11 +14,11 @@ type UserStore struct {
 	db *bun.DB
 }
 
-func (us UserStore) UpdateLogoutTime(context *context.Context, userid string, login_at time.Time, logout_at time.Time) error {
+func (us UserStore) UpdateLogoutTime(ctx context.Context, userid string, login_at time.Time, logout_at time.Time) error {
 	_, err := us.db.NewUpdate().Model(&model.LoginHistory{}).
 		Set("logout_at = ?", logout_at).
 		Where("user_id = ? AND login_at = ?", userid, login_at).
-		Exec(*context)
+		Exec(ctx)
 	return err
 }
 
@@ -27,19 +28,19 @@ func NewUserStore(db *bun.DB) *UserStore {
 	}
 }
 
-func (us *UserStore) GetIDByUserID(ctx *context.Context, user_id string) (*int64, error) {
+func (us *UserStore) GetIDByUserID(ctx context.Context, user_id string) (*int64, error) {
 	var id int64
-	err := us.db.NewSelect().Model((*model.UserList)(nil)).Column("id").Where("userid = ?", user_id).Scan(*ctx, &id)
+	err := us.db.NewSelect().Model((*model.UserList)(nil)).Column("id").Where("userid = ?", user_id).Scan(ctx, &id)
 	if err != nil {
 		return nil, err
 	}
 	return &id, nil
 }
 
-func (us *UserStore) GetUserByUserID(ctx *context.Context, user_id string) (*model.UserList, error) {
+func (us *UserStore) GetUserByUserID(ctx context.Context, user_id string) (*model.UserList, error) {
 	var users []model.UserList
 
-	err := us.db.NewSelect().Model(&users).Relation("UserRole").Where("userid = ?", user_id).Scan(*ctx)
+	err := us.db.NewSelect().Model(&users).Relation("UserRole").Where("userid = ?", user_id).Scan(ctx)
 
 	if err != nil {
 		return nil, err
@@ -56,10 +57,10 @@ func (us *UserStore) GetUserByUserID(ctx *context.Context, user_id string) (*mod
 	return &users[0], err
 }
 
-func (us *UserStore) GetUserListByUserRole(ctx *context.Context, role string) (*[]model.UserList, error) {
+func (us *UserStore) GetUserListByUserRole(ctx context.Context, role userrole.Role) (*[]model.UserList, error) {
 	var users []model.UserList
 
-	err := us.db.NewSelect().Model(&users).Relation("UserRole").Where("user_role.name = ?", role).Scan(*ctx)
+	err := us.db.NewSelect().Model(&users).Where("userlist.role_id = ?", role).Scan(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -67,32 +68,20 @@ func (us *UserStore) GetUserListByUserRole(ctx *context.Context, role string) (*
 	return &users, nil
 }
 
-func (us *UserStore) GetRoleID(ctx *context.Context, role string) (int64, error) {
-	var roleID int64
-	var userRole model.UserRole
-
-	err := us.db.NewSelect().Model(&userRole).Column("id").Where("name = ?", role).Scan(*ctx, &roleID)
-	if err != nil {
-		return 0, fmt.Errorf("failed to get role ID for %s: %w", role, err)
-	}
-
-	return roleID, nil
-}
-
-func (us *UserStore) CreateUser(ctx *context.Context, user *model.UserList) error {
-	_, err := us.db.NewInsert().Model(user).Exec(*ctx)
+func (us *UserStore) CreateUser(ctx context.Context, user *model.UserList) error {
+	_, err := us.db.NewInsert().Model(user).Exec(ctx)
 	if err != nil {
 		return fmt.Errorf("failed to create user: %w", err)
 	}
 	return nil
 }
 
-func (us *UserStore) GetLoginHistory(ctx *context.Context, userID string, loginAt time.Time) (*model.LoginHistory, error) {
+func (us *UserStore) GetLoginHistory(ctx context.Context, userID string, loginAt time.Time) (*model.LoginHistory, error) {
 	var loginHistory model.LoginHistory
 
 	err := us.db.NewSelect().Model(&loginHistory).
 		Where("user_id = ? AND login_at = ?", userID, loginAt).
-		Scan(*ctx)
+		Scan(ctx)
 
 	if err != nil {
 		return nil, fmt.Errorf("failed to get login history: %w", err)
@@ -101,8 +90,8 @@ func (us *UserStore) GetLoginHistory(ctx *context.Context, userID string, loginA
 	return &loginHistory, nil
 }
 
-func (us *UserStore) RegisterLoginHistory(ctx *context.Context, loginHistory *model.LoginHistory) error {
-	_, err := us.db.NewInsert().Model(loginHistory).Exec(*ctx)
+func (us *UserStore) RegisterLoginHistory(ctx context.Context, loginHistory *model.LoginHistory) error {
+	_, err := us.db.NewInsert().Model(loginHistory).Exec(ctx)
 	if err != nil {
 		return fmt.Errorf("failed to register loginHistory: %w", err)
 	}
