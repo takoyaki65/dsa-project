@@ -5,8 +5,9 @@ import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { oneDark } from 'react-syntax-highlighter/dist/esm/styles/prism';
 import { useParams } from "react-router";
 import NotFoundPage from "./NotFound";
-import { useAuthQuery } from "../auth/hooks";
+import { useAuthMutation, useAuthQuery } from "../auth/hooks";
 import type { JSX } from "react";
+import SubmitFormSection from "../components/SubmitFormSection";
 
 interface ProblemDetail {
   lecture_id: number;
@@ -19,6 +20,43 @@ interface ProblemDetail {
 };
 
 const renderProblemDetail = (detail: ProblemDetail): JSX.Element => {
+  const submitMutation = useAuthMutation<any, FormData>({
+    endpoint: `/problem/validate/${detail.lecture_id}/${detail.problem_id}`,
+    options: {
+      method: 'POST',
+      axiosConfig: {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      },
+      mutationOptions: {
+        onSuccess: (data) => {
+          console.log("Submission successful:", data);
+        },
+        onError: (error) => {
+          console.error("Submission error:", error);
+        },
+      },
+    },
+  });
+
+  const handleOnSubmit = async (files: File[]) => {
+    const formData = new FormData();
+
+    files.forEach(file => {
+      formData.append('files', file);
+    });
+
+    try {
+      const result = await submitMutation.mutateAsync(formData);
+      console.log("Submission successful:", result);
+
+      // TODO: move to result page.
+    } catch (error) {
+      console.error("Submission error:", error);
+    }
+  }
+
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       {/* Header Section */}
@@ -168,6 +206,11 @@ const renderProblemDetail = (detail: ProblemDetail): JSX.Element => {
             </div>
           </div>
 
+          {/* Submit Form Section */}
+          <SubmitFormSection
+            onSubmit={handleOnSubmit}
+            isLoading={submitMutation.isPending}
+          />
         </div>
       </div>
     </div>
