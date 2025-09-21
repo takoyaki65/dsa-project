@@ -1,5 +1,57 @@
 basePath: /api
 definitions:
+  problem.DetailOutput:
+    properties:
+      build_logs:
+        items:
+          $ref: '#/definitions/problem.DetailedTaskLog'
+        type: array
+      id:
+        type: integer
+      judge_logs:
+        items:
+          $ref: '#/definitions/problem.DetailedTaskLog'
+        type: array
+      lecture_id:
+        type: integer
+      memory_kb:
+        type: integer
+      problem_id:
+        type: integer
+      result_id:
+        type: integer
+      submission_ts:
+        type: integer
+      time_ms:
+        type: integer
+      ts:
+        type: integer
+      uploaded_files:
+        items:
+          $ref: '#/definitions/util.FileData'
+        type: array
+      user_id:
+        type: string
+    type: object
+  problem.DetailedTaskLog:
+    properties:
+      exit_code:
+        type: integer
+      memory_kb:
+        type: integer
+      result_id:
+        type: integer
+      stderr:
+        description: base64 encoded
+        type: string
+      stdout:
+        description: base64 encoded
+        type: string
+      test_case_id:
+        type: integer
+      time_ms:
+        type: integer
+    type: object
   problem.LectureEntryRequest:
     properties:
       deadline:
@@ -18,6 +70,34 @@ definitions:
     - id
     - start_date
     - title
+    type: object
+  problem.ListingOutput:
+    properties:
+      last_id:
+        type: integer
+      lecture_info:
+        items:
+          $ref: '#/definitions/util.LectureEntry'
+        type: array
+      results:
+        items:
+          $ref: '#/definitions/problem.ValidationResult'
+        type: array
+    type: object
+  problem.ValidationResult:
+    properties:
+      id:
+        type: integer
+      lecture_id:
+        type: integer
+      problem_id:
+        type: integer
+      result:
+        type: integer
+      ts:
+        type: integer
+      user_id:
+        type: string
     type: object
   response.Error:
     properties:
@@ -55,6 +135,19 @@ definitions:
         type: string
       name:
         type: string
+    type: object
+  util.FileData:
+    properties:
+      compression:
+        description: e.g., "gzip"
+        type: string
+      data:
+        description: base64 encoded data, compressed by gzip
+        type: string
+      filename:
+        type: string
+      original_size:
+        type: integer
     type: object
   util.LectureEntry:
     properties:
@@ -140,7 +233,7 @@ paths:
         - grading
       summary: Create a new lecture entry
       tags:
-      - problem
+      - Update
   /problem/crud/create/{lectureid}/{problemid}:
     post:
       consumes:
@@ -214,7 +307,7 @@ paths:
         - grading
       summary: Delete an existing lecture entry
       tags:
-      - problem
+      - Update
   /problem/crud/delete/{lectureid}/{problemid}:
     delete:
       consumes:
@@ -293,7 +386,7 @@ paths:
         - grading
       summary: Update an existing lecture entry
       tags:
-      - problem
+      - Update
   /problem/fetch/detail/{lectureid}/{problemid}:
     get:
       description: Get detailed information about a specific problem within a lecture.
@@ -334,7 +427,7 @@ paths:
         - me
       summary: Get problem detail
       tags:
-      - problem
+      - Fetch
   /problem/fetch/list:
     get:
       description: get all lecture entries, each containing its problem entries. When
@@ -358,7 +451,7 @@ paths:
         - me
       summary: list all problem entry, nested in lecture entry.
       tags:
-      - problem
+      - Fetch
   /problem/judge/{lectureid}/{problemid}:
     post:
       consumes:
@@ -420,7 +513,7 @@ paths:
         - grading
       summary: Request grading
       tags:
-      - problem
+      - Submit
   /problem/judge/batch/{lectureid}:
     post:
       consumes:
@@ -474,7 +567,88 @@ paths:
       summary: Request batched grading requests for all problems in a specific lecture
         entry.
       tags:
-      - problem
+      - Submit
+  /problem/result/validation/detail/{id}:
+    get:
+      description: Get detailed information about a specific validation result.
+      parameters:
+      - description: Validation Result ID
+        format: int64
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/problem.DetailOutput'
+        "400":
+          description: Invalid request
+          schema:
+            $ref: '#/definitions/response.Error'
+        "401":
+          description: Failed to get user info
+          schema:
+            $ref: '#/definitions/response.Error'
+        "404":
+          description: Validation result not found
+          schema:
+            $ref: '#/definitions/response.Error'
+        "500":
+          description: "Failed to get validation result\"\t\"File location not found\"\t\"Failed
+            to fetch uploaded files\"\t\"Failed to read build stdout\"\t\"Failed to
+            read build stderr\"\t\"Failed to read judge stdout\"\t\"Failed to read
+            judge stderr"
+          schema:
+            $ref: '#/definitions/response.Error'
+      security:
+      - OAuth2Password:
+        - me
+      summary: Get Validation Result Detail
+      tags:
+      - Result
+  /problem/result/validation/list:
+    get:
+      description: List validation results (not detailed, just summary) for the current
+        user.
+      parameters:
+      - default: -1
+        description: The last ID received in the previous request. Use -1 to get the
+          most recent results.
+        format: int64
+        in: query
+        minimum: -1
+        name: last
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/problem.ListingOutput'
+        "400":
+          description: Invalid request
+          schema:
+            $ref: '#/definitions/response.Error'
+        "401":
+          description: Failed to get user info
+          schema:
+            $ref: '#/definitions/response.Error'
+        "500":
+          description: "Failed to get lecture entries\"\t\"Failed to get validation
+            results"
+          schema:
+            $ref: '#/definitions/response.Error'
+      security:
+      - OAuth2Password:
+        - grading
+      summary: List Validation Results for Current User
+      tags:
+      - Result
   /problem/validate/{lectureid}/{problemid}:
     post:
       consumes:
@@ -520,7 +694,7 @@ paths:
         - me
       summary: Request validation
       tags:
-      - problem
+      - Submit
   /problem/validate/batch/{lectureid}:
     post:
       consumes:
@@ -562,7 +736,7 @@ paths:
         - me
       summary: Request validation for all problems in a specific lecture entry.
       tags:
-      - problem
+      - Submit
   /user/login:
     post:
       consumes:

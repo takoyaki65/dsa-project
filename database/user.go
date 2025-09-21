@@ -60,7 +60,7 @@ func (us *UserStore) GetUserByUserID(ctx context.Context, user_id string) (*mode
 func (us *UserStore) GetUserListByUserRole(ctx context.Context, role userrole.Role) (*[]model.UserList, error) {
 	var users []model.UserList
 
-	err := us.db.NewSelect().Model(&users).Where("userlist.role_id = ?", role).Scan(ctx)
+	err := us.db.NewSelect().Model(&users).Where("role_id = ?", role).Scan(ctx)
 	if err != nil {
 		return nil, err
 	}

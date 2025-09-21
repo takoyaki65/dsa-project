@@ -61,12 +61,21 @@ func (r *RequestStore) GetValidationResults(ctx context.Context, usercode int64,
 	err := r.db.NewSelect().Model(&results).
 		Where("usercode = ?", usercode).
 		Where("lecture_id IN (?)", bun.In(lecture_ids)).
-		Where("id < ?", last).
+		Where("id <= ?", last).
 		Order("id DESC").
 		Limit(limit).
 		Scan(ctx)
 
 	return results, err
+}
+
+func (r *RequestStore) GetValidationResultByID(ctx context.Context, id int64) (*model.ValidationRequest, error) {
+	var result model.ValidationRequest
+	err := r.db.NewSelect().Model(&result).Relation("FileLocation").Where("validation_request.id = ?", id).Scan(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return &result, nil
 }
 
 func NewRequestStore(db *bun.DB) *RequestStore {

@@ -32,7 +32,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "problem"
+                    "Update"
                 ],
                 "summary": "Create a new lecture entry",
                 "parameters": [
@@ -150,7 +150,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "problem"
+                    "Update"
                 ],
                 "summary": "Delete an existing lecture entry",
                 "parameters": [
@@ -265,7 +265,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "problem"
+                    "Update"
                 ],
                 "summary": "Update an existing lecture entry",
                 "parameters": [
@@ -322,7 +322,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "problem"
+                    "Fetch"
                 ],
                 "summary": "Get problem detail",
                 "parameters": [
@@ -385,7 +385,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "problem"
+                    "Fetch"
                 ],
                 "summary": "list all problem entry, nested in lecture entry.",
                 "responses": {
@@ -424,7 +424,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "problem"
+                    "Submit"
                 ],
                 "summary": "Request batched grading requests for all problems in a specific lecture entry.",
                 "parameters": [
@@ -503,7 +503,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "problem"
+                    "Submit"
                 ],
                 "summary": "Request grading",
                 "parameters": [
@@ -575,6 +575,123 @@ const docTemplate = `{
                 }
             }
         },
+        "/problem/result/validation/detail/{id}": {
+            "get": {
+                "security": [
+                    {
+                        "OAuth2Password": [
+                            "me"
+                        ]
+                    }
+                ],
+                "description": "Get detailed information about a specific validation result.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Result"
+                ],
+                "summary": "Get Validation Result Detail",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "format": "int64",
+                        "description": "Validation Result ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/problem.DetailOutput"
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid request",
+                        "schema": {
+                            "$ref": "#/definitions/response.Error"
+                        }
+                    },
+                    "401": {
+                        "description": "Failed to get user info",
+                        "schema": {
+                            "$ref": "#/definitions/response.Error"
+                        }
+                    },
+                    "404": {
+                        "description": "Validation result not found",
+                        "schema": {
+                            "$ref": "#/definitions/response.Error"
+                        }
+                    },
+                    "500": {
+                        "description": "Failed to get validation result\"\t\"File location not found\"\t\"Failed to fetch uploaded files\"\t\"Failed to read build stdout\"\t\"Failed to read build stderr\"\t\"Failed to read judge stdout\"\t\"Failed to read judge stderr",
+                        "schema": {
+                            "$ref": "#/definitions/response.Error"
+                        }
+                    }
+                }
+            }
+        },
+        "/problem/result/validation/list": {
+            "get": {
+                "security": [
+                    {
+                        "OAuth2Password": [
+                            "grading"
+                        ]
+                    }
+                ],
+                "description": "List validation results (not detailed, just summary) for the current user.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Result"
+                ],
+                "summary": "List Validation Results for Current User",
+                "parameters": [
+                    {
+                        "minimum": -1,
+                        "type": "integer",
+                        "format": "int64",
+                        "default": -1,
+                        "description": "The last ID received in the previous request. Use -1 to get the most recent results.",
+                        "name": "last",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/problem.ListingOutput"
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid request",
+                        "schema": {
+                            "$ref": "#/definitions/response.Error"
+                        }
+                    },
+                    "401": {
+                        "description": "Failed to get user info",
+                        "schema": {
+                            "$ref": "#/definitions/response.Error"
+                        }
+                    },
+                    "500": {
+                        "description": "Failed to get lecture entries\"\t\"Failed to get validation results",
+                        "schema": {
+                            "$ref": "#/definitions/response.Error"
+                        }
+                    }
+                }
+            }
+        },
         "/problem/validate/batch/{lectureid}": {
             "post": {
                 "security": [
@@ -592,7 +709,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "problem"
+                    "Submit"
                 ],
                 "summary": "Request validation for all problems in a specific lecture entry.",
                 "parameters": [
@@ -656,7 +773,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "problem"
+                    "Submit"
                 ],
                 "summary": "Request validation",
                 "parameters": [
@@ -830,6 +947,84 @@ const docTemplate = `{
         }
     },
     "definitions": {
+        "problem.DetailOutput": {
+            "type": "object",
+            "properties": {
+                "build_logs": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/problem.DetailedTaskLog"
+                    }
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "judge_logs": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/problem.DetailedTaskLog"
+                    }
+                },
+                "lecture_id": {
+                    "type": "integer"
+                },
+                "memory_kb": {
+                    "type": "integer"
+                },
+                "problem_id": {
+                    "type": "integer"
+                },
+                "result_id": {
+                    "type": "integer"
+                },
+                "submission_ts": {
+                    "type": "integer"
+                },
+                "time_ms": {
+                    "type": "integer"
+                },
+                "ts": {
+                    "type": "integer"
+                },
+                "uploaded_files": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/util.FileData"
+                    }
+                },
+                "user_id": {
+                    "type": "string"
+                }
+            }
+        },
+        "problem.DetailedTaskLog": {
+            "type": "object",
+            "properties": {
+                "exit_code": {
+                    "type": "integer"
+                },
+                "memory_kb": {
+                    "type": "integer"
+                },
+                "result_id": {
+                    "type": "integer"
+                },
+                "stderr": {
+                    "description": "base64 encoded",
+                    "type": "string"
+                },
+                "stdout": {
+                    "description": "base64 encoded",
+                    "type": "string"
+                },
+                "test_case_id": {
+                    "type": "integer"
+                },
+                "time_ms": {
+                    "type": "integer"
+                }
+            }
+        },
         "problem.LectureEntryRequest": {
             "type": "object",
             "required": [
@@ -852,6 +1047,49 @@ const docTemplate = `{
                     "default": "2025-10-01T10:00:00+09:00"
                 },
                 "title": {
+                    "type": "string"
+                }
+            }
+        },
+        "problem.ListingOutput": {
+            "type": "object",
+            "properties": {
+                "last_id": {
+                    "type": "integer"
+                },
+                "lecture_info": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/util.LectureEntry"
+                    }
+                },
+                "results": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/problem.ValidationResult"
+                    }
+                }
+            }
+        },
+        "problem.ValidationResult": {
+            "type": "object",
+            "properties": {
+                "id": {
+                    "type": "integer"
+                },
+                "lecture_id": {
+                    "type": "integer"
+                },
+                "problem_id": {
+                    "type": "integer"
+                },
+                "result": {
+                    "type": "integer"
+                },
+                "ts": {
+                    "type": "integer"
+                },
+                "user_id": {
                     "type": "string"
                 }
             }
@@ -907,6 +1145,25 @@ const docTemplate = `{
                 },
                 "name": {
                     "type": "string"
+                }
+            }
+        },
+        "util.FileData": {
+            "type": "object",
+            "properties": {
+                "compression": {
+                    "description": "e.g., \"gzip\"",
+                    "type": "string"
+                },
+                "data": {
+                    "description": "base64 encoded data, compressed by gzip",
+                    "type": "string"
+                },
+                "filename": {
+                    "type": "string"
+                },
+                "original_size": {
+                    "type": "integer"
                 }
             }
         },

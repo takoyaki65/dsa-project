@@ -14,7 +14,7 @@ import (
 //
 //	@Summary		list all problem entry, nested in lecture entry.
 //	@Description	get all lecture entries, each containing its problem entries. When you don't have scopes "grading" or "admin", you will only see lecture entries that are published.
-//	@Tags			problem
+//	@Tags			Fetch
 //	@Produce		json
 //	@Success		200	{array}		util.LectureEntry
 //	@Failure		500	{object}	response.Error	"failed to get lecture entries"
@@ -47,7 +47,7 @@ type ProblemDetailRequest struct {
 //
 //	@Summary		Get problem detail
 //	@Description	Get detailed information about a specific problem within a lecture.
-//	@Tags			problem
+//	@Tags			Fetch
 //	@Produce		json
 //	@Param			lectureid	path		int64	true	"Lecture ID"
 //	@Param			problemid	path		int64	true	"Problem ID"

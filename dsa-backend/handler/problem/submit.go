@@ -2,9 +2,9 @@ package problem
 
 import (
 	"context"
+	"dsa-backend/fileutil"
 	"dsa-backend/handler/auth"
 	"dsa-backend/handler/response"
-	"dsa-backend/util"
 	"fmt"
 	"io"
 	"net/http"
@@ -35,7 +35,7 @@ const (
 //
 //	@Summary		Request validation
 //	@Description	request a validation request, which is just compiling program codes, and executes some simple test cases.
-//	@Tags			problem
+//	@Tags			Submit
 //	@Accept			multipart/form-data
 //	@Produce		json
 //	@Param			lectureid	path		int					true	"Lecture ID"
@@ -253,7 +253,7 @@ type ProblemIDPathParam struct {
 //
 //	@Summary		Request validation for all problems in a specific lecture entry.
 //	@Description	This endpoint allows users to request validation for all problems within a specific lecture.
-//	@Tags			problem
+//	@Tags			Submit
 //	@Accept			multipart/form-data
 //	@Produce		json
 //	@Param			lectureid	path		int					true	"Lecture ID"
@@ -347,7 +347,7 @@ func (h *Handler) BatchValidation(c echo.Context) error {
 	}
 
 	// Extract zip file **safely**
-	if err := util.SafeExtractZip(tempFile.Name(), uploadDir); err != nil {
+	if err := fileutil.SafeExtractZip(tempFile.Name(), uploadDir); err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, response.NewError("Failed to extract zip file: "+err.Error()))
 	}
 
@@ -494,7 +494,7 @@ func (grp *GradingRequestParam) bind(c echo.Context) error {
 //
 //	@Summary		Request grading
 //	@Description	request a grading request, which is compiling program codes, and executes all test cases. note that the submission timestamp is specified by the user (manager or admin), and the target user ID (e.g., student) is also specified by the user.
-//	@Tags			problem
+//	@Tags			Submit
 //	@Accept			multipart/form-data
 //	@Produce		json
 //	@Param			lectureid	path		int					true	"Lecture ID"
@@ -731,7 +731,7 @@ func (bgp *BatchGradingParam) bind(c echo.Context) error {
 //
 //	@Summary		Request batched grading requests for all problems in a specific lecture entry.
 //	@Description	This endpoint allows instructors to request grading for all problems in a specific lecture entry in a single request.
-//	@Tags			problem
+//	@Tags			Submit
 //	@Accept			multipart/form-data
 //	@Produce		json
 //	@Param			lectureid	path		int					true	"Lecture ID"
@@ -839,7 +839,7 @@ func (h *Handler) BatchGrading(c echo.Context) error {
 	}
 
 	// Extract zip file **safely**
-	if err := util.SafeExtractZip(tempFile.Name(), uploadDir); err != nil {
+	if err := fileutil.SafeExtractZip(tempFile.Name(), uploadDir); err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, response.NewError("Failed to extract zip file: "+err.Error()))
 	}
 

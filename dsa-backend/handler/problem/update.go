@@ -2,8 +2,8 @@ package problem
 
 import (
 	"context"
+	"dsa-backend/fileutil"
 	"dsa-backend/handler/response"
-	"dsa-backend/util"
 	"io"
 	"net/http"
 	"os"
@@ -49,7 +49,7 @@ type ProblemResponse struct {
 //
 //	@Summary		Create a new lecture entry
 //	@Description	Create a new lecture entry, accessible by manager and admin.
-//	@Tags			problem
+//	@Tags			Update
 //	@Accept			json
 //	@Produce		json
 //	@param			lectureEntry	body		LectureEntryRequest	true	"Lecture entry details"
@@ -90,7 +90,7 @@ func (h *Handler) CreateLectureEntry(c echo.Context) error {
 //
 //	@Summary		Update an existing lecture entry
 //	@Description	Update an existing lecture entry, accessible by manager and admin.
-//	@Tags			problem
+//	@Tags			Update
 //	@Accept			json
 //	@Produce		json
 //	@Param			lectureid		path		int					true	"Lecture ID"
@@ -135,7 +135,7 @@ func (h *Handler) UpdateLectureEntry(c echo.Context) error {
 //
 //	@Summary		Delete an existing lecture entry
 //	@Description	Delete an existing lecture entry, accessible by manager and admin.
-//	@Tags			problem
+//	@Tags			Update
 //	@Accept			json
 //	@Produce		json
 //	@Param			lectureid	path		int					true	"Lecture ID"
@@ -235,7 +235,7 @@ func (h *Handler) RegisterProblem(c echo.Context) error {
 
 	// Extract the zip file
 	extractedDir := filepath.Join(tempDir, "extracted")
-	err = util.SafeExtractZip(zipPath, extractedDir)
+	err = fileutil.SafeExtractZip(zipPath, extractedDir)
 	if err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, response.NewError("failed to unzip file: "+err.Error()))
 	}
@@ -304,7 +304,7 @@ func (h *Handler) RegisterProblem(c echo.Context) error {
 	}
 
 	// Move to the extracted directory to the destination
-	err = util.CopyContents(extractedDir, destDir)
+	err = fileutil.CopyContents(extractedDir, destDir)
 	if err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, response.NewError("failed to move directory: "+err.Error()))
 	}
