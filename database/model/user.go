@@ -11,8 +11,8 @@ import (
 type UserRole struct {
 	bun.BaseModel `bun:"table:userrole"`
 
-	ID   userrole.Role `bun:"id,pk,autoincrement" json:"id"`
-	Name string        `bun:"name,notnull" json:"name"`
+	ID   userrole.Role     `bun:"id,pk,autoincrement" json:"id"`
+	Name userrole.RoleName `bun:"name,notnull" json:"name"`
 }
 
 type UserList struct {

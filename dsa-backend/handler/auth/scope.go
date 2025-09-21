@@ -1,60 +1,36 @@
 package auth
 
-import "fmt"
+import (
+	"fmt"
 
-const (
-	ScopeGrading = "grading"
-	ScopeAdmin   = "admin"
+	"github.com/takoyaki65/dsa-project/database/model/userrole"
 )
 
+type Scope string
+
 const (
-	RoleAdmin   = "admin"
-	RoleManager = "manager"
-	RoleStudent = "student"
+	ScopeGrading = Scope("grading")
+	ScopeAdmin   = Scope("admin")
 )
 
-func UserScopes() map[string][]string {
-	return map[string][]string{
-		RoleAdmin:   {ScopeGrading, ScopeAdmin},
-		RoleManager: {ScopeGrading},
-		RoleStudent: {},
+func UserScopes() map[userrole.Role][]Scope {
+	return map[userrole.Role][]Scope{
+		userrole.Admin:   {ScopeGrading, ScopeAdmin},
+		userrole.Manager: {ScopeGrading},
+		userrole.Student: {},
 	}
 }
 
-func UserRolesToID() map[string]int {
-	return map[string]int{
-		RoleAdmin:   1,
-		RoleManager: 2,
-		RoleStudent: 3,
-	}
-}
-
-func RoleIDToUserRole() map[int]string {
-	return map[int]string{
-		1: RoleAdmin,
-		2: RoleManager,
-		3: RoleStudent,
-	}
-}
-
-func GetUserScopes(userRole string) ([]string, error) {
+func GetUserScopes(userRole userrole.Role) ([]Scope, error) {
 	scopes, ok := UserScopes()[userRole]
 	if !ok {
-		return nil, fmt.Errorf("invalid user role: %s", userRole)
+		return nil, fmt.Errorf("invalid user role: %d", userRole)
 	}
 	return scopes, nil
 }
 
-func GetRoleID(userRole string) (int, error) {
-	roleID, ok := UserRolesToID()[userRole]
-	if !ok {
-		return 0, fmt.Errorf("invalid user role: %s", userRole)
-	}
-	return roleID, nil
-}
-
-func GetRoleName(roleID int) (string, error) {
-	roleName, ok := RoleIDToUserRole()[roleID]
+func GetRoleName(roleID userrole.Role) (userrole.RoleName, error) {
+	roleName, ok := userrole.RoleIDToUserRole()[roleID]
 	if !ok {
 		return "", fmt.Errorf("invalid role ID: %d", roleID)
 	}

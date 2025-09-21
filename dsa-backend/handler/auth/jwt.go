@@ -11,13 +11,13 @@ import (
 // JwtCustomClaims are custom claims extending default ones.
 // See https://github.com/golang-jwt/jwt for more examples
 type JwtCustomClaims struct {
-	ID     int64    `json:"id"`
-	UserID string   `json:"userid"`
-	Scopes []string `json:"scopes"`
+	ID     int64   `json:"id"`
+	UserID string  `json:"userid"`
+	Scopes []Scope `json:"scopes"`
 	jwt.RegisteredClaims
 }
 
-func IssueNewToken(id int64, userid string, scopes []string, secret string, issuedAt time.Time, expiredAt time.Time) (string, error) {
+func IssueNewToken(id int64, userid string, scopes []Scope, secret string, issuedAt time.Time, expiredAt time.Time) (string, error) {
 	newClaim := newJwtCustomClaims(id, userid, scopes, issuedAt, expiredAt)
 	newToken := createToken(newClaim)
 	newTokenStr, err := newToken.SignedString([]byte(secret))
@@ -31,7 +31,7 @@ func createToken(claim *JwtCustomClaims) *jwt.Token {
 	return jwt.NewWithClaims(jwt.SigningMethodHS256, claim)
 }
 
-func newJwtCustomClaims(id int64, userid string, scopes []string, issuedAt time.Time, expiredAt time.Time) *JwtCustomClaims {
+func newJwtCustomClaims(id int64, userid string, scopes []Scope, issuedAt time.Time, expiredAt time.Time) *JwtCustomClaims {
 	return &JwtCustomClaims{
 		ID:     id,
 		UserID: userid,
@@ -57,8 +57,8 @@ func GetJWTClaims(c *echo.Context) (*JwtCustomClaims, error) {
 	return claims, nil
 }
 
-func (c *JwtCustomClaims) HasAllScopes(scopes ...string) bool {
-	mapScopes := make(map[string]bool)
+func (c *JwtCustomClaims) HasAllScopes(scopes ...Scope) bool {
+	mapScopes := make(map[Scope]bool)
 	for _, s := range c.Scopes {
 		mapScopes[s] = true
 	}

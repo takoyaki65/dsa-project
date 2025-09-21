@@ -23,7 +23,7 @@ func JWTMiddleware(secret string) echo.MiddlewareFunc {
 	})
 }
 
-func RequiredScopesMiddleware(requiredScopes ...string) echo.MiddlewareFunc {
+func RequiredScopesMiddleware(requiredScopes ...auth.Scope) echo.MiddlewareFunc {
 	return func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(c echo.Context) error {
 			claims, err := auth.GetJWTClaims(&c)
@@ -31,27 +31,13 @@ func RequiredScopesMiddleware(requiredScopes ...string) echo.MiddlewareFunc {
 				return echo.NewHTTPError(http.StatusUnauthorized, "invalid token claims")
 			}
 
-			if !HasAllScopes(claims.Scopes, requiredScopes) {
+			if !claims.HasAllScopes(requiredScopes...) {
 				return echo.NewHTTPError(http.StatusForbidden, "insufficient rights")
 			}
 
 			return next(c)
 		}
 	}
-}
-
-func HasAllScopes(userScopes []string, requiredScopes []string) bool {
-	scopeMap := make(map[string]bool)
-	for _, scope := range userScopes {
-		scopeMap[scope] = true
-	}
-
-	for _, required := range requiredScopes {
-		if !scopeMap[required] {
-			return false
-		}
-	}
-	return true
 }
 
 func CheckValidityOfJWTMiddleware(db *bun.DB) echo.MiddlewareFunc {

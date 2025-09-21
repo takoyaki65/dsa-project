@@ -3,7 +3,6 @@ package problem
 import (
 	"context"
 	"dsa-backend/handler/auth"
-	"dsa-backend/handler/middleware"
 	"dsa-backend/handler/response"
 	"dsa-backend/util"
 	"fmt"
@@ -193,7 +192,7 @@ func (h *Handler) RequestValidation(c echo.Context) error {
 	filteredJudgeTasks := make([]model.TestCase, 0)
 
 	// Filter tasks if the role of requested user is not manager or admin.
-	if middleware.HasAllScopes(claim.Scopes, []string{"manager"}) || middleware.HasAllScopes(claim.Scopes, []string{"admin"}) {
+	if claim.HasAllScopes(auth.ScopeGrading) || claim.HasAllScopes(auth.ScopeAdmin) {
 		// Do nothing, keep all tasks
 		filteredBuildTasks = problem.Detail.BuildTasks
 		filteredJudgeTasks = problem.Detail.JudgeTasks
@@ -384,7 +383,7 @@ func (h *Handler) BatchValidation(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusInternalServerError, response.NewError("Failed to register file location"))
 	}
 
-	RequiringFilter := !middleware.HasAllScopes(claim.Scopes, []string{"manager"}) && !middleware.HasAllScopes(claim.Scopes, []string{"admin"})
+	RequiringFilter := !claim.HasAllScopes(auth.ScopeGrading) && !claim.HasAllScopes(auth.ScopeAdmin)
 
 	for _, problem := range problems {
 		// Make request entry

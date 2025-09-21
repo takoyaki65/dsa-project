@@ -108,12 +108,13 @@ func (h *Handler) Login(c echo.Context) error {
 	}
 
 	// get user role
-	userRole := userRecord.UserRole.Name
+	userRoleID := userRecord.RoleID
+	userRoleName := userRecord.UserRole.Name
 	// get user scopes
-	scopes, err := auth.GetUserScopes(userRole)
+	scopes, err := auth.GetUserScopes(userRoleID)
 
 	if err != nil {
-		return c.String(http.StatusInternalServerError, "invalid user role: "+userRole)
+		return c.String(http.StatusInternalServerError, "invalid user role: "+string(userRoleName))
 	}
 
 	issuedAt := time.Now()
