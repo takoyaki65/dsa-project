@@ -29,22 +29,25 @@ func (ps *ProblemStore) FetchResourcePath(ctx context.Context, lectureID int64, 
 
 func (ps *ProblemStore) GetLectureAndAllProblems(ctx context.Context, d int64) (model.Lecture, error) {
 	var lecture model.Lecture
-	err := ps.db.NewSelect().Model(&lecture).Relation("Problems").Where("id = ?", d).Scan(ctx)
+	err := ps.db.NewSelect().Model(&lecture).
+		Relation("Problems").
+		Where("id = ?", d).
+		Scan(ctx)
 	if err != nil {
 		return model.Lecture{}, err
 	}
 	return lecture, nil
 }
 
-func (ps *ProblemStore) GetProblemByID(ctx context.Context, lectureID int64, problemID int64) (*model.Problem, error) {
+func (ps *ProblemStore) GetProblemByID(ctx context.Context, lectureID int64, problemID int64) (model.Problem, error) {
 	var problem model.Problem
 	err := ps.db.NewSelect().Model(&problem).
 		Where("lecture_id = ? AND problem_id = ?", lectureID, problemID).
 		Scan(ctx)
 	if err != nil {
-		return nil, err
+		return model.Problem{}, err
 	}
-	return &problem, nil
+	return problem, nil
 }
 
 func (ps *ProblemStore) GetAllLectureAndProblems(ctx context.Context) ([]model.Lecture, error) {
@@ -103,17 +106,6 @@ func (ps *ProblemStore) RegisterProblem(ctx context.Context, problem *model.Prob
 		return err
 	}
 	return nil
-}
-
-func (ps *ProblemStore) GetProblem(ctx context.Context, lectureID, problemID int64) (*model.Problem, error) {
-	var problem model.Problem
-	err := ps.db.NewSelect().Model(&problem).
-		Where("lecture_id = ? AND problem_id = ?", lectureID, problemID).
-		Scan(ctx)
-	if err != nil {
-		return nil, err
-	}
-	return &problem, nil
 }
 
 func (ps *ProblemStore) CheckProblemExists(ctx context.Context, lectureID, problemID int64) (bool, error) {

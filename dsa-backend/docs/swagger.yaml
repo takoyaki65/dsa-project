@@ -52,6 +52,93 @@ definitions:
       time_ms:
         type: integer
     type: object
+  problem.FileGroup:
+    properties:
+      files:
+        items:
+          $ref: '#/definitions/util.FileData'
+        type: array
+      id:
+        type: integer
+    type: object
+  problem.GradingDetailOutput:
+    properties:
+      deadline:
+        type: integer
+      detail_list:
+        items:
+          $ref: '#/definitions/problem.GradingDetailPerProblem'
+        type: array
+      file_groups:
+        items:
+          $ref: '#/definitions/problem.FileGroup'
+        type: array
+      lecture_id:
+        type: integer
+      lecture_title:
+        type: string
+      user_id:
+        type: string
+      user_name:
+        type: string
+    type: object
+  problem.GradingDetailPerProblem:
+    properties:
+      build_logs:
+        items:
+          $ref: '#/definitions/problem.DetailedTaskLog'
+        type: array
+      file_group_id:
+        type: integer
+      id:
+        type: integer
+      judge_logs:
+        items:
+          $ref: '#/definitions/problem.DetailedTaskLog'
+        type: array
+      memory_kb:
+        type: integer
+      problem_id:
+        type: integer
+      problem_title:
+        type: string
+      request_user_id:
+        type: string
+      request_user_name:
+        type: string
+      result_id:
+        type: integer
+      submission_ts:
+        type: integer
+      time_ms:
+        type: integer
+      ts:
+        type: integer
+    type: object
+  problem.GradingListOutput:
+    properties:
+      detail:
+        items:
+          $ref: '#/definitions/problem.UserGradingResult'
+        type: array
+      lecture_info:
+        $ref: '#/definitions/util.LectureEntry'
+    type: object
+  problem.GradingResultPerProblem:
+    properties:
+      id:
+        type: integer
+      memory_kb:
+        type: integer
+      problem_id:
+        type: integer
+      result_id:
+        type: integer
+      submission_ts:
+        type: integer
+      time_ms:
+        type: integer
+    type: object
   problem.LectureEntryRequest:
     properties:
       deadline:
@@ -84,6 +171,17 @@ definitions:
           $ref: '#/definitions/problem.ValidationResult'
         type: array
     type: object
+  problem.UserGradingResult:
+    properties:
+      results:
+        items:
+          $ref: '#/definitions/problem.GradingResultPerProblem'
+        type: array
+      user_id:
+        type: string
+      user_name:
+        type: string
+    type: object
   problem.ValidationResult:
     properties:
       id:
@@ -92,7 +190,7 @@ definitions:
         type: integer
       problem_id:
         type: integer
-      result:
+      result_id:
         type: integer
       ts:
         type: integer
@@ -568,6 +666,91 @@ paths:
         entry.
       tags:
       - Submit
+  /problem/result/grading/list/{lectureid}:
+    get:
+      description: List grading results for a specific lecture.
+      parameters:
+      - description: The ID of the lecture to retrieve grading results for.
+        format: int64
+        in: path
+        name: lectureid
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/problem.GradingListOutput'
+        "400":
+          description: "Invalid request\"\t\"No users found"
+          schema:
+            $ref: '#/definitions/response.Error'
+        "401":
+          description: Failed to get user info
+          schema:
+            $ref: '#/definitions/response.Error'
+        "500":
+          description: "Failed to get user list\"\t\"Failed to get grading results\"\t\"Failed
+            to get lecture info\"\t\"Inconsistent data: user not found\"\t\"Inconsistent
+            data: user not found in detail assembly"
+          schema:
+            $ref: '#/definitions/response.Error'
+      security:
+      - OAuth2Password:
+        - grading
+      summary: List Grading Results for a Specific Lecture
+      tags:
+      - Result
+  /problem/result/grading/summary/{lectureid}/{userid}:
+    get:
+      description: Get detailed information about a specific grading result.
+      parameters:
+      - description: Lecture ID
+        format: int64
+        in: path
+        name: lectureid
+        required: true
+        type: integer
+      - description: User ID
+        in: path
+        name: userid
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/problem.GradingDetailOutput'
+        "400":
+          description: Invalid request
+          schema:
+            $ref: '#/definitions/response.Error'
+        "401":
+          description: Failed to get user info
+          schema:
+            $ref: '#/definitions/response.Error'
+        "404":
+          description: Grading result not found
+          schema:
+            $ref: '#/definitions/response.Error'
+        "500":
+          description: "Failed to get grading result\"\t\"Failed to get lecture info\"\t\"Failed
+            to get problem info\"\t\"Inconsistent data: user info missing\"\t\"File
+            location not found\"\t\"Failed to fetch uploaded files\"\t\"Failed to
+            read build stdout\"\t\"Failed to read build stderr\"\t\"Failed to read
+            judge stdout\"\t\"Failed to read judge stderr"
+          schema:
+            $ref: '#/definitions/response.Error'
+      security:
+      - OAuth2Password:
+        - grading
+      summary: Get Grading Result Detail
+      tags:
+      - Result
   /problem/result/validation/detail/{id}:
     get:
       description: Get detailed information about a specific validation result.

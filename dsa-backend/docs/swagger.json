@@ -569,6 +569,129 @@
                 }
             }
         },
+        "/problem/result/grading/list/{lectureid}": {
+            "get": {
+                "security": [
+                    {
+                        "OAuth2Password": [
+                            "grading"
+                        ]
+                    }
+                ],
+                "description": "List grading results for a specific lecture.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Result"
+                ],
+                "summary": "List Grading Results for a Specific Lecture",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "format": "int64",
+                        "description": "The ID of the lecture to retrieve grading results for.",
+                        "name": "lectureid",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/problem.GradingListOutput"
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid request\"\t\"No users found",
+                        "schema": {
+                            "$ref": "#/definitions/response.Error"
+                        }
+                    },
+                    "401": {
+                        "description": "Failed to get user info",
+                        "schema": {
+                            "$ref": "#/definitions/response.Error"
+                        }
+                    },
+                    "500": {
+                        "description": "Failed to get user list\"\t\"Failed to get grading results\"\t\"Failed to get lecture info\"\t\"Inconsistent data: user not found\"\t\"Inconsistent data: user not found in detail assembly",
+                        "schema": {
+                            "$ref": "#/definitions/response.Error"
+                        }
+                    }
+                }
+            }
+        },
+        "/problem/result/grading/summary/{lectureid}/{userid}": {
+            "get": {
+                "security": [
+                    {
+                        "OAuth2Password": [
+                            "grading"
+                        ]
+                    }
+                ],
+                "description": "Get detailed information about a specific grading result.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Result"
+                ],
+                "summary": "Get Grading Result Detail",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "format": "int64",
+                        "description": "Lecture ID",
+                        "name": "lectureid",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "User ID",
+                        "name": "userid",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/problem.GradingDetailOutput"
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid request",
+                        "schema": {
+                            "$ref": "#/definitions/response.Error"
+                        }
+                    },
+                    "401": {
+                        "description": "Failed to get user info",
+                        "schema": {
+                            "$ref": "#/definitions/response.Error"
+                        }
+                    },
+                    "404": {
+                        "description": "Grading result not found",
+                        "schema": {
+                            "$ref": "#/definitions/response.Error"
+                        }
+                    },
+                    "500": {
+                        "description": "Failed to get grading result\"\t\"Failed to get lecture info\"\t\"Failed to get problem info\"\t\"Inconsistent data: user info missing\"\t\"File location not found\"\t\"Failed to fetch uploaded files\"\t\"Failed to read build stdout\"\t\"Failed to read build stderr\"\t\"Failed to read judge stdout\"\t\"Failed to read judge stderr",
+                        "schema": {
+                            "$ref": "#/definitions/response.Error"
+                        }
+                    }
+                }
+            }
+        },
         "/problem/result/validation/detail/{id}": {
             "get": {
                 "security": [
@@ -1019,6 +1142,139 @@
                 }
             }
         },
+        "problem.FileGroup": {
+            "type": "object",
+            "properties": {
+                "files": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/util.FileData"
+                    }
+                },
+                "id": {
+                    "type": "integer"
+                }
+            }
+        },
+        "problem.GradingDetailOutput": {
+            "type": "object",
+            "properties": {
+                "deadline": {
+                    "type": "integer"
+                },
+                "detail_list": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/problem.GradingDetailPerProblem"
+                    }
+                },
+                "file_groups": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/problem.FileGroup"
+                    }
+                },
+                "lecture_id": {
+                    "type": "integer"
+                },
+                "lecture_title": {
+                    "type": "string"
+                },
+                "user_id": {
+                    "type": "string"
+                },
+                "user_name": {
+                    "type": "string"
+                }
+            }
+        },
+        "problem.GradingDetailPerProblem": {
+            "type": "object",
+            "properties": {
+                "build_logs": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/problem.DetailedTaskLog"
+                    }
+                },
+                "file_group_id": {
+                    "type": "integer"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "judge_logs": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/problem.DetailedTaskLog"
+                    }
+                },
+                "memory_kb": {
+                    "type": "integer"
+                },
+                "problem_id": {
+                    "type": "integer"
+                },
+                "problem_title": {
+                    "type": "string"
+                },
+                "request_user_id": {
+                    "type": "string"
+                },
+                "request_user_name": {
+                    "type": "string"
+                },
+                "result_id": {
+                    "type": "integer"
+                },
+                "submission_ts": {
+                    "type": "integer"
+                },
+                "time_ms": {
+                    "type": "integer"
+                },
+                "ts": {
+                    "type": "integer"
+                }
+            }
+        },
+        "problem.GradingListOutput": {
+            "type": "object",
+            "properties": {
+                "detail": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/problem.UserGradingResult"
+                    }
+                },
+                "lecture_info": {
+                    "$ref": "#/definitions/util.LectureEntry"
+                }
+            }
+        },
+        "problem.GradingResultPerProblem": {
+            "type": "object",
+            "properties": {
+                "id": {
+                    "type": "integer"
+                },
+                "memory_kb": {
+                    "type": "integer"
+                },
+                "problem_id": {
+                    "type": "integer"
+                },
+                "result_id": {
+                    "type": "integer"
+                },
+                "submission_ts": {
+                    "type": "integer"
+                },
+                "time_ms": {
+                    "type": "integer"
+                }
+            }
+        },
         "problem.LectureEntryRequest": {
             "type": "object",
             "required": [
@@ -1065,6 +1321,23 @@
                 }
             }
         },
+        "problem.UserGradingResult": {
+            "type": "object",
+            "properties": {
+                "results": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/problem.GradingResultPerProblem"
+                    }
+                },
+                "user_id": {
+                    "type": "string"
+                },
+                "user_name": {
+                    "type": "string"
+                }
+            }
+        },
         "problem.ValidationResult": {
             "type": "object",
             "properties": {
@@ -1077,7 +1350,7 @@
                 "problem_id": {
                     "type": "integer"
                 },
-                "result": {
+                "result_id": {
                     "type": "integer"
                 },
                 "ts": {

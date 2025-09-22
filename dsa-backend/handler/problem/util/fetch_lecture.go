@@ -5,6 +5,7 @@ import (
 	"errors"
 	"os"
 	"path/filepath"
+	"slices"
 	"time"
 
 	"github.com/takoyaki65/dsa-project/database"
@@ -59,6 +60,43 @@ func FetchLectureEntry(ctx context.Context, problemStore database.ProblemStore, 
 		lectureEntries = append(lectureEntries, lectureEntry)
 	}
 	return lectureEntries, nil
+}
+
+func FetchLectureByID(ctx context.Context, problemStore database.ProblemStore, lectureID int64, filter bool) (*LectureEntry, error) {
+	lecture, err := problemStore.GetLectureAndAllProblems(ctx, lectureID)
+	if err != nil {
+		return nil, err
+	}
+
+	// If filter is true, and the lecture is unpublished, return nil
+	if filter && lecture.StartDate.After(time.Now()) {
+		return nil, errors.New("lecture is not published")
+	}
+	lectureEntry := LectureEntry{
+		LectureID: lecture.ID,
+		Title:     lecture.Title,
+		StartDate: lecture.StartDate.Unix(),
+		Deadline:  lecture.Deadline.Unix(),
+		Problems:  []ProblemEntry{},
+	}
+
+	for _, problem := range lecture.Problems {
+		problemEntry := ProblemEntry{
+			LectureID:    problem.LectureID,
+			ProblemID:    problem.ProblemID,
+			Title:        problem.Title,
+			RegisteredAt: problem.RegisteredAt.Unix(),
+		}
+		lectureEntry.Problems = append(lectureEntry.Problems, problemEntry)
+	}
+
+	// sort problems by ProblemID to make output deterministic
+	// because currently, bun does not guarantee the order of "has-many" relations
+	slices.SortFunc(lectureEntry.Problems, func(a, b ProblemEntry) int {
+		return int(a.ProblemID - b.ProblemID)
+	})
+
+	return &lectureEntry, nil
 }
 
 type ProblemDetail struct {

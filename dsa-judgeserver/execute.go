@@ -32,7 +32,7 @@ const MAX_STDERR_BYTES = 2 * 1024 // 2 KB
 
 const CPU_SET = "0"                       // only 1 CPU core can be used.
 const TIMEOUT_BEFORE_CONTAINER_STOP = 120 // timeout in seconds for stopping container
-const PID_LIMIT = 32                      // limit max number of processes available to spawn
+const PID_LIMIT = 64                      // limit max number of processes available to spawn
 const MAX_MEMORY_LIMIT_MB = 1024          // 1 GB
 
 func NewJobExecutor() (*JobExecutor, error) {
@@ -81,7 +81,7 @@ func (executor *JobExecutor) executeBuildTasks(ctx context.Context, job *model.J
 
 	cpuSet := CPU_SET
 	timeout := TIMEOUT_BEFORE_CONTAINER_STOP
-	pidLimit := int64(PID_LIMIT)
+	pidLimit := int64(128) // allow more processes for build tasks
 	// add 32MB for overhead
 	totalMemoryInBytes := min(
 		(job.MemoryMB+32)*1024*1024, MAX_MEMORY_LIMIT_MB*1024*1024)
@@ -113,8 +113,8 @@ func (executor *JobExecutor) executeBuildTasks(ctx context.Context, job *model.J
 					},
 					{
 						Name: "nproc", // limit max number of processes
-						Hard: 64,
-						Soft: 64,
+						Hard: pidLimit,
+						Soft: pidLimit,
 					},
 					{
 						Name: "fsize",                    // limit max size of files that can be created, the unit is file-blocks (assumes 4kB = 4096 bytes)
@@ -122,9 +122,9 @@ func (executor *JobExecutor) executeBuildTasks(ctx context.Context, job *model.J
 						Soft: (100 * 1024 * 1024) / 4096, // 100 MB
 					},
 					{
-						Name: "stack",     // limit max stack size, the unit is kB (1024 bytes)
-						Hard: (32 * 1024), // 32 MB
-						Soft: (32 * 1024), // 32 MB
+						Name: "stack",      // limit max stack size, the unit is kB (1024 bytes)
+						Hard: (128 * 1024), // 128 MB
+						Soft: (128 * 1024), // 128 MB
 					},
 				},
 			},
@@ -361,8 +361,8 @@ func (executor *JobExecutor) executeJudgeTasks(ctx context.Context, job *model.J
 					},
 					{
 						Name: "nproc", // limit max number of processes
-						Hard: 64,
-						Soft: 64,
+						Hard: pidLimit,
+						Soft: pidLimit,
 					},
 					{
 						Name: "fsize",                   // limit max size of files that can be created, the unit is file-blocks (assumes 4kB = 4096 bytes)

@@ -181,7 +181,7 @@ func (h *Handler) RequestValidation(c echo.Context) error {
 	// --------------------------------------
 
 	// Get Problem info
-	problem, err := h.problemStore.GetProblem(ctx, req.LectureID, req.ProblemID)
+	problem, err := h.problemStore.GetProblemByID(ctx, req.LectureID, req.ProblemID)
 	if err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, response.NewError("Failed to get problem info"))
 	}
@@ -669,7 +669,7 @@ func (h *Handler) RequestGrading(c echo.Context) error {
 	// --------------------------------------
 
 	// Get Problem info
-	problem, err := h.problemStore.GetProblem(ctx, req.LectureID, req.ProblemID)
+	problem, err := h.problemStore.GetProblemByID(ctx, req.LectureID, req.ProblemID)
 	if err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, response.NewError("Failed to get problem info"))
 	}

@@ -97,3 +97,14 @@ func (us *UserStore) RegisterLoginHistory(ctx context.Context, loginHistory *mod
 	}
 	return nil
 }
+
+func (us *UserStore) GetAllUserList(ctx context.Context) (*[]model.UserList, error) {
+	var users []model.UserList
+
+	err := us.db.NewSelect().Model(&users).Order("id ASC").Scan(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	return &users, nil
+}

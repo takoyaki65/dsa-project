@@ -78,6 +78,32 @@ func (r *RequestStore) GetValidationResultByID(ctx context.Context, id int64) (*
 	return &result, nil
 }
 
+// Retrieves entire grading results for a lecture, ordered by usercode and submission timestamp.
+// This is intended for grading staff to review all submissions for a particular lecture.
+func (r *RequestStore) GetGradingResults(ctx context.Context, lecture_id int64) ([]model.GradingRequest, error) {
+	var results []model.GradingRequest
+	err := r.db.NewSelect().Model(&results).
+		Relation("SubjectUser").
+		Relation("FileLocation").
+		Where("lecture_id = ?", lecture_id).
+		Order("usercode ASC", "submission_ts ASC").
+		Scan(ctx)
+
+	return results, err
+}
+
+func (r *RequestStore) GetGradingResultsByLectureIDAndUserCode(ctx context.Context, lecture_id int64, usercode int64) ([]model.GradingRequest, error) {
+	var results []model.GradingRequest
+	err := r.db.NewSelect().Model(&results).
+		Relation("FileLocation").
+		Relation("RequestUser").
+		Where("lecture_id = ? AND usercode = ?", lecture_id, usercode).
+		Order("submission_ts DESC", "problem_id ASC").
+		Scan(ctx)
+
+	return results, err
+}
+
 func NewRequestStore(db *bun.DB) *RequestStore {
 	return &RequestStore{
 		db: db,
