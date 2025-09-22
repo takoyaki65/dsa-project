@@ -1103,6 +1103,12 @@ const docTemplate = `{
                 "submission_ts": {
                     "type": "integer"
                 },
+                "test_files": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/util.FileData"
+                    }
+                },
                 "time_ms": {
                     "type": "integer"
                 },
@@ -1185,6 +1191,12 @@ const docTemplate = `{
                 },
                 "lecture_title": {
                     "type": "string"
+                },
+                "test_files_per_problem": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/problem.TestFilesPerProblem"
+                    }
                 },
                 "user_id": {
                     "type": "string"
@@ -1324,6 +1336,20 @@ const docTemplate = `{
                     "items": {
                         "$ref": "#/definitions/problem.ValidationResult"
                     }
+                }
+            }
+        },
+        "problem.TestFilesPerProblem": {
+            "type": "object",
+            "properties": {
+                "files": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/util.FileData"
+                    }
+                },
+                "problem_id": {
+                    "type": "integer"
                 }
             }
         },
@@ -1482,6 +1508,12 @@ const docTemplate = `{
                     "type": "array",
                     "items": {
                         "type": "string"
+                    }
+                },
+                "test_files": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/util.FileData"
                     }
                 },
                 "time_ms": {

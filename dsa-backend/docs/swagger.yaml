@@ -22,6 +22,10 @@ definitions:
         type: integer
       submission_ts:
         type: integer
+      test_files:
+        items:
+          $ref: '#/definitions/util.FileData'
+        type: array
       time_ms:
         type: integer
       ts:
@@ -77,6 +81,10 @@ definitions:
         type: integer
       lecture_title:
         type: string
+      test_files_per_problem:
+        items:
+          $ref: '#/definitions/problem.TestFilesPerProblem'
+        type: array
       user_id:
         type: string
       user_name:
@@ -170,6 +178,15 @@ definitions:
         items:
           $ref: '#/definitions/problem.ValidationResult'
         type: array
+    type: object
+  problem.TestFilesPerProblem:
+    properties:
+      files:
+        items:
+          $ref: '#/definitions/util.FileData'
+        type: array
+      problem_id:
+        type: integer
     type: object
   problem.UserGradingResult:
     properties:
@@ -275,6 +292,10 @@ definitions:
       required_files:
         items:
           type: string
+        type: array
+      test_files:
+        items:
+          $ref: '#/definitions/util.FileData'
         type: array
       time_ms:
         type: integer

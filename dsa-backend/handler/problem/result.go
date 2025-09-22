@@ -133,6 +133,7 @@ type DetailOutput struct {
 	TimeMS        int64             `json:"time_ms"`
 	MemoryKB      int64             `json:"memory_kb"`
 	UploadedFiles []util.FileData   `json:"uploaded_files"`
+	TestFiles     []util.FileData   `json:"test_files"`
 	BuildLogs     []DetailedTaskLog `json:"build_logs"`
 	JudgeLogs     []DetailedTaskLog `json:"judge_logs"`
 }
@@ -198,6 +199,10 @@ func (h *Handler) GetValidationDetail(c echo.Context) error {
 		ResultID:     int64(validationRequest.Log.ResultID),
 		TimeMS:       validationRequest.Log.TimeMS,
 		MemoryKB:     validationRequest.Log.MemoryKB,
+		// Fill in UploadedFiles later
+		// Fill in TestFiles later
+		// Fill in BuildLogs later
+		// Fill in JudgeLogs later
 	}
 
 	// Fill in uploaded files
@@ -214,6 +219,13 @@ func (h *Handler) GetValidationDetail(c echo.Context) error {
 	}
 
 	detail.UploadedFiles = fileDataList
+
+	// Fill in test files
+	testFiles, err := util.FetchTestFielsInProblem(ctx, h.problemStore, validationRequest.LectureID, validationRequest.ProblemID)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError, response.NewError("Failed to get problem info"))
+	}
+	detail.TestFiles = testFiles
 
 	// Fill in build logs
 	for _, buildResult := range validationRequest.Log.BuildResults {
@@ -405,13 +417,14 @@ type GradingDetailProps struct {
 }
 
 type GradingDetailOutput struct {
-	LectureID    int64                     `json:"lecture_id"`
-	LectureTitle string                    `json:"lecture_title"`
-	Deadline     int64                     `json:"deadline"`
-	UserID       string                    `json:"user_id"`
-	UserName     string                    `json:"user_name"`
-	FileGroups   []FileGroup               `json:"file_groups"`
-	DetailList   []GradingDetailPerProblem `json:"detail_list"`
+	LectureID           int64                     `json:"lecture_id"`
+	LectureTitle        string                    `json:"lecture_title"`
+	Deadline            int64                     `json:"deadline"`
+	UserID              string                    `json:"user_id"`
+	UserName            string                    `json:"user_name"`
+	FileGroups          []FileGroup               `json:"file_groups"`
+	TestFilesPerProblem []TestFilesPerProblem     `json:"test_files_per_problem"`
+	DetailList          []GradingDetailPerProblem `json:"detail_list"`
 }
 
 type GradingDetailPerProblem struct {
@@ -433,6 +446,11 @@ type GradingDetailPerProblem struct {
 type FileGroup struct {
 	ID    int64           `json:"id"`
 	Files []util.FileData `json:"files"`
+}
+
+type TestFilesPerProblem struct {
+	ProblemID int64           `json:"problem_id"`
+	Files     []util.FileData `json:"files"`
 }
 
 // GetGradingResult gets detailed information about a specific grading result.
@@ -490,9 +508,25 @@ func (h *Handler) GetGradingResult(c echo.Context) error {
 		Deadline:     lectureData.Deadline.Unix(),
 		UserID:       props.UserID,
 		UserName:     user.Name,
+		// TestFilesPerProblem to be filled later,
 		// FileGroups to be filled later,
 		// DetailList to be filled later
 	}
+
+	// Fill in TestFilesPerProblem
+	testFilesPerProblem := make([]TestFilesPerProblem, 0, len(lectureData.Problems))
+	for _, problem := range lectureData.Problems {
+		testFiles, err := util.FetchTestFielsInProblem(ctx, h.problemStore, problem.LectureID, problem.ProblemID)
+		if err != nil {
+			return echo.NewHTTPError(http.StatusInternalServerError, response.NewError("Failed to get problem info"))
+		}
+
+		testFilesPerProblem = append(testFilesPerProblem, TestFilesPerProblem{
+			ProblemID: problem.ProblemID,
+			Files:     testFiles,
+		})
+	}
+	output.TestFilesPerProblem = testFilesPerProblem
 
 	fileGroupDict := make(map[int64]FileGroup)
 

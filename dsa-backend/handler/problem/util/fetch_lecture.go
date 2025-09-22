@@ -100,13 +100,14 @@ func FetchLectureByID(ctx context.Context, problemStore database.ProblemStore, l
 }
 
 type ProblemDetail struct {
-	LectureID     int64    `json:"lecture_id"`
-	ProblemID     int64    `json:"problem_id"`
-	Title         string   `json:"title"`
-	Description   string   `json:"description"`
-	TimeMS        int64    `json:"time_ms"`
-	MemoryMB      int64    `json:"memory_mb"`
-	RequiredFiles []string `json:"required_files"`
+	LectureID     int64      `json:"lecture_id"`
+	ProblemID     int64      `json:"problem_id"`
+	Title         string     `json:"title"`
+	Description   string     `json:"description"`
+	TimeMS        int64      `json:"time_ms"`
+	MemoryMB      int64      `json:"memory_mb"`
+	TestFiles     []FileData `json:"test_files"`
+	RequiredFiles []string   `json:"required_files"`
 }
 
 func FetchProblemDetail(ctx context.Context, problemStore database.ProblemStore, fileStore database.FileStore, lectureID int64, problemID int64, filter bool) (*ProblemDetail, error) {
@@ -151,5 +152,42 @@ func FetchProblemDetail(ctx context.Context, problemStore database.ProblemStore,
 		RequiredFiles: problem.Detail.RequiredFiles,
 	}
 
+	// fetch test files
+	for _, testFile := range problem.Detail.TestFiles {
+		filePath := filepath.Join(fileLocation.Path, testFile)
+		fileData, err := FetchFile(filePath)
+		if err != nil {
+			return nil, err
+		}
+		fileData.Name = testFile
+		detail.TestFiles = append(detail.TestFiles, *fileData)
+	}
+
 	return &detail, nil
+}
+
+func FetchTestFielsInProblem(ctx context.Context, problemStore database.ProblemStore, lectureID int64, problemID int64) ([]FileData, error) {
+	// fetch problem info
+	problem, err := problemStore.GetProblemByID(ctx, lectureID, problemID)
+	if err != nil {
+		return nil, err
+	}
+
+	// fetch resource resource_dir
+	resource_dir, err := problemStore.FetchResourcePath(ctx, lectureID, problemID)
+	if err != nil {
+		return nil, err
+	}
+
+	var testFiles []FileData
+	for _, testFile := range problem.Detail.TestFiles {
+		filePath := filepath.Join(resource_dir, testFile)
+		fileData, err := FetchFile(filePath)
+		if err != nil {
+			return nil, err
+		}
+		fileData.Name = testFile
+		testFiles = append(testFiles, *fileData)
+	}
+	return testFiles, nil
 }
