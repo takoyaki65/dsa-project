@@ -132,8 +132,11 @@ func (h *Handler) RequestValidation(c echo.Context) error {
 		}
 		defer src.Close()
 
+		// Sanitize file name to prevent path traversal attacks.
+		cleanedPath := filepath.Join("/", filepath.Clean(file.Filename)) // resolve all "../" to prevent path traversal
+
 		// Destination
-		dstPath := filepath.Join(uploadDir, filepath.Clean(file.Filename))
+		dstPath := filepath.Join(uploadDir, cleanedPath)
 		// Ensure the destination path is within the uploadDir to prevent path traversal attacks
 		if !strings.HasPrefix(dstPath, uploadDir) {
 			return echo.NewHTTPError(http.StatusBadRequest, response.NewError("Invalid file name"))
@@ -618,8 +621,11 @@ func (h *Handler) RequestGrading(c echo.Context) error {
 		defer src.Close()
 
 		// Destination
-		// TODO: Check if this operation is safe and there are no risks like path-traversal attacks
-		dstPath := filepath.Join(uploadDir, filepath.Clean(file.Filename))
+
+		// Sanitize file name to prevent path traversal attacks.
+		cleanedPath := filepath.Join("/", filepath.Clean(file.Filename)) // resolve all "../" to prevent path traversal
+
+		dstPath := filepath.Join(uploadDir, cleanedPath)
 		// Ensure the destination path is within the uploadDir to prevent path traversal attacks
 		if !strings.HasPrefix(dstPath, uploadDir) {
 			return echo.NewHTTPError(http.StatusBadRequest, response.NewError("Invalid file name"))

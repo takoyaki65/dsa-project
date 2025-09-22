@@ -73,6 +73,7 @@ func SafeExtractZip(zipPath, destDir string) error {
 func extractFile(file *zip.File, destDir string) error {
 	// Sanitize file name to prevent path traversal attacks.
 	cleanPath := filepath.Clean(file.Name)
+	cleanPath = filepath.Join("/", cleanPath) // resolve all "../" to prevent path traversal
 	if strings.Contains(cleanPath, "..") {
 		return fmt.Errorf("invalid file path: %s", file.Name)
 	}
