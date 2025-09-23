@@ -86,7 +86,7 @@ const DashBoardPage: React.FC = () => {
           </button>
           {lectureData.map((lecture) => (
             <button
-              key={lecture.id}
+              key={`top-lecture-${lecture.id}`}
               onClick={() => setSelectedLecture(lecture.id)}
               className={`px-4 py-2 whitespace-nowrap transition-colors ${selectedLecture === lecture.id
                 ? 'border-b-2 border-blue-500 text-blue-600 font-medium'
@@ -101,7 +101,7 @@ const DashBoardPage: React.FC = () => {
         {/* Lecture List */}
         <div className="space-y-6">
           {displayedLectures.map((lecture) => (
-            <div key={lecture.id} className="bg-white rounded-lg shadow-sm border border-gray-200">
+            <div key={`lecture-${lecture.id}`} className="bg-white rounded-lg shadow-sm border border-gray-200">
               <div className="px-6 py-4 border-b border-gray-200 bg-gray-50">
                 <h2 className="text-lg font-semibold">{lecture.title}</h2>
               </div>
@@ -110,7 +110,7 @@ const DashBoardPage: React.FC = () => {
                   <div className="space-y-3">
                     {lecture.problems.map((problem) => (
                       <div
-                        key={`${problem.lecture_id}-${problem.problem_id}`}
+                        key={`problem-${problem.lecture_id}-${problem.problem_id}`}
                         className="p-4 border border-gray-200 rounded hover:bg-gray-50 transition-colors cursor-pointer"
                         onClick={() => navigate(`/problem/${problem.lecture_id}/${problem.problem_id}`)}
                       >
