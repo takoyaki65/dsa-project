@@ -27,6 +27,7 @@ type ValidationResult struct {
 	ID        int64  `json:"id"`
 	TS        int64  `json:"ts"`
 	UserID    string `json:"user_id"`
+	UserName  string `json:"user_name"`
 	LectureID int64  `json:"lecture_id"`
 	ProblemID int64  `json:"problem_id"`
 	ResultID  int64  `json:"result_id"`
@@ -65,7 +66,6 @@ func (h *Handler) ListValidationResults(c echo.Context) error {
 	}
 
 	userCode := claim.ID
-	userID := claim.UserID
 
 	rightsToAccessAll := claim.HasAllScopes(auth.ScopeGrading) || claim.HasAllScopes(auth.ScopeAdmin)
 
@@ -106,7 +106,8 @@ func (h *Handler) ListValidationResults(c echo.Context) error {
 		outputResults = append(outputResults, ValidationResult{
 			ID:        result.ID,
 			TS:        result.TS.Unix(),
-			UserID:    userID,
+			UserID:    result.User.UserID,
+			UserName:  result.User.Name,
 			LectureID: result.LectureID,
 			ProblemID: result.ProblemID,
 			ResultID:  int64(result.ResultID),

@@ -74,7 +74,7 @@ const (
 func (r *RequestStore) GetValidationResults(ctx context.Context, usercode int64, lecture_ids []int64, Anchor int64, limit int, direction Direction) ([]model.ValidationRequest, error) {
 	var results []model.ValidationRequest
 
-	intermediate := r.db.NewSelect().Model(&results).Where("lecture_id IN (?)", bun.In(lecture_ids))
+	intermediate := r.db.NewSelect().Model(&results).Relation("User").Where("lecture_id IN (?)", bun.In(lecture_ids))
 
 	if usercode >= 0 {
 		intermediate = intermediate.Where("usercode = ?", usercode)
@@ -82,9 +82,9 @@ func (r *RequestStore) GetValidationResults(ctx context.Context, usercode int64,
 
 	switch direction {
 	case DirectionNext:
-		intermediate = intermediate.Where("id < ?", Anchor).Order("id DESC")
+		intermediate = intermediate.Where("validation_request.id < ?", Anchor).Order("validation_request.id DESC")
 	case DirectionPrev:
-		intermediate = intermediate.Where("id > ?", Anchor).Order("id ASC")
+		intermediate = intermediate.Where("validation_request.id > ?", Anchor).Order("validation_request.id ASC")
 	default:
 		return nil, errors.New("invalid direction")
 	}
