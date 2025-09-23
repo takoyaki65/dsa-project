@@ -189,6 +189,12 @@ func (h *Handler) GetValidationDetail(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusNotFound, response.NewError("Validation result not found"))
 	}
 
+	// When the user is not admin or manager, check if the user is the owner of the request
+	rightsToAccessAll := claim.HasAllScopes(auth.ScopeGrading) || claim.HasAllScopes(auth.ScopeAdmin)
+	if !rightsToAccessAll && validationRequest.UserCode != claim.ID {
+		return echo.NewHTTPError(http.StatusNotFound, response.NewError("Validation result not found"))
+	}
+
 	detail := DetailOutput{
 		ID:           validationRequest.ID,
 		TS:           validationRequest.TS.Unix(),
