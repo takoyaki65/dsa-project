@@ -31,6 +31,8 @@ type ValidationResult struct {
 	LectureID int64  `json:"lecture_id"`
 	ProblemID int64  `json:"problem_id"`
 	ResultID  int64  `json:"result_id"`
+	TimeMS    int64  `json:"time_ms"`
+	MemoryKB  int64  `json:"memory_kb"`
 }
 
 // ListValidationResults lists validation results (not detailed, just summary) for the current user.
@@ -111,6 +113,8 @@ func (h *Handler) ListValidationResults(c echo.Context) error {
 			LectureID: result.LectureID,
 			ProblemID: result.ProblemID,
 			ResultID:  int64(result.ResultID),
+			TimeMS:    result.Log.TimeMS,
+			MemoryKB:  result.Log.MemoryKB,
 		})
 	}
 

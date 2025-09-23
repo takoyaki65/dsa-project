@@ -1387,10 +1387,16 @@ const docTemplate = `{
                 "lecture_id": {
                     "type": "integer"
                 },
+                "memory_kb": {
+                    "type": "integer"
+                },
                 "problem_id": {
                     "type": "integer"
                 },
                 "result_id": {
+                    "type": "integer"
+                },
+                "time_ms": {
                     "type": "integer"
                 },
                 "ts": {
