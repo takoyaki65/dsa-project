@@ -5,6 +5,7 @@ import ProtectedRoute from './ProtectedRoute';
 import DashBoardPage from './pages/DashBoardPage';
 import ProblemStatementPage from './pages/ProblemStatementPage';
 import NotFoundPage from './pages/NotFound';
+import ValidationResultsListing from './pages/ValidationResultsListing';
 
 const queryClient = new QueryClient();
 
@@ -16,6 +17,7 @@ function App() {
           <Route path="/login" element={<LoginPage />} />
           <Route path="/dashboard" element={<ProtectedRoute><DashBoardPage /></ProtectedRoute>} />
           <Route path="/problem/:lectureid/:problemid" element={<ProtectedRoute><ProblemStatementPage /></ProtectedRoute>} />
+          <Route path="/validation/results" element={<ProtectedRoute><ValidationResultsListing /></ProtectedRoute>} />
           <Route path="/" element={<Navigate to="/dashboard" replace />} />
           <Route path="*" element={<NotFoundPage />} />
         </Routes>

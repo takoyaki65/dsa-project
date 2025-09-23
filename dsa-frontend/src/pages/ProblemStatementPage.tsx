@@ -8,6 +8,7 @@ import NotFoundPage from "./NotFound";
 import { useAuthMutation, useAuthQuery } from "../auth/hooks";
 import type { JSX } from "react";
 import SubmitFormSection from "../components/SubmitFormSection";
+import type { CompressedFileData } from "../types/FileData";
 
 interface ProblemDetail {
   lecture_id: number;
@@ -17,6 +18,7 @@ interface ProblemDetail {
   time_ms: number;
   memory_mb: number;
   required_files: string[];
+  test_files: CompressedFileData[];
 };
 
 const renderProblemDetail = (detail: ProblemDetail, handleOnSubmit: (files: File[]) => Promise<void>, isUploading: boolean): JSX.Element => {
