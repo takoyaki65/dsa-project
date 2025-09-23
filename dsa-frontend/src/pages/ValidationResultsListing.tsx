@@ -2,34 +2,8 @@ import type React from "react";
 import NavigationBar from "../components/NavigationBar";
 import { formatTimestamp } from "../util/timestamp";
 import ResultBadge from "../components/ResultBadge";
-
-const resultIDtoString = {
-  0: "AC",
-  1: "WA",
-  2: "TLE",
-  3: "MLE",
-  4: "RE",
-  5: "CE",
-  6: "OLE",
-  7: "IE",
-  8: "FN",
-  9: "Judging",
-  10: "WJ",
-}
-
-const resultIDtoExplanation = {
-  0: "Accepted",
-  1: "Wrong Answer",
-  2: "Time Limit Exceeded",
-  3: "Memory Limit Exceeded",
-  4: "Runtime Error",
-  5: "Compilation Error",
-  6: "Output Limit Exceeded",
-  7: "Internal Error",
-  8: "File Not Found",
-  9: "Judging",
-  10: "Waiting for Judging",
-}
+import { useAuthQuery } from "../auth/hooks";
+import { useEffect, useState } from "react";
 
 interface ValidationResult {
   id: number;
@@ -64,61 +38,104 @@ interface APIResponse {
 }
 
 const ValidationResultsListing: React.FC = () => {
-  const sampleData: APIResponse = {
-    results: [
-      {
-        id: 30,
-        ts: 1758441667,
-        user_id: "admin",
-        user_name: "admin",
-        lecture_id: 1,
-        problem_id: 2,
-        result_id: 5,
-        time_ms: 163,
-        memory_kb: 7680
-      },
-      {
-        id: 29,
-        ts: 1758441667,
-        user_id: "admin",
-        user_name: "admin",
-        lecture_id: 1,
-        problem_id: 1,
-        result_id: 0,
-        time_ms: 163,
-        memory_kb: 7680
-      },
-    ],
-    lecture_info: [
-      {
-        lecture_id: 1,
-        title: "課題1",
-        start_date: 1759280400,
-        deadline: 1764550800,
-        problems: [
-          {
-            lecture_id: 1,
-            problem_id: 1,
-            registered_at: 1758441326,
-            title: "基本課題"
-          },
-          {
-            lecture_id: 1,
-            problem_id: 2,
-            registered_at: 1758441345,
-            title: "発展課題"
-          }
-        ]
+  const [anchor, setAnchor] = useState<number>(15000000);
+  const [direction, setDirection] = useState<"next" | "prev">("next");
+  const [currentData, setCurrentData] = useState<APIResponse | null>(null);
+
+  // API call using useAuthQuery
+  const { data, isLoading, error } = useAuthQuery<APIResponse>({
+    queryKey: ['validationResults', `${anchor}`, `${direction}`],
+    endpoint: `/problem/result/validation/list?anchor=${anchor}&direction=${direction}`,
+    options: {
+      queryOptions: {
+        enabled: true,
+        staleTime: 0, // always fetch fresh data
       }
-    ]
-  };
+    }
+  })
+
+  // Update currentData when new data is fetched
+  useEffect(() => {
+    if (data && data.results && data.results.length > 0) {
+      setCurrentData(data);
+    }
+  }, [data]);
 
   const getProblemTitle = (lectureId: number, problemId: number): string => {
-    const lecture = sampleData.lecture_info.find(l => l.lecture_id === lectureId);
+    if (!currentData) return "Unknown";
+    const lecture = currentData.lecture_info.find(l => l.lecture_id === lectureId);
     if (!lecture) return "Unknown";
     const problem = lecture.problems.find(p => p.problem_id === problemId);
     if (!problem) return "Unknown";
     return `${lecture.title} · ${problem.title}`;
+  }
+
+  const handleNextPage = async () => {
+    if (!currentData || !currentData.results || currentData.results.length === 0) return;
+
+    // Get the smallest ID (oldest entry) from current data
+    const minId = Math.min(...currentData.results.map(r => r.id));
+
+    // Update pagination parameters
+    setAnchor(minId);
+    setDirection("next");
+
+    // Refetch will be triggered automatically by useAuthQuery due to queryKey change
+  };
+
+  const handlePrevPage = async () => {
+    if (!currentData || !currentData.results || currentData.results.length === 0) return;
+
+    // Get the largest ID (newest entry) from current data
+    const maxId = Math.max(...currentData.results.map(r => r.id));
+
+    // Update pagination parameters
+    setAnchor(maxId);
+    setDirection("prev");
+
+    // Refetch will be triggered automatically by useAuthQuery due to queryKey change
+  };
+
+  if (isLoading && !currentData) {
+    return (
+      <div className="min-h-screen bg-gray-50">
+        <NavigationBar />
+        <div className="container mx-auto px-8 py-6">
+          <h1 className="text-3xl font-semibold mb-6">Validation Results</h1>
+          <div className="flex justify-center items-center h-64">
+            <div className="text-gray-600">Loading...</div>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  if (error && !currentData) {
+    return (
+      <div className="min-h-screen bg-gray-50">
+        <NavigationBar />
+        <div className="container mx-auto px-8 py-6">
+          <h1 className="text-3xl font-semibold mb-6">Validation Results</h1>
+          <div className="flex justify-center items-center h-64">
+            <div className="text-red-600">Error loading data.</div>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  if (!currentData || !currentData.results || currentData.results.length === 0) {
+    return (
+      <div className="min-h-screen bg-gray-50">
+        <NavigationBar />
+        <div className="container mx-auto px-8 py-6">
+          <h1 className="text-3xl font-semibold mb-6">Validation Results</h1>
+          <div className="flex justify-center items-center h-64">
+            <div className="text-gray-600">No validation results available.</div>
+          </div>
+        </div>
+      </div>
+    )
   }
 
   return (
@@ -137,10 +154,16 @@ const ValidationResultsListing: React.FC = () => {
 
         {/* Pagination - Top */}
         <div className="flex justify-center mb-4 gap-4">
-          <button className="text-gray-500 hover:text-gray-700">
+          <button
+            onClick={handlePrevPage}
+            className="text-gray-500 hover:text-gray-700"
+            disabled={isLoading}>
             &lt; Prev
           </button>
-          <button className="text-blue-500 hover:text-blue-700">
+          <button
+            onClick={handleNextPage}
+            className="text-blue-500 hover:text-blue-700"
+            disabled={isLoading}>
             Next &gt;
           </button>
         </div>
@@ -160,7 +183,7 @@ const ValidationResultsListing: React.FC = () => {
               </tr>
             </thead>
             <tbody>
-              {sampleData.results.map((result, index) => (
+              {currentData.results.map((result, index) => (
                 <tr key={`result-${result.id}`} className={`border-b border-gray-400 ${index % 2 === 0 ? "bg-white" : "bg-gray-50"}`}>
                   <td className="border-r border-gray-400 px-4 py-3 text-sm">
                     {formatTimestamp(result.ts)}
@@ -195,10 +218,16 @@ const ValidationResultsListing: React.FC = () => {
 
         {/* Pagination - Top */}
         <div className="flex justify-center mt-4 gap-4">
-          <button className="text-gray-500 hover:text-gray-700">
+          <button
+            onClick={handlePrevPage}
+            className="text-gray-500 hover:text-gray-700"
+            disabled={isLoading}>
             &lt; Prev
           </button>
-          <button className="text-blue-500 hover:text-blue-700">
+          <button
+            onClick={handleNextPage}
+            className="text-blue-500 hover:text-blue-700"
+            disabled={isLoading}>
             Next &gt;
           </button>
         </div>
