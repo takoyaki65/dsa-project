@@ -9,15 +9,16 @@ import (
 	"slices"
 
 	"github.com/labstack/echo/v4"
+	"github.com/takoyaki65/dsa-project/database"
 	"github.com/takoyaki65/dsa-project/database/model"
 )
 
 type ListingProps struct {
-	Last int64 `query:"last" validate:"min=-1" default:"-1"`
+	Anchor    int64  `query:"anchor" validate:"min=0" default:"15000000"`
+	Direction string `query:"direction" validate:"omitempty,oneof=next prev" default:"next"`
 }
 
 type ListingOutput struct {
-	LastID      int64               `json:"last_id"`
 	Results     []ValidationResult  `json:"results"`
 	LectureInfo []util.LectureEntry `json:"lecture_info"`
 }
@@ -37,11 +38,12 @@ type ValidationResult struct {
 //	@Description	List validation results (not detailed, just summary) for the current user.
 //	@Tags			Result
 //	@Produce		json
-//	@Param			last	query		int64	false	"The last ID received in the previous request. Use -1 to get the most recent results."	default(-1)	minimum(-1)
-//	@Success		200		{object}	ListingOutput
-//	@Failure		400		{object}	response.Error	"Invalid request"
-//	@Failure		401		{object}	response.Error	"Failed to get user info"
-//	@Failure		500		{object}	response.Error	"Failed to get lecture entries"	"Failed to get validation results"
+//	@Param			anchor		query		int64	false	"The anchor ID received in the previous request."													default(15000000)	minimum(0)
+//	@Param			direction	query		string	false	"The direction to fetch results. Use 'next' to get older results and 'prev' to get newer results."	Enums(next, prev)	default(next)
+//	@Success		200			{object}	ListingOutput
+//	@Failure		400			{object}	response.Error	"Invalid request"
+//	@Failure		401			{object}	response.Error	"Failed to get user info"
+//	@Failure		500			{object}	response.Error	"Failed to get lecture entries"	"Failed to get validation results"
 //	@Security		OAuth2Password[grading]
 //	@Router			/problem/result/validation/list [get]
 func (h *Handler) ListValidationResults(c echo.Context) error {
@@ -52,10 +54,6 @@ func (h *Handler) ListValidationResults(c echo.Context) error {
 	}
 	if err := c.Validate(&props); err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, response.NewError("Invalid request"))
-	}
-
-	if props.Last < 0 {
-		props.Last = 1 << 62 // large number
 	}
 
 	ctx := context.Background()
@@ -69,10 +67,16 @@ func (h *Handler) ListValidationResults(c echo.Context) error {
 	userCode := claim.ID
 	userID := claim.UserID
 
+	rightsToAccessAll := claim.HasAllScopes(auth.ScopeGrading) || claim.HasAllScopes(auth.ScopeAdmin)
+
 	filter := false
-	if !claim.HasAllScopes(auth.ScopeGrading) && !claim.HasAllScopes(auth.ScopeAdmin) {
+	if !rightsToAccessAll {
 		// if the user is not manager or admin, filter out unpublished lectures
 		filter = true
+	}
+
+	if rightsToAccessAll {
+		userCode = -1 // get all users' results
 	}
 
 	// get allowed lecture ids
@@ -87,18 +91,18 @@ func (h *Handler) ListValidationResults(c echo.Context) error {
 	}
 
 	// get validation results
-	results, err := h.requestStore.GetValidationResults(ctx, userCode, allowedLectureIDs, props.Last, 20)
+	results, err := h.requestStore.GetValidationResults(ctx, userCode, allowedLectureIDs, props.Anchor, 20, database.Direction(props.Direction))
 	if err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, response.NewError("Failed to get validation results"))
 	}
 
+	// sort results by ID descending to make output deterministic
+	slices.SortFunc(results, func(a, b model.ValidationRequest) int {
+		return int(b.ID - a.ID)
+	})
+
 	var outputResults []ValidationResult
-	// calculate last id , which is most recent id (minimum)
-	lastID := int64(1 << 62)
 	for _, result := range results {
-		if result.ID < lastID {
-			lastID = result.ID
-		}
 		outputResults = append(outputResults, ValidationResult{
 			ID:        result.ID,
 			TS:        result.TS.Unix(),
@@ -109,10 +113,7 @@ func (h *Handler) ListValidationResults(c echo.Context) error {
 		})
 	}
 
-	lastID = max(lastID-1, int64(0)) // if there is no result, set lastID to 0
-
 	return c.JSON(http.StatusOK, ListingOutput{
-		LastID:      lastID,
 		Results:     outputResults,
 		LectureInfo: lectureEntries,
 	})

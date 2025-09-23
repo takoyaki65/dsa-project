@@ -2,6 +2,7 @@ package database
 
 import (
 	"context"
+	"errors"
 
 	"github.com/takoyaki65/dsa-project/database/model"
 	"github.com/takoyaki65/dsa-project/database/model/requeststatus"
@@ -53,19 +54,42 @@ func (r *RequestStore) UpdateResultOfGradingRequest(ctx context.Context, id int6
 	return err
 }
 
-// GetValidationResults retrieves validation results for a user filtered by allowed lecture IDs, with pagination support.
-// NOTE: This function does not utilize OFFSET, because OFFSET can be inefficient for large datasets.
-// Instead, it uses the "last" parameter to fetch results with IDs less than the provided value.
-func (r *RequestStore) GetValidationResults(ctx context.Context, usercode int64, lecture_ids []int64, last int64, limit int) ([]model.ValidationRequest, error) {
-	var results []model.ValidationRequest
-	err := r.db.NewSelect().Model(&results).
-		Where("usercode = ?", usercode).
-		Where("lecture_id IN (?)", bun.In(lecture_ids)).
-		Where("id <= ?", last).
-		Order("id DESC").
-		Limit(limit).
-		Scan(ctx)
+type Direction string
 
+const (
+	DirectionNext Direction = "next"
+	DirectionPrev Direction = "prev"
+)
+
+// GetValidationResults retrieves validation results for a user filtered by allowed lecture IDs, with pagination support.
+//
+// usercode: If non-negative, filters results to only those submitted by the specified user. If negative, retrieves results for all users.
+// lecture_ids: List of lecture IDs that the user is allowed to access.
+// last: The ID of the last record from the previous page. For "next" direction, fetches records with IDs less than this value. For "prev" direction, fetches records with IDs greater than this value.
+// limit: Maximum number of records to retrieve.
+// direction: "next" to fetch older records (IDs less than 'last'), "prev" to fetch newer records (IDs greater than 'last').
+//
+// Returns a slice of ValidationRequest and an error if any.
+// NOTE: This function does not utilize OFFSET, because OFFSET can be inefficient for large datasets.
+func (r *RequestStore) GetValidationResults(ctx context.Context, usercode int64, lecture_ids []int64, Anchor int64, limit int, direction Direction) ([]model.ValidationRequest, error) {
+	var results []model.ValidationRequest
+
+	intermediate := r.db.NewSelect().Model(&results).Where("lecture_id IN (?)", bun.In(lecture_ids))
+
+	if usercode >= 0 {
+		intermediate = intermediate.Where("usercode = ?", usercode)
+	}
+
+	switch direction {
+	case DirectionNext:
+		intermediate = intermediate.Where("id < ?", Anchor).Order("id DESC")
+	case DirectionPrev:
+		intermediate = intermediate.Where("id > ?", Anchor).Order("id ASC")
+	default:
+		return nil, errors.New("invalid direction")
+	}
+
+	err := intermediate.Limit(limit).Scan(ctx)
 	return results, err
 }
 

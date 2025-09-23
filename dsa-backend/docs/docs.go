@@ -778,12 +778,23 @@ const docTemplate = `{
                 "summary": "List Validation Results for Current User",
                 "parameters": [
                     {
-                        "minimum": -1,
+                        "minimum": 0,
                         "type": "integer",
                         "format": "int64",
-                        "default": -1,
-                        "description": "The last ID received in the previous request. Use -1 to get the most recent results.",
-                        "name": "last",
+                        "default": 15000000,
+                        "description": "The anchor ID received in the previous request.",
+                        "name": "anchor",
+                        "in": "query"
+                    },
+                    {
+                        "enum": [
+                            "next",
+                            "prev"
+                        ],
+                        "type": "string",
+                        "default": "next",
+                        "description": "The direction to fetch results. Use 'next' to get older results and 'prev' to get newer results.",
+                        "name": "direction",
                         "in": "query"
                     }
                 ],
@@ -1322,9 +1333,6 @@ const docTemplate = `{
         "problem.ListingOutput": {
             "type": "object",
             "properties": {
-                "last_id": {
-                    "type": "integer"
-                },
                 "lecture_info": {
                     "type": "array",
                     "items": {

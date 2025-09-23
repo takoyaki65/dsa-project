@@ -168,8 +168,6 @@ definitions:
     type: object
   problem.ListingOutput:
     properties:
-      last_id:
-        type: integer
       lecture_info:
         items:
           $ref: '#/definitions/util.LectureEntry'
@@ -819,14 +817,22 @@ paths:
       description: List validation results (not detailed, just summary) for the current
         user.
       parameters:
-      - default: -1
-        description: The last ID received in the previous request. Use -1 to get the
-          most recent results.
+      - default: 15000000
+        description: The anchor ID received in the previous request.
         format: int64
         in: query
-        minimum: -1
-        name: last
+        minimum: 0
+        name: anchor
         type: integer
+      - default: next
+        description: The direction to fetch results. Use 'next' to get older results
+          and 'prev' to get newer results.
+        enum:
+        - next
+        - prev
+        in: query
+        name: direction
+        type: string
       produces:
       - application/json
       responses:
