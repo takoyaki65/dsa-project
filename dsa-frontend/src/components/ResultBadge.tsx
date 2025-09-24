@@ -36,17 +36,23 @@ const ResultBadge: React.FC<{ resultID: number }> = ({ resultID }) => {
   const explanation = resultIDtoExplanation[resultID as keyof typeof resultIDtoExplanation] || "Unknown Result";
 
   // AC: Green, other: Orange
-  const bgColor = resultID === 0 ? "bg-green-500" : "bg-orange-500";
-  const hoverBgColor = resultID === 0 ? "hover:bg-green-600" : "hover:bg-orange-600";
+  const isGreen = resultID === 0;
+  const isGray = resultID === 9 || resultID === 10;
+
+  const bgColor = isGreen ? "bg-green-500" : isGray ? "bg-gray-500" : "bg-orange-500";
+  const hoverBgColor = isGreen ? "hover:bg-green-600" : isGray ? "hover:bg-gray-600" : "hover:bg-orange-600";
 
   return (
     <div className="relative inline-block">
       <div
-        className={`${bgColor} ${hoverBgColor} text-white px-2 py-1 rounded cursor-pointer font-semibold text-sm transition-colors duration-200`}
+        className={`${bgColor} ${hoverBgColor} flex items-center text-white px-2 py-1 rounded cursor-pointer font-semibold text-sm transition-colors duration-200`}
         onMouseEnter={() => setShowTooltip(true)}
         onMouseLeave={() => setShowTooltip(false)}
       >
         {resultText}
+        {(resultID === 9 || resultID === 10) && (
+          <div className="animate-spin h-3 w-3 border-2 border-gray-400 border-t-transparent rounded-full"></div>
+        )}
       </div>
 
       {showTooltip && (

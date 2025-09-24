@@ -95,7 +95,7 @@ func (r *RequestStore) GetValidationResults(ctx context.Context, usercode int64,
 
 func (r *RequestStore) GetValidationResultByID(ctx context.Context, id int64) (*model.ValidationRequest, error) {
 	var result model.ValidationRequest
-	err := r.db.NewSelect().Model(&result).Relation("FileLocation").Where("validation_request.id = ?", id).Scan(ctx)
+	err := r.db.NewSelect().Model(&result).Relation("FileLocation").Relation("User").Where("validation_request.id = ?", id).Scan(ctx)
 	if err != nil {
 		return nil, err
 	}

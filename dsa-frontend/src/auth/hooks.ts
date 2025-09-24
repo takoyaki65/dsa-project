@@ -69,7 +69,7 @@ export const useToken = () => {
   };
 };
 
-const addAuthorizationHeader = (config: AxiosRequestConfig | undefined): AxiosRequestConfig => {
+export const addAuthorizationHeader = (config: AxiosRequestConfig | undefined): AxiosRequestConfig => {
   const { token, expiry } = getStoredToken();
 
   if (!token) {

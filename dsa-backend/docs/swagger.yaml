@@ -776,6 +776,45 @@ paths:
       summary: Get Grading Result Detail
       tags:
       - Result
+  /problem/result/validation/{id}:
+    get:
+      description: Get summary information about a specific validation result.
+      parameters:
+      - description: Validation Result ID
+        format: int64
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/problem.ValidationResult'
+        "400":
+          description: Invalid request
+          schema:
+            $ref: '#/definitions/response.Error'
+        "401":
+          description: Failed to get user info
+          schema:
+            $ref: '#/definitions/response.Error'
+        "404":
+          description: Validation result not found
+          schema:
+            $ref: '#/definitions/response.Error'
+        "500":
+          description: Failed to get validation result
+          schema:
+            $ref: '#/definitions/response.Error'
+      security:
+      - OAuth2Password:
+        - me
+      summary: Get Validation Result Summary
+      tags:
+      - Result
   /problem/result/validation/detail/{id}:
     get:
       description: Get detailed information about a specific validation result.

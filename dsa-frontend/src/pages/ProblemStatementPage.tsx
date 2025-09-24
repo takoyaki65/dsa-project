@@ -3,7 +3,7 @@ import Markdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { oneDark } from 'react-syntax-highlighter/dist/esm/styles/prism';
-import { useParams } from "react-router";
+import { useNavigate, useParams } from "react-router";
 import NotFoundPage from "./NotFound";
 import { useAuthMutation, useAuthQuery } from "../auth/hooks";
 import type { JSX } from "react";
@@ -186,6 +186,8 @@ const renderProblemDetail = (detail: ProblemDetail, handleOnSubmit: (files: File
 const ProblemStatementPage: React.FC = () => {
   const { lectureid, problemid } = useParams<{ lectureid: string; problemid: string }>();
 
+  const navigate = useNavigate();
+
   // TODO: Should we check the validity of params before querying?
   const isValidLectureId = !!lectureid && !isNaN(parseInt(lectureid, 10));
   const isValidProblemId = !!problemid && !isNaN(parseInt(problemid, 10));
@@ -239,6 +241,7 @@ const ProblemStatementPage: React.FC = () => {
       console.log("Submission successful:", result);
 
       // TODO: move to result page.
+      navigate(`/validation/results`);
     } catch (error) {
       console.error("Submission error:", error);
     }

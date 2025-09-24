@@ -56,6 +56,7 @@ func (h *Handler) RegisterRoutes(r *echo.Group) {
 	crudRouter.DELETE("/delete/:lectureid/:problemid", h.DeleteProblem)
 
 	resultRouter := r.Group("/result")
+	resultRouter.GET("/validation/:id", h.GetValidationResult)
 	resultRouter.GET("/validation/list", h.ListValidationResults)
 	resultRouter.GET("/validation/detail/:id", h.GetValidationDetail)
 

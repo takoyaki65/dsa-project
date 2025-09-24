@@ -2,8 +2,9 @@ import type React from "react";
 import NavigationBar from "../components/NavigationBar";
 import { formatTimestamp } from "../util/timestamp";
 import ResultBadge from "../components/ResultBadge";
-import { useAuthQuery } from "../auth/hooks";
-import { useEffect, useState } from "react";
+import { addAuthorizationHeader, useAuthQuery } from "../auth/hooks";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { axiosClient } from "../api/axiosClient";
 
 interface ValidationResult {
   id: number;
@@ -41,6 +42,7 @@ const ValidationResultsListing: React.FC = () => {
   const [anchor, setAnchor] = useState<number>(15000000);
   const [direction, setDirection] = useState<"next" | "prev">("next");
   const [currentData, setCurrentData] = useState<APIResponse | null>(null);
+  const intervalRef = useRef<number | null>(null);
 
   // API call using useAuthQuery
   const { data, isLoading, error } = useAuthQuery<APIResponse>({
@@ -60,6 +62,73 @@ const ValidationResultsListing: React.FC = () => {
       setCurrentData(data);
     }
   }, [data]);
+
+  // Function to fetch individual result
+  const fetchIndividualResult = useCallback(async (resultId: number) => {
+    try {
+      // Using axios with authorization header directly
+      const config = addAuthorizationHeader(undefined);
+      const response = await axiosClient.get<ValidationResult>(
+        `/problem/result/validation/${resultId}`,
+        config
+      );
+
+      const updatedResult = response.data;
+
+      // Update the specific result in currentData
+      setCurrentData(prevData => {
+        if (!prevData) return prevData;
+
+        return {
+          ...prevData,
+          results: prevData.results.map(r =>
+            r.id === resultId ? updatedResult : r
+          )
+        };
+      });
+    } catch (error) {
+      console.error(`Failed to fetch result ${resultId}:`, error);
+      // Optionally, remove the ID from judgingIds if the fetch fails repeatedly
+      // This prevents infinite retries for deleted or invalid results
+    }
+  }, []);
+
+  // Set up polling for judging results
+  useEffect(() => {
+    // Clear existing interval
+    if (intervalRef.current) {
+      console.log("clearing existing interval: ", intervalRef.current);
+      clearInterval(intervalRef.current);
+      intervalRef.current = null;
+    }
+
+    // calculate judging IDs
+    if (!currentData) return;
+    const judgingIds = currentData.results
+      .filter(r => r.result_id === 9 || r.result_id === 10)
+      .map(r => r.id);
+
+    console.log("Current judging IDs: ", judgingIds);
+
+    // If there are judging results, set up polling
+    if (judgingIds.length > 0) {
+      intervalRef.current = setInterval(() => {
+        judgingIds.forEach(id => {
+          fetchIndividualResult(id);
+        });
+      }, 3000); // Poll every 3 seconds
+      console.log("interval set for judging results: ", intervalRef.current);
+    }
+
+    // Cleanup on unmount or when judgingIds change
+    return () => {
+      if (intervalRef.current) {
+        console.log("clearing interval: ", intervalRef.current);
+        clearInterval(intervalRef.current);
+        intervalRef.current = null;
+      }
+    };
+  }, [currentData, fetchIndividualResult]);
 
   const getProblemTitle = (lectureId: number, problemId: number): string => {
     if (!currentData) return "Unknown";

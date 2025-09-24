@@ -124,6 +124,72 @@ func (h *Handler) ListValidationResults(c echo.Context) error {
 	})
 }
 
+type ValidationResultProps struct {
+	ID int64 `param:"id" validate:"required,min=1"`
+}
+
+// GetValidationResult gets summary information about a specific validation result.
+//
+//	@Summary		Get Validation Result Summary
+//	@Description	Get summary information about a specific validation result.
+//	@Tags			Result
+//	@Produce		json
+//	@Param			id	path		int64	true	"Validation Result ID"
+//	@Success		200	{object}	ValidationResult
+//	@Failure		400	{object}	response.Error	"Invalid request"
+//	@Failure		401	{object}	response.Error	"Failed to get user info"
+//	@Failure		404	{object}	response.Error	"Validation result not found"
+//	@Failure		500	{object}	response.Error	"Failed to get validation result"
+//	@Security		OAuth2Password[me]
+//	@Router			/problem/result/validation/{id} [get]
+func (h *Handler) GetValidationResult(c echo.Context) error {
+	var props ValidationResultProps
+	if err := c.Bind(&props); err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, response.NewError("Invalid request"))
+	}
+
+	if err := c.Validate(&props); err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, response.NewError("Invalid request"))
+	}
+
+	ctx := context.Background()
+
+	// get user info from jwt
+	claim, err := auth.GetJWTClaims(&c)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusUnauthorized, response.NewError("Failed to get user info"))
+	}
+
+	userCode := claim.ID
+
+	rightsToAccessAll := claim.HasAllScopes(auth.ScopeGrading) || claim.HasAllScopes(auth.ScopeAdmin)
+	validationRequest, err := h.requestStore.GetValidationResultByID(ctx, props.ID)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError, response.NewError("Failed to get validation result"))
+	}
+
+	if validationRequest == nil {
+		return echo.NewHTTPError(http.StatusNotFound, response.NewError("Validation result not found"))
+	}
+
+	// when the user is not admin or manager, check if the user is the owner of the request
+	if !rightsToAccessAll && validationRequest.UserCode != userCode {
+		return echo.NewHTTPError(http.StatusNotFound, response.NewError("Validation result not found"))
+	}
+
+	return c.JSON(http.StatusOK, ValidationResult{
+		ID:        validationRequest.ID,
+		TS:        validationRequest.TS.Unix(),
+		UserID:    validationRequest.User.UserID,
+		UserName:  validationRequest.User.Name,
+		LectureID: validationRequest.LectureID,
+		ProblemID: validationRequest.ProblemID,
+		ResultID:  int64(validationRequest.ResultID),
+		TimeMS:    validationRequest.Log.TimeMS,
+		MemoryKB:  validationRequest.Log.MemoryKB,
+	})
+}
+
 type ValidationDetailProps struct {
 	ID int64 `param:"id" validate:"required,min=1"`
 }

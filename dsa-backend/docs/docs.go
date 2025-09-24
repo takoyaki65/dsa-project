@@ -826,6 +826,67 @@ const docTemplate = `{
                 }
             }
         },
+        "/problem/result/validation/{id}": {
+            "get": {
+                "security": [
+                    {
+                        "OAuth2Password": [
+                            "me"
+                        ]
+                    }
+                ],
+                "description": "Get summary information about a specific validation result.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Result"
+                ],
+                "summary": "Get Validation Result Summary",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "format": "int64",
+                        "description": "Validation Result ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/problem.ValidationResult"
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid request",
+                        "schema": {
+                            "$ref": "#/definitions/response.Error"
+                        }
+                    },
+                    "401": {
+                        "description": "Failed to get user info",
+                        "schema": {
+                            "$ref": "#/definitions/response.Error"
+                        }
+                    },
+                    "404": {
+                        "description": "Validation result not found",
+                        "schema": {
+                            "$ref": "#/definitions/response.Error"
+                        }
+                    },
+                    "500": {
+                        "description": "Failed to get validation result",
+                        "schema": {
+                            "$ref": "#/definitions/response.Error"
+                        }
+                    }
+                }
+            }
+        },
         "/problem/validate/batch/{lectureid}": {
             "post": {
                 "security": [
