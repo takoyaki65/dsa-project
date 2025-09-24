@@ -51,7 +51,7 @@ const ResultBadge: React.FC<{ resultID: number }> = ({ resultID }) => {
       >
         {resultText}
         {(resultID === 9 || resultID === 10) && (
-          <div className="animate-spin h-3 w-3 border-2 border-gray-400 border-t-transparent rounded-full"></div>
+          <div className="pl-1 animate-spin h-3 w-3 border-2 border-gray-400 border-t-transparent rounded-full"></div>
         )}
       </div>
 
