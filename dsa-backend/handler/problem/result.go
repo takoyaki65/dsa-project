@@ -392,6 +392,18 @@ func (h *Handler) GetValidationDetail(c echo.Context) error {
 			return echo.NewHTTPError(http.StatusInternalServerError, response.NewError("Inconsistent data: judge task not found"))
 		}
 
+		// Note: Stdin is optional
+		stdinData := ""
+		if corresponding_task.StdinPath != "" {
+			// If StdinPath is specified, try to fetch the stdin file
+			stdinPath := filepath.Join(resource_dir, corresponding_task.StdinPath)
+			stdin, err := util.FetchFile(stdinPath)
+			if err != nil {
+				return echo.NewHTTPError(http.StatusInternalServerError, response.NewError("Failed to read judge stdin"))
+			}
+			stdinData = stdin.Data
+		}
+
 		detail.JudgeLogs = append(detail.JudgeLogs, DetailedTaskLog{
 			TestCaseID:  judgeResult.TestCaseID,
 			Description: corresponding_task.Description,
@@ -400,6 +412,7 @@ func (h *Handler) GetValidationDetail(c echo.Context) error {
 			TimeMS:      judgeResult.TimeMS,
 			MemoryKB:    judgeResult.MemoryKB,
 			ExitCode:    judgeResult.ExitCode,
+			Stdin:       stdinData,
 			Stdout:      stdout.Data,
 			Stderr:      stderr.Data,
 		})
@@ -799,10 +812,16 @@ func (h *Handler) GetGradingResult(c echo.Context) error {
 				return echo.NewHTTPError(http.StatusInternalServerError, response.NewError("Failed to get problem info"))
 			}
 
-			stdinPath := filepath.Join(resource_dir, corresponding_task.StdinPath)
-			stdin, err := util.FetchFile(stdinPath)
-			if err != nil {
-				return echo.NewHTTPError(http.StatusInternalServerError, response.NewError("Failed to read judge stdin"))
+			// Note: Stdin is optional
+			stdinData := ""
+			if corresponding_task.StdinPath != "" {
+				// If StdinPath is specified, try to fetch the stdin file
+				stdinPath := filepath.Join(resource_dir, corresponding_task.StdinPath)
+				stdin, err := util.FetchFile(stdinPath)
+				if err != nil {
+					return echo.NewHTTPError(http.StatusInternalServerError, response.NewError("Failed to read judge stdin"))
+				}
+				stdinData = stdin.Data
 			}
 
 			detail.JudgeLogs = append(detail.JudgeLogs, DetailedTaskLog{
@@ -813,7 +832,7 @@ func (h *Handler) GetGradingResult(c echo.Context) error {
 				TimeMS:      judgeResult.TimeMS,
 				MemoryKB:    judgeResult.MemoryKB,
 				ExitCode:    judgeResult.ExitCode,
-				Stdin:       stdin.Data,
+				Stdin:       stdinData,
 				Stdout:      stdout.Data,
 				Stderr:      stderr.Data,
 			})
