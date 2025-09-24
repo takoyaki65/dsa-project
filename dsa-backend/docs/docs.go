@@ -1213,6 +1213,14 @@ const docTemplate = `{
                 "exit_code": {
                     "type": "integer"
                 },
+                "expected_stderr": {
+                    "description": "base64 encoded, compressed with gzip",
+                    "type": "string"
+                },
+                "expected_stdout": {
+                    "description": "base64 encoded, compressed with gzip",
+                    "type": "string"
+                },
                 "memory_kb": {
                     "type": "integer"
                 },
