@@ -1195,12 +1195,21 @@ const docTemplate = `{
                 },
                 "user_id": {
                     "type": "string"
+                },
+                "user_name": {
+                    "type": "string"
                 }
             }
         },
         "problem.DetailedTaskLog": {
             "type": "object",
             "properties": {
+                "command": {
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string"
+                },
                 "exit_code": {
                     "type": "integer"
                 },
@@ -1211,11 +1220,15 @@ const docTemplate = `{
                     "type": "integer"
                 },
                 "stderr": {
-                    "description": "base64 encoded",
+                    "description": "base64 encoded, compressed with gzip",
+                    "type": "string"
+                },
+                "stdin": {
+                    "description": "base64 encoded, compressed with gzip",
                     "type": "string"
                 },
                 "stdout": {
-                    "description": "base64 encoded",
+                    "description": "base64 encoded, compressed with gzip",
                     "type": "string"
                 },
                 "test_case_id": {

@@ -2,6 +2,7 @@ package database
 
 import (
 	"context"
+	"errors"
 
 	"github.com/takoyaki65/dsa-project/database/model"
 	"github.com/uptrace/bun"
@@ -124,4 +125,54 @@ func (ps *ProblemStore) DeleteProblem(ctx context.Context, lectureID, problemID 
 		return err
 	}
 	return nil
+}
+
+type ProblemKey struct {
+	LectureID int64
+	ProblemID int64
+}
+
+type ResourcePathDict map[ProblemKey]string
+
+func (r *ResourcePathDict) Get(lectureID, problemID int64) (string, bool) {
+	path, exists := (*r)[ProblemKey{LectureID: lectureID, ProblemID: problemID}]
+	return path, exists
+}
+
+func (ps *ProblemStore) FetchAllResourceLocations(ctx context.Context, lecture_id *int64, problem_id *int64) (ResourcePathDict, error) {
+	var lecture_ids []int64
+	var problem_ids []int64
+	var paths []string
+
+	query := ps.db.NewSelect().Model((*model.Problem)(nil)).Column("lecture_id", "problem_id", "filelocation.path")
+
+	if lecture_id != nil {
+		query = query.Where("lecture_id = ?", *lecture_id)
+	}
+
+	if problem_id != nil {
+		query = query.Where("problem_id = ?", *problem_id)
+	}
+
+	query = query.Join("JOIN filelocation ON problem.resource_location_id = filelocation.id")
+
+	err := query.Scan(ctx, &lecture_ids, &problem_ids, &paths)
+	if err != nil {
+		return nil, err
+	}
+
+	if len(lecture_ids) != len(problem_ids) || len(lecture_ids) != len(paths) {
+		return nil, errors.New("inconsistent data fetched from database")
+	}
+
+	result := make(map[ProblemKey]string)
+	for i := range lecture_ids {
+		key := ProblemKey{
+			LectureID: lecture_ids[i],
+			ProblemID: problem_ids[i],
+		}
+		result[key] = paths[i]
+	}
+
+	return result, nil
 }

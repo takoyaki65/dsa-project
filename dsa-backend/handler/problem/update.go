@@ -369,7 +369,7 @@ func (h *Handler) RegisterProblem(c echo.Context) error {
 		RegisteredAt:       time.Now(),
 		Title:              config.Title,
 		ResourceLocationID: fileLocation.ID,
-		Detail:             &detail,
+		Detail:             detail,
 	}
 
 	err = h.problemStore.RegisterProblem(context, problem)

@@ -36,9 +36,15 @@ definitions:
         type: array
       user_id:
         type: string
+      user_name:
+        type: string
     type: object
   problem.DetailedTaskLog:
     properties:
+      command:
+        type: string
+      description:
+        type: string
       exit_code:
         type: integer
       memory_kb:
@@ -46,10 +52,13 @@ definitions:
       result_id:
         type: integer
       stderr:
-        description: base64 encoded
+        description: base64 encoded, compressed with gzip
+        type: string
+      stdin:
+        description: base64 encoded, compressed with gzip
         type: string
       stdout:
-        description: base64 encoded
+        description: base64 encoded, compressed with gzip
         type: string
       test_case_id:
         type: integer

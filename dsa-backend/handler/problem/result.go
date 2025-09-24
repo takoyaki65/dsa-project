@@ -6,6 +6,7 @@ import (
 	"dsa-backend/handler/problem/util"
 	"dsa-backend/handler/response"
 	"net/http"
+	"path/filepath"
 	"slices"
 
 	"github.com/labstack/echo/v4"
@@ -198,6 +199,7 @@ type DetailOutput struct {
 	ID            int64             `json:"id"`
 	TS            int64             `json:"ts"`
 	UserID        string            `json:"user_id"`
+	UserName      string            `json:"user_name"`
 	LectureID     int64             `json:"lecture_id"`
 	ProblemID     int64             `json:"problem_id"`
 	SubmissionTS  int64             `json:"submission_ts"`
@@ -211,13 +213,16 @@ type DetailOutput struct {
 }
 
 type DetailedTaskLog struct {
-	TestCaseID int64  `json:"test_case_id"`
-	ResultID   int64  `json:"result_id"`
-	TimeMS     int64  `json:"time_ms"`
-	MemoryKB   int64  `json:"memory_kb"`
-	ExitCode   int64  `json:"exit_code"`
-	Stdout     string `json:"stdout"` // base64 encoded
-	Stderr     string `json:"stderr"` // base64 encoded
+	TestCaseID  int64  `json:"test_case_id"`
+	Description string `json:"description"`
+	Command     string `json:"command"`
+	ResultID    int64  `json:"result_id"`
+	TimeMS      int64  `json:"time_ms"`
+	MemoryKB    int64  `json:"memory_kb"`
+	ExitCode    int64  `json:"exit_code"`
+	Stdin       string `json:"stdin"`  // base64 encoded, compressed with gzip
+	Stdout      string `json:"stdout"` // base64 encoded, compressed with gzip
+	Stderr      string `json:"stderr"` // base64 encoded, compressed with gzip
 }
 
 // GetValidationDetail gets detailed information about a specific validation result.
@@ -271,6 +276,7 @@ func (h *Handler) GetValidationDetail(c echo.Context) error {
 		ID:           validationRequest.ID,
 		TS:           validationRequest.TS.Unix(),
 		UserID:       userID,
+		UserName:     validationRequest.User.Name,
 		LectureID:    validationRequest.LectureID,
 		ProblemID:    validationRequest.ProblemID,
 		SubmissionTS: validationRequest.TS.Unix(), // for validation request, submission ts is same as request ts
@@ -298,6 +304,28 @@ func (h *Handler) GetValidationDetail(c echo.Context) error {
 
 	detail.UploadedFiles = fileDataList
 
+	// Fetch problem info to get test case info and test files.
+	problem_info, err := h.problemStore.GetProblemByID(ctx, validationRequest.LectureID, validationRequest.ProblemID)
+
+	if err != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError, response.NewError("Failed to get problem info"))
+	}
+
+	resource_dir, err := h.problemStore.FetchResourcePath(ctx, validationRequest.LectureID, validationRequest.ProblemID)
+
+	if err != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError, response.NewError("Failed to get problem info"))
+	}
+
+	buildTaskDict := make(map[int64]model.TestCase)
+	for _, task := range problem_info.Detail.BuildTasks {
+		buildTaskDict[task.ID] = task
+	}
+	judgeTaskDict := make(map[int64]model.TestCase)
+	for _, task := range problem_info.Detail.JudgeTasks {
+		judgeTaskDict[task.ID] = task
+	}
+
 	// Fill in test files
 	testFiles, err := util.FetchTestFielsInProblem(ctx, h.problemStore, validationRequest.LectureID, validationRequest.ProblemID)
 	if err != nil {
@@ -307,6 +335,24 @@ func (h *Handler) GetValidationDetail(c echo.Context) error {
 
 	// Fill in build logs
 	for _, buildResult := range validationRequest.Log.BuildResults {
+		corresponding_task, exists := buildTaskDict[buildResult.TestCaseID]
+		if !exists {
+			return echo.NewHTTPError(http.StatusInternalServerError, response.NewError("Inconsistent data: build task not found"))
+		}
+
+		// Note: Stdin is optional
+		stdinData := ""
+
+		if corresponding_task.StdinPath != "" {
+			// If StdinPath is specified, try to fetch the stdin file
+			stdinPath := filepath.Join(resource_dir, corresponding_task.StdinPath)
+			stdin, err := util.FetchFile(stdinPath)
+			if err != nil {
+				return echo.NewHTTPError(http.StatusInternalServerError, response.NewError("Failed to read build stdin"))
+			}
+			stdinData = stdin.Data
+		}
+
 		stdout, err := util.FetchFile(buildResult.StdoutPath)
 		if err != nil {
 			return echo.NewHTTPError(http.StatusInternalServerError, response.NewError("Failed to read build stdout"))
@@ -317,13 +363,16 @@ func (h *Handler) GetValidationDetail(c echo.Context) error {
 		}
 
 		detail.BuildLogs = append(detail.BuildLogs, DetailedTaskLog{
-			TestCaseID: buildResult.TestCaseID,
-			ResultID:   int64(buildResult.ResultID),
-			TimeMS:     buildResult.TimeMS,
-			MemoryKB:   buildResult.MemoryKB,
-			ExitCode:   buildResult.ExitCode,
-			Stdout:     stdout.Data,
-			Stderr:     stderr.Data,
+			TestCaseID:  buildResult.TestCaseID,
+			Description: corresponding_task.Description,
+			Command:     corresponding_task.Command,
+			ResultID:    int64(buildResult.ResultID),
+			TimeMS:      buildResult.TimeMS,
+			MemoryKB:    buildResult.MemoryKB,
+			ExitCode:    buildResult.ExitCode,
+			Stdin:       stdinData,
+			Stdout:      stdout.Data,
+			Stderr:      stderr.Data,
 		})
 	}
 
@@ -338,14 +387,21 @@ func (h *Handler) GetValidationDetail(c echo.Context) error {
 			return echo.NewHTTPError(http.StatusInternalServerError, response.NewError("Failed to read judge stderr"))
 		}
 
+		corresponding_task, exists := judgeTaskDict[judgeResult.TestCaseID]
+		if !exists {
+			return echo.NewHTTPError(http.StatusInternalServerError, response.NewError("Inconsistent data: judge task not found"))
+		}
+
 		detail.JudgeLogs = append(detail.JudgeLogs, DetailedTaskLog{
-			TestCaseID: judgeResult.TestCaseID,
-			ResultID:   int64(judgeResult.ResultID),
-			TimeMS:     judgeResult.TimeMS,
-			MemoryKB:   judgeResult.MemoryKB,
-			ExitCode:   judgeResult.ExitCode,
-			Stdout:     stdout.Data,
-			Stderr:     stderr.Data,
+			TestCaseID:  judgeResult.TestCaseID,
+			Description: corresponding_task.Description,
+			Command:     corresponding_task.Command,
+			ResultID:    int64(judgeResult.ResultID),
+			TimeMS:      judgeResult.TimeMS,
+			MemoryKB:    judgeResult.MemoryKB,
+			ExitCode:    judgeResult.ExitCode,
+			Stdout:      stdout.Data,
+			Stderr:      stderr.Data,
 		})
 	}
 
@@ -575,6 +631,12 @@ func (h *Handler) GetGradingResult(c echo.Context) error {
 		problemDict[problem.ProblemID] = *problem
 	}
 
+	// Fetch resource paths for all problems
+	resourceDirDict, err := h.problemStore.FetchAllResourceLocations(ctx, &props.LectureID, nil)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError, response.NewError("Failed to get problem info"))
+	}
+
 	grResults, err := h.requestStore.GetGradingResultsByLectureIDAndUserCode(ctx, props.LectureID, userCode)
 	if err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, response.NewError("Failed to get grading results"))
@@ -660,6 +722,16 @@ func (h *Handler) GetGradingResult(c echo.Context) error {
 			// JudgeLogs to be filled later
 		}
 
+		buildTaskDict := make(map[int64]model.TestCase)
+		for _, task := range problemData.Detail.BuildTasks {
+			buildTaskDict[task.ID] = task
+		}
+
+		judgeTaskDict := make(map[int64]model.TestCase)
+		for _, task := range problemData.Detail.JudgeTasks {
+			judgeTaskDict[task.ID] = task
+		}
+
 		for _, buildResult := range grResult.Log.BuildResults {
 			stdout, err := util.FetchFile(buildResult.StdoutPath)
 			if err != nil {
@@ -670,14 +742,40 @@ func (h *Handler) GetGradingResult(c echo.Context) error {
 				return echo.NewHTTPError(http.StatusInternalServerError, response.NewError("Failed to read build stderr"))
 			}
 
+			corresponding_task, exists := buildTaskDict[buildResult.TestCaseID]
+			if !exists {
+				return echo.NewHTTPError(http.StatusInternalServerError, response.NewError("Inconsistent data: build task not found"))
+			}
+
+			resource_dir, exists := resourceDirDict.Get(grResult.LectureID, grResult.ProblemID)
+			if !exists {
+				return echo.NewHTTPError(http.StatusInternalServerError, response.NewError("Failed to get problem info"))
+			}
+
+			// Note: Stdin is optional
+			stdinData := ""
+
+			if corresponding_task.StdinPath != "" {
+				// If StdinPath is specified, try to fetch the stdin file
+				stdinPath := filepath.Join(resource_dir, corresponding_task.StdinPath)
+				stdin, err := util.FetchFile(stdinPath)
+				if err != nil {
+					return echo.NewHTTPError(http.StatusInternalServerError, response.NewError("Failed to read build stdin"))
+				}
+				stdinData = stdin.Data
+			}
+
 			detail.BuildLogs = append(detail.BuildLogs, DetailedTaskLog{
-				TestCaseID: buildResult.TestCaseID,
-				ResultID:   int64(buildResult.ResultID),
-				TimeMS:     buildResult.TimeMS,
-				MemoryKB:   buildResult.MemoryKB,
-				ExitCode:   buildResult.ExitCode,
-				Stdout:     stdout.Data,
-				Stderr:     stderr.Data,
+				TestCaseID:  buildResult.TestCaseID,
+				Description: corresponding_task.Description,
+				Command:     corresponding_task.Command,
+				ResultID:    int64(buildResult.ResultID),
+				TimeMS:      buildResult.TimeMS,
+				MemoryKB:    buildResult.MemoryKB,
+				ExitCode:    buildResult.ExitCode,
+				Stdin:       stdinData,
+				Stdout:      stdout.Data,
+				Stderr:      stderr.Data,
 			})
 		}
 
@@ -691,14 +789,33 @@ func (h *Handler) GetGradingResult(c echo.Context) error {
 				return echo.NewHTTPError(http.StatusInternalServerError, response.NewError("Failed to read judge stderr"))
 			}
 
+			corresponding_task, exists := judgeTaskDict[judgeResult.TestCaseID]
+			if !exists {
+				return echo.NewHTTPError(http.StatusInternalServerError, response.NewError("Inconsistent data: judge task not found"))
+			}
+
+			resource_dir, exists := resourceDirDict.Get(grResult.LectureID, grResult.ProblemID)
+			if !exists {
+				return echo.NewHTTPError(http.StatusInternalServerError, response.NewError("Failed to get problem info"))
+			}
+
+			stdinPath := filepath.Join(resource_dir, corresponding_task.StdinPath)
+			stdin, err := util.FetchFile(stdinPath)
+			if err != nil {
+				return echo.NewHTTPError(http.StatusInternalServerError, response.NewError("Failed to read judge stdin"))
+			}
+
 			detail.JudgeLogs = append(detail.JudgeLogs, DetailedTaskLog{
-				TestCaseID: judgeResult.TestCaseID,
-				ResultID:   int64(judgeResult.ResultID),
-				TimeMS:     judgeResult.TimeMS,
-				MemoryKB:   judgeResult.MemoryKB,
-				ExitCode:   judgeResult.ExitCode,
-				Stdout:     stdout.Data,
-				Stderr:     stderr.Data,
+				TestCaseID:  judgeResult.TestCaseID,
+				Description: corresponding_task.Description,
+				Command:     corresponding_task.Command,
+				ResultID:    int64(judgeResult.ResultID),
+				TimeMS:      judgeResult.TimeMS,
+				MemoryKB:    judgeResult.MemoryKB,
+				ExitCode:    judgeResult.ExitCode,
+				Stdin:       stdin.Data,
+				Stdout:      stdout.Data,
+				Stderr:      stderr.Data,
 			})
 		}
 

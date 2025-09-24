@@ -26,7 +26,7 @@ type Problem struct {
 	RegisteredAt       time.Time `bun:"registered_at,notnull,default:current_timestamp" json:"registered_at"`
 	Title              string    `bun:"title,notnull" json:"title"`
 	ResourceLocationID int64     `bun:"resource_location_id,notnull" json:"resource_location_id"`
-	Detail             *Detail   `bun:"detail,notnull,type:jsonb" json:"detail"`
+	Detail             Detail    `bun:"detail,notnull,type:jsonb" json:"detail"`
 }
 
 type Detail struct {
