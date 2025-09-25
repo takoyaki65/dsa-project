@@ -39,7 +39,7 @@ async function decompressFileData(compressedFileData: CompressedFileData): Promi
     const decompressedData = await decompressWithStream(bytes);
 
     /* Create Blob from decompressed data */
-    const blob = createBlobFromUint8Array(decompressedData);
+    const blob = new Blob([decompressedData]);
 
     return {
       filename: compressedFileData.filename,
@@ -52,14 +52,7 @@ async function decompressFileData(compressedFileData: CompressedFileData): Promi
   }
 }
 
-function createBlobFromUint8Array(data: Uint8Array): Blob {
-  const buffer = new ArrayBuffer(data.length);
-  const view = new Uint8Array(buffer);
-  view.set(data);
-  return new Blob([buffer]);
-}
-
-async function decompressWithStream(compressedData: Uint8Array): Promise<Uint8Array> {
+async function decompressWithStream(compressedData: Uint8Array<ArrayBuffer>): Promise<Uint8Array<ArrayBuffer>> {
   // Check for DecompressionStream support
   if (!('DecompressionStream' in window)) {
     throw new Error('DecompressionStream is not supported in this browser.');
@@ -67,7 +60,7 @@ async function decompressWithStream(compressedData: Uint8Array): Promise<Uint8Ar
 
   const ds = new DecompressionStream('gzip');
 
-  const blob = createBlobFromUint8Array(compressedData);
+  const blob = new Blob([compressedData]);
   const compressedStream = blob.stream();
 
   const decompressedstream = compressedStream.pipeThrough(ds);

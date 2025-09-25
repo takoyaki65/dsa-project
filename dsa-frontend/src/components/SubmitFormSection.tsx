@@ -147,7 +147,7 @@ const SubmitFormSection: React.FC<SubmitFormSectionProps> = ({ onSubmit, isLoadi
               </button>
             </div>
 
-            <div className="max-h-48 overflow-y-auto space-y-1.5 pl-1 pr-1">
+            <div className="max-h-48 overflow-y-auto space-y-1.5 pl-1 pr-1 group">
               {uploadedFiles.map((uploadedFile) => (
                 <div
                   key={uploadedFile.id}
