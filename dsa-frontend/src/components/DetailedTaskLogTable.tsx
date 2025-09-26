@@ -1,7 +1,7 @@
 import React from "react";
 import type { DetailedTaskLog } from "../types/DetailedTaskLog";
 import { useState } from "react";
-import { ChevronDown, ChevronUp } from "lucide-react";
+import { ChevronDown } from "lucide-react";
 import ResultBadge from "./ResultBadge";
 import { DiffEditor } from "@monaco-editor/react";
 

@@ -1,8 +1,8 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import type { FileData } from "../types/FileData";
 import { saveAs } from "file-saver";
 import JSZip from "jszip";
-import { ChevronDown, Download, File, FileText, X } from "lucide-react";
+import { ChevronDown, Download, File, FileText, Maximize2, Minimize2, X } from "lucide-react";
 import { Editor } from "@monaco-editor/react";
 const textExtensions = ['c', 'cpp', 'cc', 'h', 'hpp', 'py', 'js', 'jsx', 'ts', 'tsx', 'java', 'cs', 'php', 'rb', 'go', 'rs', 'swift', 'kt', 'scala', 'r', 'matlab', 'm', 'sh', 'bash', 'zsh', 'fish', 'ps1', 'bat', 'cmd', 'asm', 's', 'sql', 'html', 'css', 'xml', 'json', 'yaml', 'yml', 'toml', 'ini', 'cfg', 'conf', 'txt', 'md', 'markdown', 'rst', 'tex', 'log'];
 
@@ -68,6 +68,8 @@ const FileViewer: React.FC<FileViewerProps> = ({ files }) => {
   const [pdfUrl, setPdfUrl] = useState<string | null>(null);
   const [showPdfModel, setShowPdfModel] = useState(false);
   const [pdfFileName, setPdfFileName] = useState<string | null>(null);
+  const [isFullscreen, setIsFullscreen] = useState(false);
+  const modalRef = useRef<HTMLDivElement>(null);
 
   const getFileExtension = (filename: string): string => {
     const lastDot = filename.lastIndexOf(".");
@@ -116,6 +118,36 @@ const FileViewer: React.FC<FileViewerProps> = ({ files }) => {
     loadTextFiles();
   }, [files]);
 
+  // Event listener for Fullscreen change of PDF modal
+  useEffect(() => {
+    const handleFullscreenChange = () => {
+      setIsFullscreen(!!document.fullscreenElement);
+    };
+
+    document.addEventListener('fullscreenchange', handleFullscreenChange);
+
+    return () => {
+      document.removeEventListener('fullscreenchange', handleFullscreenChange);
+    };
+  }, []);
+
+  useEffect(() => {
+    // When modal is open and not in fullscreen, close on Escape
+    const handleEsc = (e: KeyboardEvent) => {
+      if (e.key === "Escape" && showPdfModel && !isFullscreen) {
+        closePdfModal();
+      }
+    };
+
+    // Register event listener only when modal is shown
+    if (showPdfModel) {
+      document.addEventListener("keydown", handleEsc);
+      return () => {
+        document.removeEventListener("keydown", handleEsc);
+      };
+    }
+  }, [showPdfModel, isFullscreen]);
+
   // initial selected file
   if (textFiles.length > 0 && !selectedFile) {
     setSelectedFile(textFiles[0]);
@@ -123,7 +155,7 @@ const FileViewer: React.FC<FileViewerProps> = ({ files }) => {
 
   const downloadFile = (file: FileData) => {
     if (getFileExtension(file.filename) === 'pdf') {
-      const url = URL.createObjectURL(file.data);
+      const url = URL.createObjectURL(new Blob([file.data], { type: 'application/pdf' }));
       setPdfUrl(url);
       setPdfFileName(file.filename);
       setShowPdfModel(true);
@@ -153,6 +185,36 @@ const FileViewer: React.FC<FileViewerProps> = ({ files }) => {
       setPdfUrl(null);
     }
     setPdfFileName(null);
+  };
+
+  // Toggle full screen for PDF modal
+  const toggleFullscreen = async () => {
+    if (!modalRef.current) return;
+
+    try {
+      if (!isFullscreen) {
+        // Enter fullscreen
+        const elem = modalRef.current;
+        if (elem.requestFullscreen) {
+          await elem.requestFullscreen();
+        }
+      } else {
+        // Exit fullscreen
+        await exitFullscreen();
+      }
+    } catch (error) {
+      console.error("Failed to toggle fullscreen:", error);
+    }
+  };
+
+  const exitFullscreen = async () => {
+    try {
+      if (document.exitFullscreen) {
+        await document.exitFullscreen();
+      }
+    } catch (error) {
+      console.error("Failed to exit fullscreen:", error);
+    }
   };
 
   const formatFileSize = (bytes: number): string => {
@@ -260,27 +322,51 @@ const FileViewer: React.FC<FileViewerProps> = ({ files }) => {
 
       {/* Modal for PDF viewer */}
       {showPdfModel && pdfUrl && (
-        <div className="fixed inset-0 bg-black flex items-center justify-center z-60 p-4">
-          <div className="bg-white rounded-lg shadow-xl w-full max-w-6xl h-[90vh] flex flex-col">
+        <div
+          ref={modalRef}
+          className={`fixed inset-0 ${isFullscreen ? 'bg-black/100' : 'bg-black/50'} flex items-center justify-center z-60 ${isFullscreen ? '' : 'p-4'}`}
+        >
+          <div className={`bg-white ${isFullscreen ? 'w-full h-full' : 'rounded-lg shadow-xl w-full max-w-6xl h-[90vh]'} flex flex-col`}>
             <div className="flex items-center justify-between p-4 border-b bg-gray-50">
               <div className="flex items-center gap-2">
                 <File className="w-5 h-5 text-gray-600" />
                 <h3 className="text-lg font-semibold text-gray-800">{pdfFileName}</h3>
               </div>
-              <button
-                onClick={closePdfModal}
-                className="p-2 hover:bg-gray-200 rounded-lg transition-colors"
-                aria-label="Close PDF Viewer"
-              >
-                <X className="w-5 h-5 text-gray-600" />
-              </button>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={toggleFullscreen}
+                  className="p-2 hover:bg-gray-200 rounded-lg transition-colors"
+                  aria-label={isFullscreen ? 'Exit fullscreen' : 'Enter fullscreen'}
+                  title={isFullscreen ? '全画面表示を終了' : '全画面表示'}
+                >
+                  {isFullscreen ? (
+                    <Minimize2 className="w-5 h-5 text-gray-600" />
+                  ) : (
+                    <Maximize2 className="w-5 h-5 text-gray-600" />
+                  )}
+                </button>
+                <button
+                  onClick={() => saveAs(pdfUrl, pdfFileName || 'document.pdf')}
+                  aria-label="Download PDF"
+                  title="Download PDF"
+                >
+                  <Download className="w-5 h-5 text-gray-600" />
+                </button>
+                <button
+                  onClick={closePdfModal}
+                  className="p-2 hover:bg-gray-200 rounded-lg transition-colors"
+                  aria-label="Close PDF Viewer"
+                >
+                  <X className="w-5 h-5 text-gray-600" />
+                </button>
+              </div>
             </div>
 
-            <div className="flex-1 p-4 bg-gray-100 overflow-hidden">
+            <div className={`flex-1 bg-gray-100 overflow-hidden`}>
               <object
                 data={pdfUrl}
                 type="application/pdf"
-                className="w-full h-full rounded-lg shadow-inner"
+                className="w-full h-full shadow-inner"
               >
                 <div className="flex flex-col items-center justify-center h-full text-gray-500">
                   <File className="w-16 h-16 mb-4" />
