@@ -290,7 +290,10 @@ const FileViewer: React.FC<FileViewerProps> = ({ files }) => {
               scrollBeyondLastLine: false,
               wordWrap: 'on',
               automaticLayout: true,
-              padding: { top: 10, bottom: 10 }
+              padding: { top: 10, bottom: 10 },
+              scrollbar: {
+                alwaysConsumeMouseWheel: false,
+              }
             }}
           />
         </div>
