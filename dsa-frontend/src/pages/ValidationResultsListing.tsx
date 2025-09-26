@@ -5,6 +5,7 @@ import ResultBadge from "../components/ResultBadge";
 import { addAuthorizationHeader, useAuthQuery } from "../auth/hooks";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { axiosClient } from "../api/axiosClient";
+import { useNavigate } from "react-router";
 
 interface ValidationResult {
   id: number;
@@ -43,6 +44,7 @@ const ValidationResultsListing: React.FC = () => {
   const [direction, setDirection] = useState<"next" | "prev">("next");
   const [currentData, setCurrentData] = useState<APIResponse | null>(null);
   const intervalRef = useRef<number | null>(null);
+  const navigation = useNavigate();
 
   // API call using useAuthQuery
   const { data, isLoading, error } = useAuthQuery<APIResponse>({
@@ -165,6 +167,10 @@ const ValidationResultsListing: React.FC = () => {
     // Refetch will be triggered automatically by useAuthQuery due to queryKey change
   };
 
+  const handleDetailClick = (id: number) => {
+    navigation(`/validation/detail/${id}`);
+  }
+
   if (isLoading && !currentData) {
     return (
       <div className="min-h-screen bg-gray-50">
@@ -275,7 +281,10 @@ const ValidationResultsListing: React.FC = () => {
                     {result.memory_kb} KiB
                   </td>
                   <td className="px-4 py-3 text-center">
-                    <button className="text-blue-500 hover:text-blue-700 underline text-sm">
+                    {/* Link to detail page /validation/detail/:id */}
+                    <button
+                      onClick={() => handleDetailClick(result.id)}
+                      className="text-blue-500 hover:text-blue-700 underline text-sm">
                       詳細
                     </button>
                   </td>

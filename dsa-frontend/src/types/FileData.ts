@@ -68,5 +68,29 @@ async function decompressWithStream(compressedData: Uint8Array<ArrayBuffer>): Pr
   return new Uint8Array(decompressedArrayBuffer);
 }
 
+
+async function decompressString(base64CompressedString: string | null): Promise<string> {
+  if (!base64CompressedString) return ""
+
+  try {
+    // Base64 decode
+    const binaryString = atob(base64CompressedString);
+    const bytes = new Uint8Array(binaryString.length);
+    for (let i = 0; i < binaryString.length; i++) {
+      bytes[i] = binaryString.charCodeAt(i);
+    }
+
+    // Decompress
+    const decompressed = await decompressWithStream(bytes);
+
+    // Convert to string
+    const decoder = new TextDecoder();
+    return decoder.decode(decompressed);
+  } catch (error) {
+    console.error('Error decompressing string:', error);
+    return '';
+  }
+}
+
 export type { CompressedFileData, FileData };
-export { decompressFileData };
+export { decompressFileData, decompressString };

@@ -71,7 +71,7 @@ const FileViewer: React.FC<FileViewerProps> = ({ files }) => {
 
   const getFileExtension = (filename: string): string => {
     const lastDot = filename.lastIndexOf(".");
-    return lastDot < 0 ? filename.substring(lastDot + 1).toLocaleLowerCase() : "";
+    return lastDot >= 0 ? filename.substring(lastDot + 1).toLocaleLowerCase() : "";
   };
   const isTextFile = (filename: string): boolean => {
     const lowerFilename = filename.toLowerCase();
