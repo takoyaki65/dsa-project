@@ -42,10 +42,12 @@ const DetailedTaskLogTable: React.FC<DetailedTaskLogTableProps> = ({ logs }) => 
         <tbody>
           {logs.map((log, index) => (
             <React.Fragment key={index}>
-              <tr className="border-b border-gray-200 hover:bg-gray-50">
+              <tr
+                onClick={() => toggleRow(index)}
+                className="border-b border-gray-200 hover:bg-gray-50"
+              >
                 <td className="p-2">
                   <button
-                    onClick={() => toggleRow(index)}
                     className="p-1 hover:bg-gray-200 rounded transition-colors"
                   >
                     <ChevronDown className={`w-4 h-4 transition-transform ${expandedRows.has(index) ? "rotate-180" : ""}`} />
