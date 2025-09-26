@@ -93,6 +93,17 @@ func (rl *RequestLog) ConstructFromTaskLogs(buildLogs []TaskLog, judgeLogs []Tas
 		maxResultState = maxResultState.Max(log.ResultID)
 	}
 
+	for _, log := range judgeLogs {
+		if log.TimeMS > maxTimeMS {
+			maxTimeMS = log.TimeMS
+		}
+
+		if log.MemoryKB > maxMemoryKB {
+			maxMemoryKB = log.MemoryKB
+		}
+		maxResultState = maxResultState.Max(log.ResultID)
+	}
+
 	rl.TimeMS = maxTimeMS
 	rl.MemoryKB = maxMemoryKB
 	rl.ResultID = maxResultState
