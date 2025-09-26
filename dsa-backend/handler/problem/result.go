@@ -214,18 +214,19 @@ type DetailOutput struct {
 }
 
 type DetailedTaskLog struct {
-	TestCaseID     int64   `json:"test_case_id"`
-	Description    string  `json:"description"`
-	Command        string  `json:"command"`
-	ResultID       int64   `json:"result_id"`
-	TimeMS         int64   `json:"time_ms"`
-	MemoryKB       int64   `json:"memory_kb"`
-	ExitCode       int64   `json:"exit_code"`
-	Stdin          *string `json:"stdin"`           // base64 encoded, compressed with gzip
-	Stdout         string  `json:"stdout"`          // base64 encoded, compressed with gzip
-	Stderr         string  `json:"stderr"`          // base64 encoded, compressed with gzip
-	ExpectedStdout *string `json:"expected_stdout"` // base64 encoded, compressed with gzip
-	ExpectedStderr *string `json:"expected_stderr"` // base64 encoded, compressed with gzip
+	TestCaseID       int64   `json:"test_case_id"`
+	Description      string  `json:"description"`
+	Command          string  `json:"command"`
+	ResultID         int64   `json:"result_id"`
+	TimeMS           int64   `json:"time_ms"`
+	MemoryKB         int64   `json:"memory_kb"`
+	ExitCode         int64   `json:"exit_code"`
+	ExpectedExitCode int64   `json:"expected_exit_code"`
+	Stdin            *string `json:"stdin"`           // base64 encoded, compressed with gzip
+	Stdout           string  `json:"stdout"`          // base64 encoded, compressed with gzip
+	Stderr           string  `json:"stderr"`          // base64 encoded, compressed with gzip
+	ExpectedStdout   *string `json:"expected_stdout"` // base64 encoded, compressed with gzip
+	ExpectedStderr   *string `json:"expected_stderr"` // base64 encoded, compressed with gzip
 }
 
 // GetValidationDetail gets detailed information about a specific validation result.
@@ -283,7 +284,7 @@ func (h *Handler) GetValidationDetail(c echo.Context) error {
 		LectureID:    validationRequest.LectureID,
 		ProblemID:    validationRequest.ProblemID,
 		SubmissionTS: validationRequest.TS.Unix(), // for validation request, submission ts is same as request ts
-		ResultID:     int64(validationRequest.Log.ResultID),
+		ResultID:     int64(validationRequest.ResultID),
 		TimeMS:       validationRequest.Log.TimeMS,
 		MemoryKB:     validationRequest.Log.MemoryKB,
 		// Fill in UploadedFiles later
@@ -781,17 +782,18 @@ func makeDetailedTaskLog(taskResult model.TaskLog, testCase model.TestCase, reso
 	}
 
 	return DetailedTaskLog{
-		TestCaseID:     taskResult.TestCaseID,
-		Description:    testCase.Description,
-		Command:        testCase.Command,
-		ResultID:       int64(taskResult.ResultID),
-		TimeMS:         taskResult.TimeMS,
-		MemoryKB:       taskResult.MemoryKB,
-		ExitCode:       taskResult.ExitCode,
-		Stdin:          stdinData,
-		Stdout:         stdout.Data,
-		Stderr:         stderr.Data,
-		ExpectedStdout: expectedStdoutData,
-		ExpectedStderr: expectedStderrData,
+		TestCaseID:       taskResult.TestCaseID,
+		Description:      testCase.Description,
+		Command:          testCase.Command,
+		ResultID:         int64(taskResult.ResultID),
+		TimeMS:           taskResult.TimeMS,
+		MemoryKB:         taskResult.MemoryKB,
+		ExitCode:         taskResult.ExitCode,
+		ExpectedExitCode: testCase.ExitCode,
+		Stdin:            stdinData,
+		Stdout:           stdout.Data,
+		Stderr:           stderr.Data,
+		ExpectedStdout:   expectedStdoutData,
+		ExpectedStderr:   expectedStderrData,
 	}, nil
 }
