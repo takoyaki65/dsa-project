@@ -1163,11 +1163,17 @@ const docTemplate = `{
                 "lecture_id": {
                     "type": "integer"
                 },
+                "lecture_title": {
+                    "type": "string"
+                },
                 "memory_kb": {
                     "type": "integer"
                 },
                 "problem_id": {
                     "type": "integer"
+                },
+                "problem_title": {
+                    "type": "string"
                 },
                 "result_id": {
                     "type": "integer"
@@ -1211,6 +1217,9 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "exit_code": {
+                    "type": "integer"
+                },
+                "expected_exit_code": {
                     "type": "integer"
                 },
                 "expected_stderr": {

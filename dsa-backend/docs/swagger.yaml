@@ -14,10 +14,14 @@ definitions:
         type: array
       lecture_id:
         type: integer
+      lecture_title:
+        type: string
       memory_kb:
         type: integer
       problem_id:
         type: integer
+      problem_title:
+        type: string
       result_id:
         type: integer
       submission_ts:
@@ -46,6 +50,8 @@ definitions:
       description:
         type: string
       exit_code:
+        type: integer
+      expected_exit_code:
         type: integer
       expected_stderr:
         description: base64 encoded, compressed with gzip

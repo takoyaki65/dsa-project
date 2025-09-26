@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"path/filepath"
 	"slices"
+	"time"
 
 	"github.com/labstack/echo/v4"
 	"github.com/takoyaki65/dsa-project/database"
@@ -203,6 +204,8 @@ type DetailOutput struct {
 	UserName      string            `json:"user_name"`
 	LectureID     int64             `json:"lecture_id"`
 	ProblemID     int64             `json:"problem_id"`
+	LectureTitle  string            `json:"lecture_title"`
+	ProblemTitle  string            `json:"problem_title"`
 	SubmissionTS  int64             `json:"submission_ts"`
 	ResultID      int64             `json:"result_id"`
 	TimeMS        int64             `json:"time_ms"`
@@ -276,6 +279,24 @@ func (h *Handler) GetValidationDetail(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusNotFound, response.NewError("Validation result not found"))
 	}
 
+	// Fetch lecture info
+	lecture_info, err := h.problemStore.GetLectureByID(ctx, validationRequest.LectureID)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError, response.NewError("Failed to get lecture info"))
+	}
+
+	// When the user is not admin or manager, check if the lecture is published
+	if !rightsToAccessAll && lecture_info.StartDate.After(time.Now()) {
+		return echo.NewHTTPError(http.StatusNotFound, response.NewError("Validation result not found"))
+	}
+
+	// Fetch problem info to get test case info and test files.
+	problem_info, err := h.problemStore.GetProblemByID(ctx, validationRequest.LectureID, validationRequest.ProblemID)
+
+	if err != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError, response.NewError("Failed to get problem info"))
+	}
+
 	detail := DetailOutput{
 		ID:           validationRequest.ID,
 		TS:           validationRequest.TS.Unix(),
@@ -283,6 +304,8 @@ func (h *Handler) GetValidationDetail(c echo.Context) error {
 		UserName:     validationRequest.User.Name,
 		LectureID:    validationRequest.LectureID,
 		ProblemID:    validationRequest.ProblemID,
+		LectureTitle: lecture_info.Title,
+		ProblemTitle: problem_info.Title,
 		SubmissionTS: validationRequest.TS.Unix(), // for validation request, submission ts is same as request ts
 		ResultID:     int64(validationRequest.ResultID),
 		TimeMS:       validationRequest.Log.TimeMS,
@@ -307,13 +330,6 @@ func (h *Handler) GetValidationDetail(c echo.Context) error {
 	}
 
 	detail.UploadedFiles = fileDataList
-
-	// Fetch problem info to get test case info and test files.
-	problem_info, err := h.problemStore.GetProblemByID(ctx, validationRequest.LectureID, validationRequest.ProblemID)
-
-	if err != nil {
-		return echo.NewHTTPError(http.StatusInternalServerError, response.NewError("Failed to get problem info"))
-	}
 
 	resource_dir, err := h.problemStore.FetchResourcePath(ctx, validationRequest.LectureID, validationRequest.ProblemID)
 
