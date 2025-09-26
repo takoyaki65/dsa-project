@@ -48,11 +48,7 @@ const DetailedTaskLogTable: React.FC<DetailedTaskLogTableProps> = ({ logs }) => 
                     onClick={() => toggleRow(index)}
                     className="p-1 hover:bg-gray-200 rounded transition-colors"
                   >
-                    {expandedRows.has(index) ? (
-                      <ChevronUp size={20} />
-                    ) : (
-                      <ChevronDown size={20} />
-                    )}
+                    <ChevronDown className={`w-4 h-4 transition-transform ${expandedRows.has(index) ? "rotate-180" : ""}`} />
                   </button>
                 </td>
                 <td className="p-2">{log.description}</td>
@@ -97,7 +93,7 @@ const DetailedTaskLogTable: React.FC<DetailedTaskLogTableProps> = ({ logs }) => 
 
                       {/* Standard Output */}
                       <div>
-                        <div className="flex items-center justify-between mb-2">
+                        <div className="flex items-center gap-4 mb-2">
                           <h4 className="font-semibold">標準出力 (stdout)</h4>
                           {log.expected_stdout && (
                             <button
@@ -150,7 +146,7 @@ const DetailedTaskLogTable: React.FC<DetailedTaskLogTableProps> = ({ logs }) => 
 
                       {/* Standard Error */}
                       <div>
-                        <div className="flex items-center justify-between mb-2">
+                        <div className="flex items-center gap-4 mb-2">
                           <h4 className="font-semibold">標準エラー出力 (stderr)</h4>
                           {log.expected_stderr && (
                             <button
