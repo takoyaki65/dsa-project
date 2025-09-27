@@ -39,6 +39,7 @@ func (h *Handler) RegisterRoutes(r *echo.Group) {
 	fetchRouter := r.Group("/fetch")
 	fetchRouter.GET("/list", h.ListProblems)
 	fetchRouter.GET("/detail/:lectureid/:problemid", h.GetProblemInfo)
+	fetchRouter.GET("/requiredfiles", h.ListRequiredFiles)
 
 	validateRouter := r.Group("/validate")
 	validateRouter.POST("/:lectureid/:problemid", h.RequestValidation)

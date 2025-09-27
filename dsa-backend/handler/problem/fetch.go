@@ -5,9 +5,12 @@ import (
 	"dsa-backend/handler/auth"
 	"dsa-backend/handler/problem/util"
 	"dsa-backend/handler/response"
+	"fmt"
 	"net/http"
+	"time"
 
 	"github.com/labstack/echo/v4"
+	"github.com/takoyaki65/dsa-project/database/model"
 )
 
 // ListProblems godoc
@@ -78,4 +81,85 @@ func (h *Handler) GetProblemInfo(c echo.Context) error {
 	}
 
 	return c.JSON(http.StatusOK, *detail)
+}
+
+type RequiredFiles struct {
+	LectureID int64    `json:"lecture_id"`
+	Title     string   `json:"title"`
+	Files     []string `json:"files"`
+}
+
+type ListRequiredFilesResponse struct {
+	List []RequiredFiles `json:"list"`
+}
+
+// ListRequiredFiles godoc
+//
+//	@Summary		List required files for each lecture
+//	@Description	Get a list of required files for each lecture, including problem-specific files and a report template.
+//	@Tags			Fetch
+//	@Produce		json
+//	@Success		200	{object}	ListRequiredFilesResponse
+//	@Failure		500	{object}	response.Error	"failed to get lecture list"
+//	@Security		OAuth2Password[me]
+//	@Router			/problem/fetch/requiredfiles [get]
+func (h *Handler) ListRequiredFiles(c echo.Context) error {
+	ctx := context.Background()
+
+	lectureList, err := h.problemStore.GetAllLectureAndProblems(ctx)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError, response.NewError("failed to get lecture list"))
+	}
+
+	// Check JWT claims
+	jwtClaim, err := auth.GetJWTClaims(&c)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusUnauthorized, response.NewError("failed to get JWT claims"))
+	}
+
+	rightsToSeeAll := jwtClaim.HasAllScopes(auth.ScopeGrading) || jwtClaim.HasAllScopes(auth.ScopeAdmin)
+	filter := !rightsToSeeAll
+
+	// filter LectureList based on publication status
+	filteredLectureList := make([]model.Lecture, 0)
+	if filter {
+		for _, lecture := range lectureList {
+			if lecture.StartDate.After(time.Now()) {
+				continue
+			}
+			filteredLectureList = append(filteredLectureList, lecture)
+		}
+	} else {
+		filteredLectureList = lectureList
+	}
+
+	responseList := make([]RequiredFiles, 0)
+
+	for _, lecture := range filteredLectureList {
+		fileSet := make(map[string]struct{})
+		fileList := make([]string, 0)
+
+		for _, problem := range lecture.Problems {
+			for _, filename := range problem.Detail.RequiredFiles {
+				_, exists := fileSet[filename]
+				if exists {
+					continue
+				}
+
+				fileSet[filename] = struct{}{}
+				fileList = append(fileList, filename)
+			}
+		}
+
+		fileList = append(fileList, fmt.Sprintf("report%d.pdf", lecture.ID))
+		responseList = append(responseList, RequiredFiles{
+			LectureID: lecture.ID,
+			Title:     lecture.Title,
+			Files:     fileList,
+		})
+	}
+
+	return c.JSON(http.StatusOK, ListRequiredFilesResponse{
+		List: responseList,
+	})
 }

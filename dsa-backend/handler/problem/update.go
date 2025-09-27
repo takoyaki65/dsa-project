@@ -175,7 +175,7 @@ type LectureIDProblemID struct {
 //
 //	@Summary		Register a new problem
 //	@Description	Register a new problem associated with a lecture
-//	@Tags			problem
+//	@Tags			Update
 //	@Accept			multipart/form-data
 //	@Produce		json
 //	@Param			lectureid	path		int					true	"Lecture ID"
@@ -385,7 +385,7 @@ func (h *Handler) RegisterProblem(c echo.Context) error {
 //
 //	@Summary		delete problem entry
 //	@Description	delete a problem entry by lecture ID and problem ID
-//	@Tags			problem
+//	@Tags			Update
 //	@Accept			json
 //	@Produce		json
 //	@Param			lectureid	path		int					true	"Lecture ID"

@@ -187,6 +187,13 @@ definitions:
     - start_date
     - title
     type: object
+  problem.ListRequiredFilesResponse:
+    properties:
+      list:
+        items:
+          $ref: '#/definitions/problem.RequiredFiles'
+        type: array
+    type: object
   problem.ListingOutput:
     properties:
       lecture_info:
@@ -197,6 +204,17 @@ definitions:
         items:
           $ref: '#/definitions/problem.ValidationResult'
         type: array
+    type: object
+  problem.RequiredFiles:
+    properties:
+      files:
+        items:
+          type: string
+        type: array
+      lecture_id:
+        type: integer
+      title:
+        type: string
     type: object
   problem.TestFilesPerProblem:
     properties:
@@ -419,7 +437,7 @@ paths:
         - grading
       summary: Register a new problem
       tags:
-      - problem
+      - Update
   /problem/crud/delete/{lectureid}:
     delete:
       consumes:
@@ -492,7 +510,7 @@ paths:
         - grading
       summary: delete problem entry
       tags:
-      - problem
+      - Update
   /problem/crud/update/{lectureid}:
     patch:
       consumes:
@@ -594,6 +612,27 @@ paths:
       - OAuth2Password:
         - me
       summary: list all problem entry, nested in lecture entry.
+      tags:
+      - Fetch
+  /problem/fetch/requiredfiles:
+    get:
+      description: Get a list of required files for each lecture, including problem-specific
+        files and a report template.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/problem.ListRequiredFilesResponse'
+        "500":
+          description: failed to get lecture list
+          schema:
+            $ref: '#/definitions/response.Error'
+      security:
+      - OAuth2Password:
+        - me
+      summary: List required files for each lecture
       tags:
       - Fetch
   /problem/judge/{lectureid}/{problemid}:

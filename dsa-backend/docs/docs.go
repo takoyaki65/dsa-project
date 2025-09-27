@@ -85,7 +85,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "problem"
+                    "Update"
                 ],
                 "summary": "Register a new problem",
                 "parameters": [
@@ -201,7 +201,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "problem"
+                    "Update"
                 ],
                 "summary": "delete problem entry",
                 "parameters": [
@@ -400,6 +400,39 @@ const docTemplate = `{
                     },
                     "500": {
                         "description": "failed to get lecture entries",
+                        "schema": {
+                            "$ref": "#/definitions/response.Error"
+                        }
+                    }
+                }
+            }
+        },
+        "/problem/fetch/requiredfiles": {
+            "get": {
+                "security": [
+                    {
+                        "OAuth2Password": [
+                            "me"
+                        ]
+                    }
+                ],
+                "description": "Get a list of required files for each lecture, including problem-specific files and a report template.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Fetch"
+                ],
+                "summary": "List required files for each lecture",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/problem.ListRequiredFilesResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "failed to get lecture list",
                         "schema": {
                             "$ref": "#/definitions/response.Error"
                         }
@@ -1421,6 +1454,17 @@ const docTemplate = `{
                 }
             }
         },
+        "problem.ListRequiredFilesResponse": {
+            "type": "object",
+            "properties": {
+                "list": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/problem.RequiredFiles"
+                    }
+                }
+            }
+        },
         "problem.ListingOutput": {
             "type": "object",
             "properties": {
@@ -1435,6 +1479,23 @@ const docTemplate = `{
                     "items": {
                         "$ref": "#/definitions/problem.ValidationResult"
                     }
+                }
+            }
+        },
+        "problem.RequiredFiles": {
+            "type": "object",
+            "properties": {
+                "files": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "lecture_id": {
+                    "type": "integer"
+                },
+                "title": {
+                    "type": "string"
                 }
             }
         },
