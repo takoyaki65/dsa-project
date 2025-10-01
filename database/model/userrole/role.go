@@ -23,3 +23,11 @@ func RoleIDToUserRole() map[Role]RoleName {
 		Student: RoleNameStudent,
 	}
 }
+
+func RoleNameToUserRole() map[RoleName]Role {
+	return map[RoleName]Role{
+		RoleNameAdmin:   Admin,
+		RoleNameManager: Manager,
+		RoleNameStudent: Student,
+	}
+}

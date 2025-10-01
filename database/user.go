@@ -108,3 +108,39 @@ func (us *UserStore) GetAllUserList(ctx context.Context) (*[]model.UserList, err
 
 	return &users, nil
 }
+
+func (us *UserStore) ExistsByUserID(ctx context.Context, userID string) (bool, error) {
+	count, err := us.db.NewSelect().Model((*model.UserList)(nil)).Where("user_id = ?", userID).Count(ctx)
+	if err != nil {
+		return false, fmt.Errorf("failed to check user existence: %w", err)
+	}
+	return count > 0, nil
+}
+
+func (us *UserStore) ModifyUserValidity(ctx context.Context, userID string, disabledAt time.Time) error {
+	_, err := us.db.NewUpdate().Model((*model.UserList)(nil)).
+		Set("disabled_at = ?", disabledAt).
+		Where("user_id = ?", userID).
+		Exec(ctx)
+	return err
+}
+
+func (us *UserStore) ModifyUserDetails(ctx context.Context, userID string, name *string, hashed_password *string, email *string, roleID *userrole.Role) error {
+	update := us.db.NewUpdate().Model((*model.UserList)(nil)).Where("user_id = ?", userID)
+
+	if name != nil {
+		update = update.Set("name = ?", *name)
+	}
+	if hashed_password != nil {
+		update = update.Set("hashed_password = ?", *hashed_password)
+	}
+	if email != nil {
+		update = update.Set("email = ?", email)
+	}
+	if roleID != nil {
+		update = update.Set("role_id = ?", *roleID)
+	}
+
+	_, err := update.Exec(ctx)
+	return err
+}

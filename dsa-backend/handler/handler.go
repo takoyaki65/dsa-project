@@ -2,6 +2,7 @@ package handler
 
 import (
 	"crypto/rand"
+	"dsa-backend/handler/admin"
 	"dsa-backend/handler/problem"
 	"dsa-backend/handler/user"
 	"encoding/hex"
@@ -31,6 +32,11 @@ func (h *Handler) RegisterRoutes(r *echo.Group) {
 	problemHandler := problem.NewProblemHandler(h.jwtSecret, h.db)
 	problemRouter := r.Group("/problem")
 	problemHandler.RegisterRoutes(problemRouter)
+
+	// admin routes
+	adminHandler := admin.NewAdminHandler(h.jwtSecret, h.db)
+	adminRouter := r.Group("/admin")
+	adminHandler.RegisterRoutes(adminRouter)
 }
 
 func generateSecretKey() string {
