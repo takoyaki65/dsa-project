@@ -139,6 +139,8 @@ func ProcessJobQueue(ctx context.Context, db *bun.DB, logger *echo.Logger) {
 		if !triggered {
 			// Sleep for a while if no jobs were processed
 			time.Sleep(2 * time.Second)
+		} else {
+			time.Sleep(100 * time.Millisecond)
 		}
 
 		select {
