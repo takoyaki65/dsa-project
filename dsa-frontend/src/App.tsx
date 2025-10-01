@@ -7,6 +7,7 @@ import ProblemStatementPage from './pages/ProblemStatementPage';
 import NotFoundPage from './pages/NotFound';
 import ValidationResultsListing from './pages/ValidationResultsListing';
 import ValidationDetail from './pages/ValidationDetail';
+import BatchValidation from './pages/BatchValidation';
 
 const queryClient = new QueryClient();
 
@@ -20,6 +21,7 @@ function App() {
           <Route path="/problem/:lectureid/:problemid" element={<ProtectedRoute><ProblemStatementPage /></ProtectedRoute>} />
           <Route path="/validation/results" element={<ProtectedRoute><ValidationResultsListing /></ProtectedRoute>} />
           <Route path="/validation/detail/:idParam" element={<ProtectedRoute><ValidationDetail /></ProtectedRoute>} />
+          <Route path="/validation/batch" element={<ProtectedRoute><BatchValidation /></ProtectedRoute>} />
           <Route path="/" element={<Navigate to="/dashboard" replace />} />
           <Route path="*" element={<NotFoundPage />} />
         </Routes>

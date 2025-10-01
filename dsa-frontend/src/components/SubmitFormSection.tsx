@@ -9,22 +9,56 @@ interface UploadedFile {
 interface SubmitFormSectionProps {
   onSubmit: (files: File[]) => Promise<void>;
   isLoading?: boolean;
+  maxFiles?: number;
 }
 
-const SubmitFormSection: React.FC<SubmitFormSectionProps> = ({ onSubmit, isLoading = false }) => {
+const SubmitFormSection: React.FC<SubmitFormSectionProps> = ({ onSubmit, isLoading = false, maxFiles }) => {
   const [uploadedFiles, setUploadedFiles] = useState<UploadedFile[]>([]);
   const [isDragging, setIsDragging] = useState<boolean>(false);
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
+  const [errorMessage, setErrorMessage] = useState<string>("");
 
   const handleFileSelect = (files: FileList | null, inputElement?: HTMLInputElement) => {
     if (!files) return;
 
-    const newFiles: UploadedFile[] = Array.from(files).map(file => ({
-      file,
-      id: `${file.name}-${Date.now()}-${Math.random()}`
-    }));
+    // Clear previous error message
+    setErrorMessage("");
 
-    setUploadedFiles(prev => [...prev, ...newFiles]);
+    const filesArray = Array.from(files);
+    const currentFileCount = uploadedFiles.length;
+    const newFileCount = filesArray.length;
+    const totalFileCount = currentFileCount + newFileCount;
+
+    if (maxFiles !== undefined && totalFileCount > maxFiles) {
+      const remainingSlots = maxFiles - currentFileCount;
+
+      if (remainingSlots <= 0) {
+        setErrorMessage(`最大${maxFiles}ファイルまでアップロード可能です。すでに上限に達しています。`);
+        if (inputElement) {
+          inputElement.value = '';
+        }
+        return;
+      }
+
+      // Add only up to the maximum allowed files
+      const filesToAdd = filesArray.slice(0, remainingSlots);
+
+      setErrorMessage(`最大${maxFiles}ファイルまでアップロード可能です。`);
+
+      const newFiles: UploadedFile[] = filesToAdd.map(file => ({
+        file,
+        id: `${file.name}-${Date.now()}-${Math.random()}`
+      }));
+
+      setUploadedFiles(prev => [...prev, ...newFiles]);
+    } else {
+      const newFiles: UploadedFile[] = filesArray.map(file => ({
+        file,
+        id: `${file.name}-${Date.now()}-${Math.random()}`
+      }));
+
+      setUploadedFiles(prev => [...prev, ...newFiles]);
+    }
 
     // Reset input values to allow re-selecting the same file
     if (inputElement) {
@@ -57,11 +91,13 @@ const SubmitFormSection: React.FC<SubmitFormSectionProps> = ({ onSubmit, isLoadi
   // Remove a file
   const removeFile = (fileId: string) => {
     setUploadedFiles(prev => prev.filter(f => f.id !== fileId));
+    setErrorMessage("");
   };
 
   // Clear all files
   const clearAll = () => {
     setUploadedFiles([]);
+    setErrorMessage("");
   };
 
   // Handle form submission
@@ -69,6 +105,7 @@ const SubmitFormSection: React.FC<SubmitFormSectionProps> = ({ onSubmit, isLoadi
     if (uploadedFiles.length === 0) return;
 
     setIsSubmitting(true);
+    setErrorMessage("");
 
     try {
       // Extract File objects from UploadedFile array
@@ -79,6 +116,7 @@ const SubmitFormSection: React.FC<SubmitFormSectionProps> = ({ onSubmit, isLoadi
       clearAll();
     } catch (error) {
       console.error("Submission page error:", error);
+      setErrorMessage("Error during submission. Please try again.");
     } finally {
       setIsSubmitting(false);
     };
@@ -88,15 +126,33 @@ const SubmitFormSection: React.FC<SubmitFormSectionProps> = ({ onSubmit, isLoadi
   const totalSize = uploadedFiles.reduce((acc, uf) => acc + uf.file.size, 0);
   const totalSizeMB = (totalSize / (1024 * 1024)).toFixed(2);
 
+  const isAtMaxCapacity = maxFiles !== undefined && uploadedFiles.length >= maxFiles;
+
   return (
     <>
       {/* Submit File Section */}
       <div className="bg-white rounded-lg shadow-sm border border-gray-200">
         <div className="px-4 py-3 border-b border-gray-200">
-          <h3 className="text-sm font-semibold text-gray-900">Submit file</h3>
+          <div className="flex items-center justify-between">
+            <h3 className="text-sm font-semibold text-gray-900">Submit file</h3>
+            {maxFiles !== undefined && (
+              <span className={`text-xs ${isAtMaxCapacity ? 'text-orange-600 font-medium' : 'text-gray-500'}`}>
+                {uploadedFiles.length} / {maxFiles} files
+              </span>
+            )}
+          </div>
         </div>
 
         <div className="p-4 space-y-4">
+          {/* Error Message */}
+          {errorMessage && (
+            <div className="flex items-center space-x-2 p-3 bg-red-50 border-red-200 rounded-lg">
+              <svg className="w-5 h-5 text-red-500 mt-0.5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              <p className="text-sm text-red-700">{errorMessage}</p>
+            </div>
+          )}
 
           {/* Upload Area */}
           <div
