@@ -1060,7 +1060,7 @@ const docTemplate = `{
                     "application/x-www-form-urlencoded"
                 ],
                 "tags": [
-                    "user"
+                    "User"
                 ],
                 "summary": "User Login",
                 "parameters": [
@@ -1112,7 +1112,7 @@ const docTemplate = `{
                 ],
                 "description": "Logout user and invalidate JWT token",
                 "tags": [
-                    "user"
+                    "User"
                 ],
                 "summary": "Logout user",
                 "responses": {
@@ -1148,7 +1148,7 @@ const docTemplate = `{
                 ],
                 "description": "Get current user information from JWT token",
                 "tags": [
-                    "user"
+                    "User"
                 ],
                 "summary": "Get current user information",
                 "responses": {

@@ -1085,7 +1085,7 @@ paths:
             type: string
       summary: User Login
       tags:
-      - user
+      - User
   /user/logout:
     post:
       description: Logout user and invalidate JWT token
@@ -1107,7 +1107,7 @@ paths:
         - me
       summary: Logout user
       tags:
-      - user
+      - User
   /user/me:
     get:
       description: Get current user information from JWT token
@@ -1129,7 +1129,7 @@ paths:
         - me
       summary: Get current user information
       tags:
-      - user
+      - User
 securityDefinitions:
   OAuth2Password:
     flow: password
