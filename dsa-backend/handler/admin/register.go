@@ -20,6 +20,20 @@ type registerUserRequest struct {
 	Role     string `json:"role" validate:"required,oneof=admin manager student"`
 }
 
+// RegisterUser registers a new user.
+//
+//	@Summary		Register a new user
+//	@Description	Register a new user with the provided details.
+//	@Tags			Admin
+//	@Accept			json
+//	@Produce		json
+//	@Param			user	body		registerUserRequest	true	"User registration details"
+//	@Success		201		{object}	response.Success	"User registered successfully"
+//	@Failure		400		{object}	response.Error		"Invalid request body or validation failed"
+//	@Failure		409		{object}	response.Error		"User ID already exists"
+//	@Failure		500		{object}	response.Error		"Failed to create user"
+//	@Security		OAuth2Password[admin]
+//	@Router			/admin/register [post]
 func (h *Handler) RegisterUser(c echo.Context) error {
 	ctx := context.Background()
 

@@ -18,6 +18,22 @@ type ModifyUserRequest struct {
 	Role     *string `json:"role" validate:"omitempty,oneof=admin manager student"`
 }
 
+// ModifyUser modifies user details.
+//
+//	@Summary		Modify user details
+//	@Description	Modify user details such as name, password, email, and role.
+//	@Tags			Admin
+//	@Accept			json
+//	@Produce		json
+//	@Param			user_id	path		string				true	"User ID"
+//	@Param			user	body		ModifyUserRequest	true	"User modification details"
+//	@Success		200		{object}	response.Success	"User modified successfully"
+//	@Failure		400		{object}	response.Error		"Invalid request body or validation failed"
+//	@Failure		403		{object}	response.Error		"Cannot modify an admin user"
+//	@Failure		404		{object}	response.Error		"User not found"
+//	@Failure		500		{object}	response.Error		"Failed to modify user"
+//	@Security		OAuth2Password[admin]
+//	@Router			/admin/modify/{user_id} [patch]
 func (h *Handler) ModifyUser(c echo.Context) error {
 	ctx := context.Background()
 	var req ModifyUserRequest

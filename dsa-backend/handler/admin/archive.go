@@ -14,6 +14,20 @@ type archiveUserRequest struct {
 	UserID string `param:"user_id" validate:"required"`
 }
 
+// ArchiveUser archives a user by setting their DisabledAt to the current time.
+//
+//	@Summary		Archive a user
+//	@Description	Archive a user by setting their DisabledAt to the current time.
+//	@Tags			Admin
+//	@Produce		json
+//	@Param			user_id	path		string				true	"User ID"
+//	@Success		200		{object}	response.Success	"User archived successfully"
+//	@Failure		400		{object}	response.Error		"Invalid request body or validation failed"
+//	@Failure		403		{object}	response.Error		"Cannot archive an admin user"
+//	@Failure		404		{object}	response.Error		"User not found"
+//	@Failure		500		{object}	response.Error		"Failed to archive user"
+//	@Security		OAuth2Password[admin]
+//	@Router			/admin/archive/{user_id} [patch]
 func (h *Handler) ArchiveUser(c echo.Context) error {
 	ctx := context.Background()
 
@@ -47,6 +61,20 @@ func (h *Handler) ArchiveUser(c echo.Context) error {
 	return c.JSON(http.StatusOK, response.NewSuccess("User archived successfully"))
 }
 
+// ActivateUser activates a user by setting their DisabledAt to a future date.
+//
+//	@Summary		Activate a user
+//	@Description	Activate a user by setting their DisabledAt to a future date.
+//	@Tags			Admin
+//	@Produce		json
+//	@Param			user_id	path		string				true	"User ID"
+//	@Success		200		{object}	response.Success	"User activated successfully"
+//	@Failure		400		{object}	response.Error		"Invalid request body or validation failed"
+//	@Failure		403		{object}	response.Error		"Cannot modify an admin user"
+//	@Failure		404		{object}	response.Error		"User not found"
+//	@Failure		500		{object}	response.Error		"Failed to activate user"
+//	@Security		OAuth2Password[admin]
+//	@Router			/admin/activate/{user_id} [patch]
 func (h *Handler) ActivateUser(c echo.Context) error {
 	ctx := context.Background()
 

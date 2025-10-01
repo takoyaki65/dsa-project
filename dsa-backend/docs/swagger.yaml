@@ -1,5 +1,54 @@
 basePath: /api
 definitions:
+  admin.ModifyUserRequest:
+    properties:
+      email:
+        type: string
+      name:
+        maxLength: 30
+        minLength: 1
+        type: string
+      password:
+        maxLength: 100
+        minLength: 8
+        type: string
+      role:
+        enum:
+        - admin
+        - manager
+        - student
+        type: string
+      userID:
+        type: string
+    required:
+    - userID
+    type: object
+  admin.registerUserRequest:
+    properties:
+      email:
+        type: string
+      name:
+        maxLength: 30
+        minLength: 1
+        type: string
+      password:
+        maxLength: 100
+        minLength: 8
+        type: string
+      role:
+        enum:
+        - admin
+        - manager
+        - student
+        type: string
+      user_id:
+        type: string
+    required:
+    - name
+    - password
+    - role
+    - user_id
+    type: object
   problem.DetailOutput:
     properties:
       build_logs:
@@ -363,6 +412,165 @@ info:
   title: DSA Backend API
   version: 0.0.1
 paths:
+  /admin/activate/{user_id}:
+    patch:
+      description: Activate a user by setting their DisabledAt to a future date.
+      parameters:
+      - description: User ID
+        in: path
+        name: user_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: User activated successfully
+          schema:
+            $ref: '#/definitions/response.Success'
+        "400":
+          description: Invalid request body or validation failed
+          schema:
+            $ref: '#/definitions/response.Error'
+        "403":
+          description: Cannot modify an admin user
+          schema:
+            $ref: '#/definitions/response.Error'
+        "404":
+          description: User not found
+          schema:
+            $ref: '#/definitions/response.Error'
+        "500":
+          description: Failed to activate user
+          schema:
+            $ref: '#/definitions/response.Error'
+      security:
+      - OAuth2Password:
+        - admin
+      summary: Activate a user
+      tags:
+      - Admin
+  /admin/archive/{user_id}:
+    patch:
+      description: Archive a user by setting their DisabledAt to the current time.
+      parameters:
+      - description: User ID
+        in: path
+        name: user_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: User archived successfully
+          schema:
+            $ref: '#/definitions/response.Success'
+        "400":
+          description: Invalid request body or validation failed
+          schema:
+            $ref: '#/definitions/response.Error'
+        "403":
+          description: Cannot archive an admin user
+          schema:
+            $ref: '#/definitions/response.Error'
+        "404":
+          description: User not found
+          schema:
+            $ref: '#/definitions/response.Error'
+        "500":
+          description: Failed to archive user
+          schema:
+            $ref: '#/definitions/response.Error'
+      security:
+      - OAuth2Password:
+        - admin
+      summary: Archive a user
+      tags:
+      - Admin
+  /admin/modify/{user_id}:
+    patch:
+      consumes:
+      - application/json
+      description: Modify user details such as name, password, email, and role.
+      parameters:
+      - description: User ID
+        in: path
+        name: user_id
+        required: true
+        type: string
+      - description: User modification details
+        in: body
+        name: user
+        required: true
+        schema:
+          $ref: '#/definitions/admin.ModifyUserRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: User modified successfully
+          schema:
+            $ref: '#/definitions/response.Success'
+        "400":
+          description: Invalid request body or validation failed
+          schema:
+            $ref: '#/definitions/response.Error'
+        "403":
+          description: Cannot modify an admin user
+          schema:
+            $ref: '#/definitions/response.Error'
+        "404":
+          description: User not found
+          schema:
+            $ref: '#/definitions/response.Error'
+        "500":
+          description: Failed to modify user
+          schema:
+            $ref: '#/definitions/response.Error'
+      security:
+      - OAuth2Password:
+        - admin
+      summary: Modify user details
+      tags:
+      - Admin
+  /admin/register:
+    post:
+      consumes:
+      - application/json
+      description: Register a new user with the provided details.
+      parameters:
+      - description: User registration details
+        in: body
+        name: user
+        required: true
+        schema:
+          $ref: '#/definitions/admin.registerUserRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: User registered successfully
+          schema:
+            $ref: '#/definitions/response.Success'
+        "400":
+          description: Invalid request body or validation failed
+          schema:
+            $ref: '#/definitions/response.Error'
+        "409":
+          description: User ID already exists
+          schema:
+            $ref: '#/definitions/response.Error'
+        "500":
+          description: Failed to create user
+          schema:
+            $ref: '#/definitions/response.Error'
+      security:
+      - OAuth2Password:
+        - admin
+      summary: Register a new user
+      tags:
+      - Admin
   /problem/crud/create:
     put:
       consumes:
