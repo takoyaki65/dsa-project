@@ -68,7 +68,7 @@ func (h *Handler) RegisterRoutes(r *echo.Group) {
 //
 //	@Summary		User Login
 //	@Description	User login with user ID and password. Returns a JWT token if successful.
-//	@Tags			user
+//	@Tags			User
 //	@Accept			x-www-form-urlencoded
 //	@Product		json
 //	@param			username	formData	string				true	"User ID"
@@ -156,7 +156,7 @@ func (h *Handler) Login(c echo.Context) error {
 //
 //	@Summary		Get current user information
 //	@Description	Get current user information from JWT token
-//	@Tags			user
+//	@Tags			User
 //	@Product		json
 //	@Success		200	{object}	userResponse	"Current user information"
 //	@Failure		401	{object}	response.Error	"Unauthorized"
@@ -192,7 +192,7 @@ func (h *Handler) GetCurrentUser(c echo.Context) error {
 //
 //	@Summary		Logout user
 //	@Description	Logout user and invalidate JWT token
-//	@Tags			user
+//	@Tags			User
 //	@Product		json
 //	@Success		200	{object}	response.Success	"Logout successful"
 //	@Failure		401	{object}	response.Error		"Unauthorized"
