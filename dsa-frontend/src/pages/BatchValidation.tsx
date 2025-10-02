@@ -1,10 +1,10 @@
 import type React from "react";
 import NavigationBar from "../components/NavigationBar";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import SubmitFormSection from "../components/SubmitFormSection";
 import { FileArchive, FileText } from "lucide-react";
 import { useAuthMutation, useAuthQuery } from "../auth/hooks";
-import { useNavigate } from "react-router";
+import { useNavigate, useSearchParams } from "react-router";
 
 interface RequiredFiles {
   lecture_id: number;
@@ -16,7 +16,10 @@ interface APIResponse {
   list: RequiredFiles[];
 }
 
+// url: /validation/batch?lectureid=...
 const BatchValidation = () => {
+  const [searchParams, setSearchParams] = useSearchParams();
+
   const [selectedLecture, setSelectedLecture] = useState<RequiredFiles | null>(null);
   const [errorMessage, setErrorMessage] = useState<string>("");
 
@@ -52,6 +55,36 @@ const BatchValidation = () => {
     },
   })
 
+  useEffect(() => {
+    if (!requiredFilesData) return;
+
+    const lectureIdFromParam = searchParams.get('lectureid');
+    const lectureIdNumFromParam = lectureIdFromParam ? parseInt(lectureIdFromParam) : null;
+
+    if (!lectureIdNumFromParam) {
+      setSelectedLecture(null);
+      setSearchParams({});
+      return;
+    }
+
+    const lecture = requiredFilesData.list.find(l => l.lecture_id === lectureIdNumFromParam);
+    if (!lecture) {
+      setSelectedLecture(null);
+      setSearchParams({});
+      return;
+    }
+
+    if (lecture && selectedLecture === null) {
+      setSelectedLecture(lecture);
+      return;
+    }
+
+    if (lecture && selectedLecture && selectedLecture.lecture_id !== lecture.lecture_id) {
+      setSelectedLecture(lecture);
+      return;
+    }
+  }, [requiredFilesData]);
+
   if (isPending) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -80,6 +113,7 @@ const BatchValidation = () => {
     const lectureId = parseInt(e.target.value);
     const lecture = requiredFilesData.list.find(l => l.lecture_id === lectureId);
     setSelectedLecture(lecture || null);
+    setSearchParams(lecture ? { lectureid: lecture.lecture_id.toString() } : {});
   };
 
   const handleSubmit = async (files: File[]) => {
