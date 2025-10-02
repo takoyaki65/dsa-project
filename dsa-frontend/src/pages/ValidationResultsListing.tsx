@@ -223,7 +223,8 @@ const ValidationResultsListing: React.FC = () => {
         {/* Warning Message */}
         <div className="bg-white border-2 border-red-500 rounded-lg p-4 mb-6">
           <p className="text-sm">注） ここで行った提出で、課題の評価はされません。</p>
-          <p className="text-sm">注） 問題無く採点可能であることを確認した後、manabaで提出してください。</p>
+          <p className="text-sm">注） ここでアクセプトされても、アルゴリズムが正しいことの保証にはなりません。採点時にはさらに厳しいテストケースが用意されています。</p>
+          <p className="text-sm">注） レポート含め問題無く採点可能であることを確認した後、manabaで提出してください。</p>
           <p className="text-sm">注） 提出してから一週間程度で結果は削除されます。</p>
         </div>
 

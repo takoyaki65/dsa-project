@@ -149,9 +149,11 @@ const FileViewer: React.FC<FileViewerProps> = ({ files }) => {
   }, [showPdfModel, isFullscreen]);
 
   // initial selected file
-  if (textFiles.length > 0 && !selectedFile) {
-    setSelectedFile(textFiles[0]);
-  }
+  useEffect(() => {
+    if (textFiles.length > 0 && !selectedFile) {
+      setSelectedFile(textFiles[0]);
+    }
+  }, [textFiles, selectedFile]);
 
   const downloadFile = (file: FileData) => {
     if (getFileExtension(file.filename) === 'pdf') {

@@ -122,6 +122,8 @@ const DetailedTaskLogTable: React.FC<DetailedTaskLogTableProps> = ({ logs }) => 
                                 scrollBeyondLastLine: false,
                                 renderSideBySide: true,
                               }}
+                              keepCurrentModifiedModel={true}
+                              keepCurrentOriginalModel={true}
                             />
                           </div>
                         ) : (

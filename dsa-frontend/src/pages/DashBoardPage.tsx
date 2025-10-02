@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useAuthQuery } from "../auth/hooks";
 import NavigationBar from "../components/NavigationBar";
-import { useNavigate } from "react-router";
+import { Link, useNavigate } from "react-router";
 
 interface Problem {
   lecture_id: number;
@@ -11,7 +11,7 @@ interface Problem {
 }
 
 interface Lecture {
-  id: number;
+  lecture_id: number;
   title: string;
   start_date: number;
   deadline: number;
@@ -65,7 +65,7 @@ const DashBoardPage: React.FC = () => {
     // Filter lectures based on selection
     const displayedLectures = selectedLecture === null
       ? lectureData
-      : lectureData.filter(lecture => lecture.id === selectedLecture);
+      : lectureData.filter(lecture => lecture.lecture_id === selectedLecture);
 
     return (
       <div className="container mx-auto px-6 py-8">
@@ -86,9 +86,9 @@ const DashBoardPage: React.FC = () => {
           </button>
           {lectureData.map((lecture) => (
             <button
-              key={`top-lecture-${lecture.id}`}
-              onClick={() => setSelectedLecture(lecture.id)}
-              className={`px-4 py-2 whitespace-nowrap transition-colors ${selectedLecture === lecture.id
+              key={`top-lecture-${lecture.lecture_id}`}
+              onClick={() => setSelectedLecture(lecture.lecture_id)}
+              className={`px-4 py-2 whitespace-nowrap transition-colors ${selectedLecture === lecture.lecture_id
                 ? 'border-b-2 border-blue-500 text-blue-600 font-medium'
                 : 'text-gray-600 hover:text-gray-800'
                 }`}
@@ -101,9 +101,13 @@ const DashBoardPage: React.FC = () => {
         {/* Lecture List */}
         <div className="space-y-6">
           {displayedLectures.map((lecture) => (
-            <div key={`lecture-${lecture.id}`} className="bg-white rounded-lg shadow-sm border border-gray-200">
-              <div className="px-6 py-4 border-b border-gray-200 bg-gray-50">
+            <div key={`lecture-${lecture.lecture_id}`} className="bg-white rounded-lg shadow-sm border border-gray-200">
+              <div className="flex items-center space-x-4 px-6 py-4 border-b border-gray-200 bg-gray-50">
                 <h2 className="text-lg font-semibold">{lecture.title}</h2>
+                {/* link to /validation/batch?lectureid=... */}
+                <Link to={`/validation/batch?lectureid=${lecture.lecture_id}`} className="text-blue-500 font-semibold hover:text-blue-700 underline text-sm">
+                  [Zip提出]
+                </Link>
               </div>
               <div className="p-6">
                 {lecture.problems.length > 0 ? (
