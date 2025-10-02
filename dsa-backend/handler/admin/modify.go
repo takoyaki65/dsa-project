@@ -10,8 +10,7 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
-type ModifyUserRequest struct {
-	UserID   string  `param:"user_id" validate:"required"`
+type ModifyUserProps struct {
 	UserName *string `json:"name" validate:"omitempty,min=1,max=30"`
 	Password *string `json:"password" validate:"omitempty,min=8,max=100"`
 	Email    *string `json:"email" validate:"omitempty,email"`
@@ -23,10 +22,9 @@ type ModifyUserRequest struct {
 //	@Summary		Modify user details
 //	@Description	Modify user details such as name, password, email, and role.
 //	@Tags			Admin
-//	@Accept			json
 //	@Produce		json
-//	@Param			user_id	path		string				true	"User ID"
-//	@Param			user	body		ModifyUserRequest	true	"User modification details"
+//	@Param			user_id	path		string				true	"User ID of the user to be modified"
+//	@Param			user	body		ModifyUserProps		true	"User modification details"
 //	@Success		200		{object}	response.Success	"User modified successfully"
 //	@Failure		400		{object}	response.Error		"Invalid request body or validation failed"
 //	@Failure		403		{object}	response.Error		"Cannot modify an admin user"
@@ -36,7 +34,16 @@ type ModifyUserRequest struct {
 //	@Router			/admin/modify/{user_id} [patch]
 func (h *Handler) ModifyUser(c echo.Context) error {
 	ctx := context.Background()
-	var req ModifyUserRequest
+
+	user_id := c.Param("user_id")
+
+	if user_id == "" {
+		return c.JSON(http.StatusBadRequest, response.NewError("User ID is required"))
+	}
+
+	// Bind and validate request body
+
+	var req ModifyUserProps
 	if err := c.Bind(&req); err != nil {
 		return c.JSON(http.StatusBadRequest, response.NewError("Invalid request body: "+err.Error()))
 	}
@@ -45,7 +52,7 @@ func (h *Handler) ModifyUser(c echo.Context) error {
 	}
 
 	// Check if user exists
-	user, err := h.userStore.GetUserByUserID(ctx, req.UserID)
+	user, err := h.userStore.GetUserByUserID(ctx, user_id)
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, response.NewError("Failed to check user existence: "+err.Error()))
 	}
@@ -78,9 +85,9 @@ func (h *Handler) ModifyUser(c echo.Context) error {
 		new_role_id = &roleID
 	}
 
-	if err := h.userStore.ModifyUserDetails(ctx, req.UserID, req.UserName, new_hashed_password, req.Email, new_role_id); err != nil {
+	if err := h.userStore.ModifyUserDetails(ctx, user_id, req.UserName, new_hashed_password, req.Email, new_role_id); err != nil {
 		return c.JSON(http.StatusInternalServerError, response.NewError("Failed to modify user: "+err.Error()))
 	}
 
-	panic("not implemented")
+	return c.JSON(http.StatusOK, response.NewSuccess("User modified successfully"))
 }

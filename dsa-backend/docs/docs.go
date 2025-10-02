@@ -145,9 +145,6 @@ const docTemplate = `{
                     }
                 ],
                 "description": "Modify user details such as name, password, email, and role.",
-                "consumes": [
-                    "application/json"
-                ],
                 "produces": [
                     "application/json"
                 ],
@@ -158,7 +155,7 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "User ID",
+                        "description": "User ID of the user to be modified",
                         "name": "user_id",
                         "in": "path",
                         "required": true
@@ -169,7 +166,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/admin.ModifyUserRequest"
+                            "$ref": "#/definitions/admin.ModifyUserProps"
                         }
                     }
                 ],
@@ -259,6 +256,39 @@ const docTemplate = `{
                     },
                     "500": {
                         "description": "Failed to create user",
+                        "schema": {
+                            "$ref": "#/definitions/response.Error"
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/users": {
+            "get": {
+                "security": [
+                    {
+                        "OAuth2Password": [
+                            "admin"
+                        ]
+                    }
+                ],
+                "description": "Retrieve a list of all users with their details.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Admin"
+                ],
+                "summary": "List all users",
+                "responses": {
+                    "200": {
+                        "description": "List of users retrieved successfully",
+                        "schema": {
+                            "$ref": "#/definitions/admin.ListUserResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Failed to get user list",
                         "schema": {
                             "$ref": "#/definitions/response.Error"
                         }
@@ -1426,11 +1456,19 @@ const docTemplate = `{
         }
     },
     "definitions": {
-        "admin.ModifyUserRequest": {
+        "admin.ListUserResponse": {
             "type": "object",
-            "required": [
-                "userID"
-            ],
+            "properties": {
+                "users": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/admin.UserInfo"
+                    }
+                }
+            }
+        },
+        "admin.ModifyUserProps": {
+            "type": "object",
             "properties": {
                 "email": {
                     "type": "string"
@@ -1452,8 +1490,25 @@ const docTemplate = `{
                         "manager",
                         "student"
                     ]
+                }
+            }
+        },
+        "admin.UserInfo": {
+            "type": "object",
+            "properties": {
+                "archived": {
+                    "type": "boolean"
                 },
-                "userID": {
+                "email": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "role": {
+                    "type": "string"
+                },
+                "user_id": {
                     "type": "string"
                 }
             }

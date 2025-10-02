@@ -110,7 +110,7 @@ func (us *UserStore) GetAllUserList(ctx context.Context) (*[]model.UserList, err
 }
 
 func (us *UserStore) ExistsByUserID(ctx context.Context, userID string) (bool, error) {
-	count, err := us.db.NewSelect().Model((*model.UserList)(nil)).Where("user_id = ?", userID).Count(ctx)
+	count, err := us.db.NewSelect().Model((*model.UserList)(nil)).Where("userid = ?", userID).Count(ctx)
 	if err != nil {
 		return false, fmt.Errorf("failed to check user existence: %w", err)
 	}
@@ -120,13 +120,13 @@ func (us *UserStore) ExistsByUserID(ctx context.Context, userID string) (bool, e
 func (us *UserStore) ModifyUserValidity(ctx context.Context, userID string, disabledAt time.Time) error {
 	_, err := us.db.NewUpdate().Model((*model.UserList)(nil)).
 		Set("disabled_at = ?", disabledAt).
-		Where("user_id = ?", userID).
+		Where("userid = ?", userID).
 		Exec(ctx)
 	return err
 }
 
 func (us *UserStore) ModifyUserDetails(ctx context.Context, userID string, name *string, hashed_password *string, email *string, roleID *userrole.Role) error {
-	update := us.db.NewUpdate().Model((*model.UserList)(nil)).Where("user_id = ?", userID)
+	update := us.db.NewUpdate().Model((*model.UserList)(nil)).Where("userid = ?", userID)
 
 	if name != nil {
 		update = update.Set("name = ?", *name)

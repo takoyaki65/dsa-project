@@ -1,6 +1,13 @@
 basePath: /api
 definitions:
-  admin.ModifyUserRequest:
+  admin.ListUserResponse:
+    properties:
+      users:
+        items:
+          $ref: '#/definitions/admin.UserInfo'
+        type: array
+    type: object
+  admin.ModifyUserProps:
     properties:
       email:
         type: string
@@ -18,10 +25,19 @@ definitions:
         - manager
         - student
         type: string
-      userID:
+    type: object
+  admin.UserInfo:
+    properties:
+      archived:
+        type: boolean
+      email:
         type: string
-    required:
-    - userID
+      name:
+        type: string
+      role:
+        type: string
+      user_id:
+        type: string
     type: object
   admin.registerUserRequest:
     properties:
@@ -490,11 +506,9 @@ paths:
       - Admin
   /admin/modify/{user_id}:
     patch:
-      consumes:
-      - application/json
       description: Modify user details such as name, password, email, and role.
       parameters:
-      - description: User ID
+      - description: User ID of the user to be modified
         in: path
         name: user_id
         required: true
@@ -504,7 +518,7 @@ paths:
         name: user
         required: true
         schema:
-          $ref: '#/definitions/admin.ModifyUserRequest'
+          $ref: '#/definitions/admin.ModifyUserProps'
       produces:
       - application/json
       responses:
@@ -569,6 +583,26 @@ paths:
       - OAuth2Password:
         - admin
       summary: Register a new user
+      tags:
+      - Admin
+  /admin/users:
+    get:
+      description: Retrieve a list of all users with their details.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: List of users retrieved successfully
+          schema:
+            $ref: '#/definitions/admin.ListUserResponse'
+        "500":
+          description: Failed to get user list
+          schema:
+            $ref: '#/definitions/response.Error'
+      security:
+      - OAuth2Password:
+        - admin
+      summary: List all users
       tags:
       - Admin
   /problem/crud/create:
