@@ -2,7 +2,6 @@ import type React from "react";
 import type { DetailedTaskLog } from "../types/DetailedTaskLog";
 import { decompressFileData, decompressString, type CompressedFileData, type FileData } from "../types/FileData";
 import { useParams } from "react-router";
-import NavigationBar from "../components/NavigationBar";
 import { useAuthQuery } from "../auth/hooks";
 import { useEffect, useMemo, useState } from "react";
 import FileViewer from "../components/FileViewer";

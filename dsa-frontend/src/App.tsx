@@ -9,6 +9,8 @@ import ValidationResultsListing from './pages/ValidationResultsListing';
 import ValidationDetail from './pages/ValidationDetail';
 import BatchValidation from './pages/BatchValidation';
 import NavigationBarLayout from './NavigationBarLayout';
+import AdminRoute from './AdminRoute';
+import BatchedUserCreation from './pages/admin/BatchedUserCreation';
 
 const queryClient = new QueryClient();
 
@@ -24,6 +26,9 @@ function App() {
             <Route path="/validation/results" element={<ValidationResultsListing />} />
             <Route path="/validation/detail/:idParam" element={<ValidationDetail />} />
             <Route path="/validation/batch" element={<BatchValidation />} />
+          </Route>
+          <Route path="admin" element={<AdminRoute><NavigationBarLayout /></AdminRoute>}>
+            <Route path="user/register/batch" element={<BatchedUserCreation />} />
           </Route>
           <Route element={<NotFoundPage />} />
         </Routes>

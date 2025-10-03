@@ -24,6 +24,78 @@ interface LoginResponse {
 export const TOKEN_KEY = 'authToken';
 export const TOKEN_EXPIRY_KEY = 'tokenExpiry';
 
+interface JWTPayload {
+  id: number;
+  userid: string;
+  scopes: ('grading' | 'admin')[];
+  exp: number;
+  iat: number;
+}
+
+const base64UrlDecode = (str: string): string => {
+  // Convert from base64url to base64
+  let base64 = str.replace(/-/g, '+').replace(/_/g, '/');
+
+  // Add padding if necessary
+  const pad = base64.length % 4;
+  if (pad) {
+    if (pad === 1) {
+      throw new Error('Invalid base64url string');
+    }
+    base64 += '='.repeat(4 - pad);
+  }
+
+  // Decode base64 string
+  try {
+    return decodeURIComponent(
+      atob(base64)
+        .split('')
+        .map(c => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2))
+        .join('')
+    );
+  } catch (e) {
+    throw new Error('Failed to decode base64url string');
+  }
+};
+
+const parseJWTPayload = (token: string): JWTPayload => {
+  try {
+    const parts = token.split('.');
+    if (parts.length !== 3) {
+      throw new Error('Invalid JWT token');
+    }
+
+    const payload = base64UrlDecode(parts[1]);
+    return JSON.parse(payload) as JWTPayload;
+  } catch (e) {
+    throw new Error('Failed to parse JWT token');
+  }
+};
+
+const hasScope = (scope: 'grading' | 'admin'): boolean => {
+  const { token } = getStoredToken();
+  if (!token) {
+    return false;
+  }
+
+  try {
+    const payload = parseJWTPayload(token);
+    // console.log('Token: ', payload);
+    return payload.scopes.includes(scope);
+  } catch (e) {
+    console.error('Error parsing JWT token:', e);
+    return false;
+  }
+}
+
+export const hasAdminScope = (): boolean => {
+  return hasScope('admin');
+}
+
+export const hasGradingScope = (): boolean => {
+  return hasScope('grading');
+}
+
 export const getStoredToken = (): { token: string | null; expiry: number | null } => {
   const token = localStorage.getItem(TOKEN_KEY);
   const expiry = localStorage.getItem(TOKEN_EXPIRY_KEY);
@@ -262,6 +334,8 @@ export const useAuth = () => {
     isLoginPending: loginMutation.isPending,
     loginError: loginMutation.error,
     logout,
-    isLogoutLoading
+    isLogoutLoading,
+    hasAdminScope,
+    hasGradingScope,
   }
 }
