@@ -247,36 +247,23 @@ const ProblemStatementPage: React.FC = () => {
     }
   }
 
-  let mainContent: JSX.Element = <NotFoundPage />;
-
   if (!isValidLectureId || !isValidProblemId) {
-    mainContent = <NotFoundPage />;
+    return <NotFoundPage />;
   } else if (isPending) {
-    mainContent = (
+    return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-gray-500">Loading...</div>
       </div>
-    )
+    );
   } else if (error) {
-    mainContent = (
+    return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-gray-500">Problem not found</div>
       </div>
-    )
+    );
   } else {
-    mainContent = renderProblemDetail(problemDetail!, handleOnSubmit, submitMutation.isPending);
+    return renderProblemDetail(problemDetail!, handleOnSubmit, submitMutation.isPending);
   }
-
-  // console.log(problemDetail)
-
-  return (
-    <div className="min-h-screen bg-gray-50">
-      <NavigationBar />
-
-      {mainContent}
-
-    </div>
-  )
 }
 
 export default ProblemStatementPage;

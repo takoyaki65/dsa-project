@@ -1,5 +1,4 @@
 import type React from "react";
-import NavigationBar from "../components/NavigationBar";
 import { useEffect, useState } from "react";
 import SubmitFormSection from "../components/SubmitFormSection";
 import { FileArchive, FileText } from "lucide-react";
@@ -17,7 +16,7 @@ interface APIResponse {
 }
 
 // url: /validation/batch?lectureid=...
-const BatchValidation = () => {
+const BatchValidation: React.FC = () => {
   const [searchParams, setSearchParams] = useSearchParams();
 
   const [selectedLecture, setSelectedLecture] = useState<RequiredFiles | null>(null);
@@ -87,24 +86,24 @@ const BatchValidation = () => {
 
   if (isPending) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-gray-500">Loading...</div>
+      <div className="container mx-auto px-4 py-8">
+        <div className="text-gray-500 text-center">Loading...</div>
       </div>
     )
   }
 
   if (error) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-red-500">Error loading required files: {error.message}</div>
+      <div className="container mx-auto px-4 py-8">
+        <div className="text-red-500 text-center">Error loading required files: {error.message}</div>
       </div>
     )
   }
 
   if (!requiredFilesData) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-gray-500">No required files data available</div>
+      <div className="container mx-auto px-4 py-8">
+        <div className="text-gray-500 text-center">No required files data available</div>
       </div>
     )
   }
@@ -174,63 +173,58 @@ const BatchValidation = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <NavigationBar />
+    <div className="max-w-3xl mx-auto py-8 px-4">
+      <h1 className="text-2xl font-bold text-gray-900 mb-8">Validation Request</h1>
 
-      {/* Main Content */}
-      <div className="max-w-3xl mx-auto py-8 px-4">
-        <h1 className="text-2xl font-bold text-gray-900 mb-8">Validation Request</h1>
-
-        {/* Dropdown selection */}
-        <div className="mb-6">
-          <select
-            onChange={handleLectureChange}
-            className="w-full bg-white px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-            defaultValue=""
-          >
-            <option value="" disabled>
-              Select
+      {/* Dropdown selection */}
+      <div className="mb-6">
+        <select
+          onChange={handleLectureChange}
+          className="w-full bg-white px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+          defaultValue=""
+        >
+          <option value="" disabled>
+            Select
+          </option>
+          {requiredFilesData.list.map((lecture) => (
+            <option key={lecture.lecture_id} value={lecture.lecture_id}>
+              {lecture.lecture_id}. {lecture.title}
             </option>
-            {requiredFilesData.list.map((lecture) => (
-              <option key={lecture.lecture_id} value={lecture.lecture_id}>
-                {lecture.lecture_id}. {lecture.title}
-              </option>
-            ))}
-          </select>
-        </div>
-
-        {/* File Structure Display */}
-        {selectedLecture && (
-          <div className="mb-6 bg-white rounded-lg shadow-sm border border-gray-200 p-4">
-            <h3 className="text-sm font-semibold text-gray-900 mb-3">Expected File Structure</h3>
-            <div className="font-mono text-sm">
-              <TreeItem name={`class${selectedLecture.lecture_id}.zip`} />
-              {selectedLecture.files.map((file, index) => (
-                <TreeItem
-                  key={file}
-                  name={file}
-                  isLast={index === selectedLecture.files.length - 1}
-                  depth={1}
-                />
-              ))}
-            </div>
-          </div>
-        )}
-
-        {errorMessage && (
-          <div className="mb-4 text-red-600">
-            {errorMessage}
-          </div>
-        )}
-
-        {/* Submit Form Section */}
-        {selectedLecture && (
-          <SubmitFormSection
-            onSubmit={handleSubmit}
-            maxFiles={1}
-          />
-        )}
+          ))}
+        </select>
       </div>
+
+      {/* File Structure Display */}
+      {selectedLecture && (
+        <div className="mb-6 bg-white rounded-lg shadow-sm border border-gray-200 p-4">
+          <h3 className="text-sm font-semibold text-gray-900 mb-3">Expected File Structure</h3>
+          <div className="font-mono text-sm">
+            <TreeItem name={`class${selectedLecture.lecture_id}.zip`} />
+            {selectedLecture.files.map((file, index) => (
+              <TreeItem
+                key={file}
+                name={file}
+                isLast={index === selectedLecture.files.length - 1}
+                depth={1}
+              />
+            ))}
+          </div>
+        </div>
+      )}
+
+      {errorMessage && (
+        <div className="mb-4 text-red-600">
+          {errorMessage}
+        </div>
+      )}
+
+      {/* Submit Form Section */}
+      {selectedLecture && (
+        <SubmitFormSection
+          onSubmit={handleSubmit}
+          maxFiles={1}
+        />
+      )}
     </div>
   )
 }
