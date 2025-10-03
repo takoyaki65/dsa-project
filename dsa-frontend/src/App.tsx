@@ -12,6 +12,7 @@ import NavigationBarLayout from './NavigationBarLayout';
 import AdminRoute from './AdminRoute';
 import BatchedUserCreation from './pages/admin/BatchedUserCreation';
 import UserList from './pages/admin/UserList';
+import About from './pages/About';
 
 const queryClient = new QueryClient();
 
@@ -22,6 +23,7 @@ function App() {
         <Routes>
           <Route path="/login" element={<LoginPage />} />
           <Route element={<ProtectedRoute> <NavigationBarLayout /> </ProtectedRoute>}>
+            <Route path="/about" element={<About />} />
             <Route path="/dashboard" element={<DashBoardPage />} />
             <Route path="/problem/:lectureid/:problemid" element={<ProblemStatementPage />} />
             <Route path="/validation/results" element={<ValidationResultsListing />} />

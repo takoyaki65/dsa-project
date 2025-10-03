@@ -9,8 +9,12 @@ const NavigationBar = (): React.JSX.Element => {
 
   const handleDSAClick = () => {
     // Navigate to main page (implementation to be added)
-    navigate("/dashboard");
+    navigate("/about");
   };
+
+  const handleDashboardClick = () => {
+    navigate("/dashboard");
+  }
 
   const handleResultsClick = () => {
     navigate("/validation/results");
@@ -31,6 +35,13 @@ const NavigationBar = (): React.JSX.Element => {
           className="hover:bg-blue-600 text-2xl font-bold hover:opacity-80 transition-opacity"
         >
           DSA
+        </button>
+        <button
+          key="dashboard-button"
+          onClick={handleDashboardClick}
+          className="hover:bg-blue-600 font-semibold hover:opacity-80 transition-opacity"
+        >
+          Dashboard
         </button>
         <button
           key="results-button"
