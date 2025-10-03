@@ -60,7 +60,7 @@ const BatchedUserCreation: React.FC = () => {
       name: String(row.username || ''),
       email: String(row.email || ''),
       role: (row.role === 'manager' ? 'manager' : 'student') as 'student' | 'manager',
-      password: generatePassword(),
+      password: String(row.password || generatePassword()),
     }));
   };
 
@@ -75,7 +75,7 @@ const BatchedUserCreation: React.FC = () => {
       name: String(row.username || ''),
       email: String(row.email || ''),
       role: (row.role === 'manager' ? 'manager' : 'student') as 'student' | 'manager',
-      password: generatePassword(),
+      password: String(row.password || generatePassword()),
     }));
   };
 
