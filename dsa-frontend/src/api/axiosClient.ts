@@ -11,6 +11,10 @@ interface ErrorResponse {
   }
 }
 
+export interface SuccessResponse {
+  message?: string;
+}
+
 export const axiosClient: AxiosInstance = axios.create({
   baseURL: API_BASE_URL,
 });

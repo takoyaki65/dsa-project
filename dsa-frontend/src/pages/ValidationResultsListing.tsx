@@ -1,5 +1,4 @@
 import type React from "react";
-import NavigationBar from "../components/NavigationBar";
 import { formatTimestamp } from "../util/timestamp";
 import ResultBadge from "../components/ResultBadge";
 import { addAuthorizationHeader, useAuthQuery } from "../auth/hooks";
@@ -173,13 +172,10 @@ const ValidationResultsListing: React.FC = () => {
 
   if (isLoading && !currentData) {
     return (
-      <div className="min-h-screen bg-gray-50">
-        <NavigationBar />
-        <div className="container mx-auto px-8 py-6">
-          <h1 className="text-3xl font-semibold mb-6">Validation Results</h1>
-          <div className="flex justify-center items-center h-64">
-            <div className="text-gray-600">Loading...</div>
-          </div>
+      <div className="container mx-auto px-8 py-6">
+        <h1 className="text-3xl font-semibold mb-6">Validation Results</h1>
+        <div className="flex justify-center items-center h-64">
+          <div className="text-gray-600">Loading...</div>
         </div>
       </div>
     )
@@ -187,13 +183,10 @@ const ValidationResultsListing: React.FC = () => {
 
   if (error && !currentData) {
     return (
-      <div className="min-h-screen bg-gray-50">
-        <NavigationBar />
-        <div className="container mx-auto px-8 py-6">
-          <h1 className="text-3xl font-semibold mb-6">Validation Results</h1>
-          <div className="flex justify-center items-center h-64">
-            <div className="text-red-600">Error loading data.</div>
-          </div>
+      <div className="container mx-auto px-8 py-6">
+        <h1 className="text-3xl font-semibold mb-6">Validation Results</h1>
+        <div className="flex justify-center items-center h-64">
+          <div className="text-red-600">Error loading data.</div>
         </div>
       </div>
     )
@@ -201,13 +194,10 @@ const ValidationResultsListing: React.FC = () => {
 
   if (!currentData || !currentData.results || currentData.results.length === 0) {
     return (
-      <div className="min-h-screen bg-gray-50">
-        <NavigationBar />
-        <div className="container mx-auto px-8 py-6">
-          <h1 className="text-3xl font-semibold mb-6">Validation Results</h1>
-          <div className="flex justify-center items-center h-64">
-            <div className="text-gray-600">No validation results available.</div>
-          </div>
+      <div className="container mx-auto px-8 py-6">
+        <h1 className="text-3xl font-semibold mb-6">Validation Results</h1>
+        <div className="flex justify-center items-center h-64">
+          <div className="text-gray-600">No validation results available.</div>
         </div>
       </div>
     )

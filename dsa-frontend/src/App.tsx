@@ -1,4 +1,4 @@
-import { BrowserRouter, Route, Routes } from 'react-router'
+import { BrowserRouter, Navigate, Route, Routes } from 'react-router'
 import LoginPage from './pages/LoginPage'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import ProtectedRoute from './ProtectedRoute';
@@ -11,6 +11,7 @@ import BatchValidation from './pages/BatchValidation';
 import NavigationBarLayout from './NavigationBarLayout';
 import AdminRoute from './AdminRoute';
 import BatchedUserCreation from './pages/admin/BatchedUserCreation';
+import UserList from './pages/admin/UserList';
 
 const queryClient = new QueryClient();
 
@@ -29,8 +30,10 @@ function App() {
           </Route>
           <Route path="admin" element={<AdminRoute><NavigationBarLayout /></AdminRoute>}>
             <Route path="user/register/batch" element={<BatchedUserCreation />} />
+            <Route path="user/list" element={<UserList />} />
           </Route>
-          <Route element={<NotFoundPage />} />
+          <Route path="/" element={<Navigate to="/login" />} />
+          <Route path="*" element={<NotFoundPage />} />
         </Routes>
       </BrowserRouter>
     </QueryClientProvider>
