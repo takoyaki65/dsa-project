@@ -1,10 +1,32 @@
 import React, { useState, type ChangeEvent, type FormEvent } from "react";
-import { Navigate } from "react-router";
+import { Navigate, useLocation, useSearchParams } from "react-router";
 import { useAuth, type LoginCredentials } from "../auth/hooks";
 
 // url: /login
 const LoginPage: React.FC = () => {
   const [credentials, setCredentials] = useState<LoginCredentials>({ username: '', password: '' });
+  const location = useLocation();
+
+  // Read redirect query parameter
+  const [searchParams] = useSearchParams();
+  const redirectParam = searchParams.get('redirect');
+  // console.log("Redirect parameter:", redirectParam);
+
+  let decodedRedirectParam: string | null = null;
+  if (redirectParam) {
+    try {
+      decodedRedirectParam = decodeURIComponent(redirectParam);
+      // console.log("Decoded redirect parameter:", decodedRedirectParam);
+    } catch (e) {
+      console.error("Failed to decode redirect parameter:", e);
+    }
+  }
+
+  // console.log("Location state:", location.state);
+  // console.log("Location state from:", location.state?.from);
+  // console.log("Location state from pathname:", location.state?.from?.pathname);
+
+  const from = location.state?.from?.pathname || decodedRedirectParam || "/about";
 
   const { login: loginMutation, loginResponse, isLoginPending, loginError, isAuthenticated } = useAuth();
 
@@ -32,7 +54,7 @@ const LoginPage: React.FC = () => {
 
   // When login is successful, loginResponse is materialized, then navigate to /dashboard
   if (!!loginResponse || isAuthenticated()) {
-    return <Navigate to="/dashboard" />;
+    return <Navigate to={from} replace />;
   }
 
   return (

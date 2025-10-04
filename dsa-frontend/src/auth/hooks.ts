@@ -294,14 +294,13 @@ export const useLogout = () => {
           // clear auth information whatever api fails
           clearStoredToken();
           queryClient.clear();
-          window.location.href = '/login'; // Redirect to login page
         },
       }
     }
   });
 
   return {
-    logout: () => logoutMutation.mutate(),
+    logout: () => logoutMutation.mutateAsync(),
     isLoading: logoutMutation.isPending,
   };
 };

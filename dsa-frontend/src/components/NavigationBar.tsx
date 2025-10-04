@@ -1,4 +1,4 @@
-import { useNavigate } from "react-router";
+import { useLocation, useNavigate } from "react-router";
 import { useLogout } from "../auth/hooks";
 
 const NavigationBar = (): React.JSX.Element => {
@@ -6,6 +6,8 @@ const NavigationBar = (): React.JSX.Element => {
   const { logout } = useLogout();
 
   const navigate = useNavigate();
+
+  const location = useLocation();
 
   const handleDSAClick = () => {
     // Navigate to main page (implementation to be added)
@@ -20,10 +22,10 @@ const NavigationBar = (): React.JSX.Element => {
     navigate("/validation/results");
   }
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
     // Logout process (implementation to be added)
-    logout();
-    navigate("/login");
+    await logout();
+    navigate("/login", { state: { from: location } });
   };
 
   return (

@@ -37,9 +37,14 @@ axiosClient.interceptors.response.use(
   },
   (error: AxiosError<ErrorResponse>) => {
     if (error.response?.status === 401) {
+      // save current path
+      const currentPath = window.location.pathname;
+
+      // Clear stored token and expiry time
       localStorage.removeItem(TOKEN_KEY);
       localStorage.removeItem(TOKEN_EXPIRY_KEY);
-      window.location.href = '/login'; // Redirect to login page
+
+      window.location.href = `/login?redirect=${encodeURIComponent(currentPath)}`; // Redirect to login page
       return Promise.reject(new Error('Unauthorized'))
     }
 
