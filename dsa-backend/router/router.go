@@ -15,7 +15,7 @@ func New() *echo.Echo {
 
 	// CORS setting
 	e.Use(middleware.CORSWithConfig(middleware.CORSConfig{
-		AllowOrigins: []string{"*"}, // Allow all origins (TODO: we need to restrict this in production)
+		AllowOrigins: []string{"http://localhost:80", "https://dsa.kde.cs.tsukuba.ac.jp"},
 		AllowHeaders: []string{echo.HeaderOrigin, echo.HeaderContentType, echo.HeaderAccept, echo.HeaderAuthorization},
 		AllowMethods: []string{echo.GET, echo.HEAD, echo.PUT, echo.POST, echo.DELETE, echo.PATCH, echo.OPTIONS},
 	}))
