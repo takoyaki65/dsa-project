@@ -8,7 +8,7 @@ import (
 	"slices"
 	"time"
 
-	"github.com/takoyaki65/dsa-project/database"
+	"github.com/dsa-uts/dsa-project/database"
 )
 
 type LectureEntry struct {

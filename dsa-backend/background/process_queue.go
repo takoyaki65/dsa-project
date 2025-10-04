@@ -4,11 +4,11 @@ import (
 	"context"
 	"time"
 
+	"github.com/dsa-uts/dsa-project/database"
+	"github.com/dsa-uts/dsa-project/database/model/queuestatus"
+	"github.com/dsa-uts/dsa-project/database/model/queuetype"
+	"github.com/dsa-uts/dsa-project/database/model/requeststatus"
 	"github.com/labstack/echo/v4"
-	"github.com/takoyaki65/dsa-project/database"
-	"github.com/takoyaki65/dsa-project/database/model/queuestatus"
-	"github.com/takoyaki65/dsa-project/database/model/queuetype"
-	"github.com/takoyaki65/dsa-project/database/model/requeststatus"
 	"github.com/uptrace/bun"
 )
 

@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/takoyaki65/dsa-project/database/model"
-	"github.com/takoyaki65/dsa-project/database/model/userrole"
+	"github.com/dsa-uts/dsa-project/database/model"
+	"github.com/dsa-uts/dsa-project/database/model/userrole"
 	"github.com/uptrace/bun"
 )
 

@@ -10,7 +10,7 @@ require (
 	github.com/labstack/gommon v0.4.2
 	github.com/swaggo/echo-swagger v1.4.1
 	github.com/swaggo/swag v1.16.6
-	github.com/takoyaki65/dsa-project/database v0.0.0-20250912111140-c6fd2affd444
+	github.com/dsa-uts/dsa-project/database v0.0.0
 	github.com/uptrace/bun v1.2.15
 	github.com/uptrace/bun/dialect/pgdialect v1.2.15
 	github.com/uptrace/bun/driver/pgdriver v1.2.15
@@ -68,4 +68,4 @@ require (
 	mellium.im/sasl v0.3.2 // indirect
 )
 
-replace github.com/takoyaki65/dsa-project/database => ../database
+replace github.com/dsa-uts/dsa-project/database => ../database

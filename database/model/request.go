@@ -4,7 +4,7 @@ import (
 	"context"
 	"time"
 
-	"github.com/takoyaki65/dsa-project/database/model/requeststatus"
+	"github.com/dsa-uts/dsa-project/database/model/requeststatus"
 	"github.com/uptrace/bun"
 )
 

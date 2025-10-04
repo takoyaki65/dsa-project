@@ -3,7 +3,7 @@ package database
 import (
 	"context"
 
-	"github.com/takoyaki65/dsa-project/database/model"
+	"github.com/dsa-uts/dsa-project/database/model"
 	"github.com/uptrace/bun"
 )
 

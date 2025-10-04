@@ -5,8 +5,8 @@ import (
 	"dsa-backend/handler/response"
 	"net/http"
 
+	"github.com/dsa-uts/dsa-project/database/model/userrole"
 	"github.com/labstack/echo/v4"
-	"github.com/takoyaki65/dsa-project/database/model/userrole"
 	"golang.org/x/crypto/bcrypt"
 )
 

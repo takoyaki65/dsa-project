@@ -6,10 +6,10 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/dsa-uts/dsa-project/database"
 	"github.com/golang-jwt/jwt/v5"
 	echojwt "github.com/labstack/echo-jwt/v4"
 	"github.com/labstack/echo/v4"
-	"github.com/takoyaki65/dsa-project/database"
 	"github.com/uptrace/bun"
 )
 

@@ -4,8 +4,8 @@ import (
 	"dsa-backend/handler/auth"
 	"dsa-backend/handler/middleware"
 
+	"github.com/dsa-uts/dsa-project/database"
 	"github.com/labstack/echo/v4"
-	"github.com/takoyaki65/dsa-project/database"
 	"github.com/uptrace/bun"
 )
 

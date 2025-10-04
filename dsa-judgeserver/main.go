@@ -10,9 +10,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/takoyaki65/dsa-project/database"
-	"github.com/takoyaki65/dsa-project/database/model"
-	"github.com/takoyaki65/dsa-project/database/model/queuestatus"
+	"github.com/dsa-uts/dsa-project/database"
+	"github.com/dsa-uts/dsa-project/database/model"
+	"github.com/dsa-uts/dsa-project/database/model/queuestatus"
 	"github.com/uptrace/bun"
 	"github.com/uptrace/bun/dialect/pgdialect"
 	"github.com/uptrace/bun/driver/pgdriver"
