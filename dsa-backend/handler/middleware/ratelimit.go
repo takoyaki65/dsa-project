@@ -129,6 +129,11 @@ func (l *LoginRateLimiter) Middleware() echo.MiddlewareFunc {
 				return next(c)
 			}
 
+			// If username is too long, abort early to prevent abuse
+			if len(username) > 30 {
+				return c.JSON(http.StatusBadRequest, response.NewError("malformed credentials"))
+			}
+
 			limiter := l.getLimiter(username)
 			if !limiter.Allow() {
 				return c.JSON(http.StatusTooManyRequests, response.NewError("too many login attempts, please try again later"))
