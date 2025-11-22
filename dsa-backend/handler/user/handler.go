@@ -18,7 +18,7 @@ import (
 )
 
 type userLoginRequest struct {
-	UserId   string `form:"username" validate:"required"`
+	UserId   string `form:"username" validate:"required,min=1,max=30"`
 	Password string `form:"password" validate:"required"`
 }
 
@@ -109,7 +109,7 @@ func (h *Handler) Login(c echo.Context) error {
 	var loginRequest userLoginRequest
 	err := loginRequest.bind(c)
 	if err != nil {
-		return c.JSON(http.StatusBadRequest, response.NewError("failed to bind request: "+err.Error()))
+		return c.JSON(http.StatusBadRequest, response.NewError("Validation failed"))
 	}
 
 	plain_password := loginRequest.Password
